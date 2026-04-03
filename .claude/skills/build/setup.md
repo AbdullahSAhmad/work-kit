@@ -38,4 +38,5 @@ description: "Build sub-stage: Branch creation, dependency installation, scaffol
 - Do NOT write implementation code — just scaffolding (empty files, directory structure)
 - Do NOT write tests yet — that's Red
 - If the worktree already has setup from a previous loop-back, verify state and skip what's done
+- If dependency installation fails, diagnose the issue — don't proceed with broken dependencies
 - Run the build/compile check to ensure nothing is broken before proceeding

@@ -54,6 +54,6 @@ description: "Review sub-stage: Finalize PR, make ship/no-ship decision."
 ## Rules
 
 - Be specific about what needs to change — "needs work" is useless feedback
-- Don't block on cosmetic issues — fix them yourself in Self-Review
+- Don't block on cosmetic issues — fix them directly before finalizing
 - The PR should be ready for a human reviewer after this step
 - If you're unsure between approved and changes_requested, ask the user

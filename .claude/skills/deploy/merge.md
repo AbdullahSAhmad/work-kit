@@ -17,8 +17,8 @@ description: "Deploy sub-stage: Get the PR merged safely."
    - Review: approved
    - Conflicts: none/resolved
    - Risk: low/medium/high
-5. **Ask the user for merge approval** — don't auto-merge
-6. Once approved, merge using the project's preferred method (squash/merge/rebase)
+5. **Prepare a merge readiness summary** and return it to the orchestrator for user approval — don't auto-merge
+6. Once the orchestrator confirms user approval, merge using the project's preferred method (check CONTRIBUTING.md or README for merge preferences; default to squash if unspecified)
 
 ## Output (append to state.md)
 
@@ -42,6 +42,6 @@ description: "Deploy sub-stage: Get the PR merged safely."
 
 - NEVER force push to main
 - NEVER merge with failing CI
-- ALWAYS ask the user before merging
+- ALWAYS return to the orchestrator for user approval before merging
 - If CI fails, diagnose the issue — don't just retry
 - If conflicts are non-trivial, explain them to the user before resolving

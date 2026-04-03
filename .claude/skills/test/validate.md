@@ -48,3 +48,4 @@ Also append:
 - Be honest about gaps — hiding them here means Review catches them later (or worse, they ship)
 - If a criterion is genuinely not testable, explain why
 - Low confidence should trigger concern in the Review phase
+- Criteria should not change during Test — if a new criterion is discovered, note it but don't add it to the checklist mid-test

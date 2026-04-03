@@ -52,7 +52,7 @@ description: "Plan sub-stage: Produce a full ordered step-by-step implementation
 
 ## Rules
 
-- Every acceptance criterion must map to at least one step
+- Every acceptance criterion must map to at least one step. If a criterion can't be mapped, it's a gap — flag it for Audit
 - Every step must have an exact file path
 - Steps should be small enough to implement in one focused session
 - If a step is "update 5 files", break it into 5 steps

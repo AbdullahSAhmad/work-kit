@@ -36,7 +36,7 @@ description: "Build sub-stage: Make failing tests pass — service layer, API, b
 - Still failing: <K> (explain why if > 0)
 
 **Notes:**
-- <any deviations from Blueprint and why>
+- <any deviations from Blueprint — also record in the `## Deviations` section of state.md>
 ```
 
 ## Rules
