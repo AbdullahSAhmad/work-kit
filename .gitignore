@@ -1,3 +1,9 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
 # Work-in-progress state (ephemeral, per-worktree)
 .work-kit/
 

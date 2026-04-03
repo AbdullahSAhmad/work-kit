@@ -17,52 +17,41 @@ Best for: large features, new systems, or when you want maximum rigor.
 
 ## Starting New Work (`/full-kit <description>`)
 
-1. Generate a slug from the description (kebab-case, max 40 chars)
-2. Create a git worktree:
+1. Create a git worktree and initialize state:
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
+   cd worktrees/<slug>
+   npx work-kit init --mode full --description "<description>"
    ```
-3. Initialize `.work-kit/state.md` in the worktree root:
-   ```markdown
-   # <Title>
-
-   **Slug:** <slug>
-   **Branch:** feature/<slug>
-   **Started:** <YYYY-MM-DD>
-   **Mode:** full-kit
-   **Phase:** plan
-   **Sub-stage:** clarify
-   **Status:** in-progress
-
-   ## Description
-   <user's description>
-
-   ## Criteria
-   <!-- Added during Plan/Clarify, checked off during test/review -->
-
-   ## Decisions
-   <!-- Append here whenever you choose between real alternatives -->
-   <!-- Format: **<context>**: chose <X> over <Y> — <why> -->
-
-   ## Deviations
-   <!-- Append here whenever implementation diverges from the Blueprint -->
-   <!-- Format: **<Blueprint step>**: <what changed> — <why> -->
-   ```
-4. Run Plan/Clarify — read `.claude/skills/plan.md` and start from Clarify
-5. After Clarify completes, update state and report results to the user
-6. **Stop and wait** for the user to say "proceed" or give feedback before continuing the Plan phase
+2. Parse the JSON response and follow the action
+3. Continue with the execution loop below
 
 ## Continuing Work (`/full-kit` with no args)
 
 1. Find the active worktree — check `git worktree list` or look for `.work-kit/state.md`
-2. Read `.work-kit/state.md` — verify `**Mode:** full-kit`
-3. Determine current phase and sub-stage
-4. Resume from where it left off — run the next phase/sub-stage
-5. After each phase completes, update state and **stop for user confirmation**
+2. Run `npx work-kit status` to see current state
+3. Run `npx work-kit next` to get the next action
+4. Follow the execution loop below
+
+## Execution Loop
+
+The CLI manages all state transitions, prerequisites, and loopbacks. Follow this loop:
+
+1. Run `npx work-kit next` to get the next action
+2. Parse the JSON response
+3. Follow the action type:
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit complete <phase>/<sub-stage> --outcome <outcome>`
+   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `npx work-kit complete <onComplete target>`
+   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit next` again.
+   - **`loopback`**: Report the loopback to the user, then run `npx work-kit next` to continue from the target.
+   - **`complete`**: Done — run wrap-up if not already done.
+   - **`error`**: Report the error and suggestion to the user. Stop.
+4. After each agent completes: `npx work-kit complete <phase>/<sub-stage> --outcome <outcome>`
+5. Then `npx work-kit next` again to continue
 
 ## Phase Prerequisites
 
-Before running any phase, read `.work-kit/state.md` and check that its prerequisite phase is complete. **Refuse to proceed** if the prerequisite isn't met — tell the user which phase they need to complete first.
+Prerequisites are enforced by the CLI (`npx work-kit validate <phase>`). You don't need to check manually — the `next` command handles it.
 
 | Phase    | Requires                          |
 |----------|-----------------------------------|
@@ -72,9 +61,6 @@ Before running any phase, read `.work-kit/state.md` and check that its prerequis
 | Review   | Test (complete)                   |
 | Deploy   | Review (complete), Handoff = approved |
 | Wrap-up  | Review (complete) or Deploy (complete) |
-
-If the user tries to skip ahead:
-> "**<Phase>** requires **<prerequisite>** to be complete. Current phase: **<current phase>**. Continue with `/full-kit` to proceed in order."
 
 ## Agent Architecture
 

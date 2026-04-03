@@ -73,82 +73,29 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
 
 ### Step 3: Initialize
 
-1. Generate a slug from the description (kebab-case, max 40 chars)
-2. Create a git worktree:
+1. Create a git worktree and initialize state with the CLI:
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
+   cd worktrees/<slug>
+   npx work-kit init --mode auto --description "<description>" --classification <classification>
    ```
-3. Initialize `.work-kit/state.md` with the dynamic workflow:
-   ```markdown
-   # <Title>
-
-   **Slug:** <slug>
-   **Branch:** feature/<slug>
-   **Started:** <YYYY-MM-DD>
-   **Mode:** auto-kit
-   **Classification:** <bug-fix | small-change | refactor | feature | large-feature>
-   **Phase:** plan
-   **Sub-stage:** clarify
-   **Status:** in-progress
-
-   ## Description
-   <user's description>
-
-   ## Workflow
-   <!-- The dynamic workflow for this work item -->
-   <!-- Checked off as each step completes -->
-   - [ ] Plan: Clarify
-   - [ ] Plan: Investigate
-   - [ ] Build: Red
-   - [ ] Build: Core
-   - [ ] Build: Commit
-   - [ ] Test: Verify
-   - [ ] Test: Validate
-   - [ ] Review: Self-Review
-   - [ ] Review: Handoff
-   - [ ] Wrap-up
-
-   ## Criteria
-   <!-- Added during Plan/Clarify, checked off during test/review -->
-
-   ## Decisions
-   <!-- Append here whenever you choose between real alternatives -->
-   <!-- Format: **<context>**: chose <X> over <Y> — <why> -->
-
-   ## Deviations
-   <!-- Append here whenever implementation diverges from the Blueprint -->
-   <!-- Format: **<Blueprint step>**: <what changed> — <why> -->
-   ```
-4. **Present the workflow to the user** — show the classification and selected steps
-5. **Wait for approval** — user can add/remove steps before proceeding
-6. Once approved, start executing from the first step
+2. Show the workflow to the user: `npx work-kit workflow`
+3. User can adjust: `npx work-kit workflow --add review/security` or `npx work-kit workflow --remove test/e2e`
+4. **Wait for approval** — user can add/remove steps before proceeding
+5. Once approved, start the execution loop
 
 ## Continuing Work (`/auto-kit` with no args)
 
 1. Find the active worktree — check `git worktree list` or look for `.work-kit/state.md`
-2. Read `.work-kit/state.md` — verify `**Mode:** auto-kit`
-3. Find the first unchecked `- [ ]` step in the `## Workflow` checklist
-4. Resume from that step
-5. After all steps in a phase are checked, update state and **stop for user confirmation**
+2. Run `npx work-kit status` to see current state
+3. Run `npx work-kit next` to get the next action
+4. Follow the execution loop below
 
 ## Step Validation
 
-**Refuse to proceed** if validation fails — tell the user what's missing.
+All validation is handled by the CLI. The `next` command enforces order, phase boundaries, and prerequisites automatically.
 
-### Rules
-
-1. **Order is enforced** — steps must complete top-to-bottom. The next step is always the first unchecked `- [ ]` item. No jumping ahead.
-2. **Phase boundaries are enforced** — before running the first step of a new phase, all steps from prior phases must be checked:
-   - First `Build:` step requires all `Plan:` steps checked
-   - First `Test:` step requires all `Build:` steps checked
-   - First `Review:` step requires all `Test:` steps checked
-   - First `Deploy:` step requires all `Review:` steps checked, Handoff = approved
-   - `Wrap-up` requires all `Review:` steps checked (or all `Deploy:` steps if present)
-3. **No removing completed steps** — once a step is `[x]`, it stays
-4. **Adding steps mid-work** — if you realize a skipped step is needed, tell the user and ask to insert it at the correct position (respecting phase order). Never silently add steps.
-
-If the user tries to skip ahead:
-> "Cannot run **<requested step>**. Next step is **<next unchecked step>**. Complete it first or use `/auto-kit` to continue in order."
+To add/remove steps mid-work: `npx work-kit workflow --add <phase/sub-stage>` or `--remove <phase/sub-stage>`. Completed steps cannot be removed.
 
 ## Agent Architecture
 
@@ -209,17 +156,21 @@ Each phase writes a `### <Phase>: Final` section — a self-contained summary. T
 
 If a phase has fewer sub-stages in the workflow, the Final section still covers the same output — just with less detail where sub-stages were skipped.
 
-## Step Execution
+## Execution Loop
 
-For each step:
-1. **Find next unchecked step** in `## Workflow`
-2. **Validate phase boundary** — if this step crosses into a new phase, verify all prior phase steps are checked
-3. **Spawn a fresh agent** if crossing a phase boundary — pass it the relevant Final sections
-4. Read the sub-stage skill file (e.g., `.claude/skills/plan/clarify.md`)
-5. Follow its instructions
-6. Check off the step: `- [x] <step>`
-7. Update `**Phase:**` and `**Sub-stage:**` in state.md
-8. When all steps in a phase are checked, write `### <Phase>: Final` and wait for user
+The CLI manages all state transitions, prerequisites, and loopbacks. Follow this loop:
+
+1. Run `npx work-kit next` to get the next action
+2. Parse the JSON response
+3. Follow the action type:
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit complete <phase>/<sub-stage> --outcome <outcome>`
+   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `npx work-kit complete <onComplete target>`
+   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit next` again.
+   - **`loopback`**: Report the loopback to the user, then run `npx work-kit next` to continue from the target.
+   - **`complete`**: Done — run wrap-up if not already done.
+   - **`error`**: Report the error and suggestion to the user. Stop.
+4. After each agent completes: `npx work-kit complete <phase>/<sub-stage> --outcome <outcome>`
+5. Then `npx work-kit next` again to continue
 
 ## Loop-Back Rules
 

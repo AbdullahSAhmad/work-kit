@@ -1,0 +1,32 @@
+{
+  "name": "work-kit",
+  "version": "1.0.0",
+  "description": "Structured development workflow for Claude Code. Two modes, 6 phases, 27 sub-stages — all as reusable skill files.",
+  "type": "module",
+  "bin": {
+    "work-kit": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdullahSAhmad/work-kit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "bugs": {
+    "url": "https://github.com/AbdullahSAhmad/work-kit/issues"
+  },
+  "homepage": "https://github.com/AbdullahSAhmad/work-kit#readme"
+}
