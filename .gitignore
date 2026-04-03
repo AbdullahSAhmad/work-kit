@@ -1,0 +1,8 @@
+# Work-in-progress state (ephemeral, per-worktree)
+.work-kit/
+
+# Worktrees directory
+worktrees/
+
+# Local Claude settings
+.claude/settings.local.json
