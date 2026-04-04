@@ -10,17 +10,23 @@
     "cli/src/",
     "skills/"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "tsx cli/src/index.ts",
     "doctor": "tsx cli/src/index.ts doctor",
-    "setup": "tsx cli/src/index.ts setup"
+    "setup": "tsx cli/src/index.ts setup",
+    "build": "tsc --project cli/tsconfig.json",
+    "typecheck": "tsc --project cli/tsconfig.json --noEmit",
+    "test": "tsx --test cli/src/**/*.test.ts"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AbdullahSAhmad/work-kit.git"
   },
   "keywords": ["claude-code", "workflow", "skills", "development"],
-  "author": "",
+  "author": "Abdullah Ahmad",
   "license": "ISC",
   "dependencies": {
     "commander": "^13.1.0",

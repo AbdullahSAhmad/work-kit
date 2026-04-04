@@ -12,3 +12,16 @@ worktrees/
 
 # Local Claude settings
 .claude/settings.local.json
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
