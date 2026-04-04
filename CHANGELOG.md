@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.3 (2026-04-04)
+
+### Added
+- Anti-rationalization tables in 18 sub-stage files to counter LLM shortcut-taking
+- Three-tier boundaries (Always / Ask First / Never) in all 6 phase runner skills
+- Verdict protocol with structured output templates across phase runners and sub-stages
+- Bootstrap command (`npx work-kit-cli bootstrap`) for session detection and recovery
+- Content redactor with `@wk-ignore-start/end` markers to hide code from agents
+- Session recovery flow in full-kit and auto-kit orchestrators
+
 ## 0.2.2 (2026-04-04)
 
 ### Fixed
