@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
 import { doctorCommand } from "./doctor.js";
+import { bold, dim, green, yellow, red, cyan } from "../utils/colors.js";
 
 const SKILLS_SOURCE = path.resolve(import.meta.dirname, "..", "..", "..", "skills");
 
@@ -91,7 +92,7 @@ export async function setupCommand(targetPath?: string): Promise<void> {
   } else if (isClaudeProject(process.cwd())) {
     // Current directory is a Claude project
     projectDir = process.cwd();
-    console.error(`Installing to current project: ${projectDir}`);
+    console.error(`Installing to current project: ${bold(projectDir)}`);
   } else {
     // Discover Claude projects and let user pick
     const projects = findClaudeProjects();
@@ -107,7 +108,7 @@ export async function setupCommand(targetPath?: string): Promise<void> {
     } else {
       console.error("Found Claude Code projects:\n");
       for (let i = 0; i < projects.length; i++) {
-        console.error(`  ${i + 1}. ${projects[i].path}`);
+        console.error(`  ${cyan(String(i + 1))}. ${projects[i].path}`);
       }
       console.error();
 
@@ -131,28 +132,28 @@ export async function setupCommand(targetPath?: string): Promise<void> {
 
   if (copied.length > 0) {
     for (const f of copied) {
-      console.error(`  + ${f}`);
+      console.error(`  ${green("+")} ${f}`);
     }
   }
   if (skipped.length > 0) {
     console.error(`  (${skipped.length} files unchanged)`);
   }
   if (copied.length === 0 && skipped.length > 0) {
-    console.error("  Already up to date.");
+    console.error(`  ${dim("Already up to date.")}`);
   }
 
   // Run doctor against the target project
   console.error("\nRunning doctor...");
   const result = doctorCommand(projectDir);
   for (const check of result.checks) {
-    const icon = check.status === "pass" ? "\u2713" : check.status === "warn" ? "!" : "\u2717";
-    console.error(`  ${icon} ${check.name}: ${check.message}`);
+    const icon = check.status === "pass" ? green("\u2713") : check.status === "warn" ? yellow("!") : red("\u2717");
+    console.error(`  ${icon} ${bold(check.name)}: ${check.message}`);
   }
 
   console.error();
   if (result.ok) {
-    console.error("Ready. Use /full-kit or /auto-kit in Claude Code.");
+    console.error(green(bold("Ready. Use /full-kit or /auto-kit in Claude Code.")));
   } else {
-    console.error("Setup complete but some checks failed. Review the issues above.");
+    console.error(red("Setup complete but some checks failed. Review the issues above."));
   }
 }

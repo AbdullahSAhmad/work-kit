@@ -11,6 +11,9 @@ import { loopbackCommand } from "./commands/loopback.js";
 import { workflowCommand } from "./commands/workflow.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { setupCommand } from "./commands/setup.js";
+import { upgradeCommand } from "./commands/upgrade.js";
+import { completionsCommand } from "./commands/completions.js";
+import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
 const program = new Command();
@@ -184,11 +187,11 @@ program
       console.log(JSON.stringify(result, null, 2));
     } else {
       for (const check of result.checks) {
-        const icon = check.status === "pass" ? "\u2713" : check.status === "warn" ? "!" : "\u2717";
-        console.error(`  ${icon} ${check.name}: ${check.message}`);
+        const icon = check.status === "pass" ? green("\u2713") : check.status === "warn" ? yellow("!") : red("\u2717");
+        console.error(`  ${icon} ${bold(check.name)}: ${check.message}`);
       }
       console.error();
-      console.error(result.ok ? "All checks passed." : "Some checks failed. Fix the issues above.");
+      console.error(result.ok ? green("All checks passed.") : red("Some checks failed. Fix the issues above."));
     }
     process.exit(result.ok ? 0 : 1);
   });
@@ -200,6 +203,25 @@ program
   .description("Install work-kit skills into a project")
   .action(async (targetPath) => {
     await setupCommand(targetPath);
+  });
+
+// ── upgrade ───────────────────────────────────────────────────────────
+
+program
+  .command("upgrade")
+  .description("Update work-kit skills to the latest version")
+  .option("--worktree-root <path>", "Override project path")
+  .action(async (opts) => {
+    await upgradeCommand(opts.worktreeRoot);
+  });
+
+// ── completions ─────────────────────────────────────────────────────
+
+program
+  .command("completions <shell>")
+  .description("Output shell completions (bash, zsh, fish)")
+  .action((shell) => {
+    completionsCommand(shell);
   });
 
 program.parse();
