@@ -1,18 +1,62 @@
 # work-kit
 
-Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 6 phases, 27 sub-stages — all as reusable skill files.
+Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 6 phases, 27 sub-stages — orchestrated by a TypeScript CLI with reusable skill files.
+
+## Installation
+
+**One-step setup** (recommended):
+
+```bash
+npx work-kit setup
+```
+
+This auto-detects Claude Code projects in your workspace and installs the skill files. If multiple projects are found, it lists them for you to choose.
+
+**Global install**:
+
+```bash
+npm install -g work-kit
+```
+
+## Quick start
+
+```bash
+# 1. Set up work-kit in your project
+npx work-kit setup
+
+# 2. In Claude Code, start a workflow
+/full-kit add user avatar upload    # strict, all phases
+/auto-kit fix login redirect bug    # dynamic, only needed stages
+```
 
 ## Modes
 
 ### `/full-kit <description>`
-Runs every phase and sub-stage in order. No shortcuts.
+
+Runs every phase and sub-stage in strict order. No shortcuts.
 
 Best for: large features, new systems, maximum rigor.
 
 ### `/auto-kit <description>`
-Analyzes the request first, classifies it (bug-fix, small-change, refactor, feature, large-feature), then builds a dynamic workflow with only the sub-stages needed.
+
+Classifies the request (bug-fix, small-change, refactor, feature, large-feature) and builds a dynamic workflow with only the sub-stages needed.
 
 Best for: bug fixes, small changes, refactors, well-understood tasks.
+
+## CLI commands
+
+| Command | Description |
+|---------|-------------|
+| `init <description>` | Initialize a new workflow with a task description |
+| `next` | Advance to the next sub-stage |
+| `complete` | Mark the current sub-stage as complete |
+| `status` | Show current workflow state (phase, sub-stage, progress) |
+| `context` | Generate context summary for the current phase |
+| `validate` | Validate state integrity and phase prerequisites |
+| `loopback` | Route back to a previous stage (max 2 per route) |
+| `workflow` | Display the full workflow plan |
+| `doctor` | Run environment health checks (supports `--json`) |
+| `setup` | Install work-kit skills into a Claude Code project |
 
 ## Phases
 
@@ -25,50 +69,40 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 | **Deploy** | Merge, Monitor, Remediate | Single (optional) |
 | **Wrap-up** | Summary + Archive | Single |
 
-## How it works
-
-```
-/full-kit add user avatar upload
-
-  Plan (fresh agent)
-    Clarify → Investigate → Sketch → Scope → UX Flow → Architecture → Blueprint → Audit
-    writes: ### Plan: Final
-
-  Build (fresh agent — reads Plan: Final)
-    Setup → Migration → Red → Core → UI → Refactor → Integration → Commit
-    writes: ### Build: Final
-
-  Test (fresh agent — reads Build: Final)
-    Verify ──┐ parallel
-    E2E    ──┘ → Validate
-    writes: ### Test: Final
-
-  Review (fresh agent — reads all Finals)
-    Self-Review  ──┐
-    Security     ──┤ 4 parallel
-    Performance  ──┤
-    Compliance   ──┘ → Handoff
-    writes: ### Review: Final
-
-  Deploy → Wrap-up → done
-```
-
 ## Architecture
 
 ### Context management
-Each phase runs as a **fresh agent**. No context bloat — the Build agent doesn't carry Plan's investigation notes.
 
-Phases communicate through **Final sections** in `.work-kit/state.md`. Each phase writes a `### <Phase>: Final` section that's all the next phase needs.
+Each phase runs as a **fresh agent**. The Build agent doesn't carry Plan's investigation notes — no context bloat.
 
-### State tracking
-All work is tracked in `.work-kit/state.md` inside the git worktree. Sub-stage working notes accumulate alongside Final sections. The full file is archived on completion.
+Phases communicate through **Final sections** in `.work-kit/state.md`. Each phase writes a `### <Phase>: Final` section that the next phase reads.
+
+### State management
+
+Dual state files in `.work-kit/`:
+
+- **state.json** — state machine (current phase, sub-stage, transitions, loop-back counts)
+- **state.md** — content (working notes, Final sections, accumulated context)
+
+All writes are atomic to prevent state corruption.
+
+### Parallel agents
+
+- **Test phase**: Verify and E2E run in parallel, then Validate runs sequentially
+- **Review phase**: Self-Review, Security, Performance, and Compliance run as 4 parallel reviewers, then Handoff runs sequentially
+
+### Loop-back routing
+
+Any stage can route back to a previous stage. Each route is enforced with a max count of 2 to prevent infinite loops.
 
 ### Validation
+
 - **full-kit**: phase-level prerequisites (Plan before Build before Test...)
 - **auto-kit**: step-level validation against the `## Workflow` checklist
 - Both modes refuse to skip ahead
 
 ### Output
+
 ```
 .claude/work-kit/
   2026-04-03-avatar-upload.md        # distilled summary
@@ -77,57 +111,37 @@ All work is tracked in `.work-kit/state.md` inside the git worktree. Sub-stage w
   index.md                           # log of all completed work
 ```
 
-## File structure
+## Repo structure
 
 ```
-.claude/skills/
-  full-kit.md              # /full-kit orchestrator
-  auto-kit.md              # /auto-kit orchestrator
-  plan.md                  # Plan phase runner
-  plan/
-    clarify.md
-    investigate.md
-    sketch.md
-    scope.md
-    ux-flow.md
-    architecture.md
-    blueprint.md
-    audit.md
-  build.md                 # Build phase runner
-  build/
-    setup.md
-    migration.md
-    red.md
-    core.md
-    ui.md
-    refactor.md
-    integration.md
-    commit.md
-  test.md                  # Test phase runner
-  test/
-    verify.md
-    e2e.md
-    validate.md
-  review.md                # Review phase runner
-  review/
-    self-review.md
-    security.md
-    performance.md
-    compliance.md
-    handoff.md
-  deploy.md                # Deploy phase runner
-  deploy/
-    merge.md
-    monitor.md
-    remediate.md
-  wrap-up.md               # Final summary + cleanup
+work-kit/
+  cli/
+    src/
+      commands/       # CLI command implementations
+      config/         # Configuration and defaults
+      context/        # Context generation for phases
+      engine/         # Workflow engine and transitions
+      state/          # State machine and file management
+      index.ts        # Entry point
+  skills/
+    full-kit/SKILL.md   # /full-kit orchestrator
+    auto-kit/SKILL.md   # /auto-kit orchestrator
+    plan/SKILL.md       # Plan phase runner
+    plan/stages/        # 8 stage files
+    build/SKILL.md      # Build phase runner
+    build/stages/       # 8 stage files
+    test/SKILL.md       # Test phase runner
+    test/stages/        # 3 stage files
+    review/SKILL.md     # Review phase runner
+    review/stages/      # 5 stage files
+    deploy/SKILL.md     # Deploy phase runner
+    deploy/stages/      # 3 stage files
+    wrap-up/SKILL.md    # Final summary + cleanup
+  package.json
 ```
-
-## Installation
-
-Copy the `.claude/skills/` directory into your project's `.claude/skills/` folder. The skills will be available as `/full-kit` and `/auto-kit` in Claude Code.
 
 ## Requirements
 
+- Node.js >= 18
+- Git
 - [Claude Code](https://claude.com/claude-code)
-- Git (worktrees used for branch isolation)
