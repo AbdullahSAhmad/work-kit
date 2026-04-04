@@ -2,7 +2,7 @@
 name: auto-kit
 description: "Smart pipeline that analyzes the request and builds a dynamic workflow. Usage: /auto-kit <description> to start, /auto-kit to continue."
 user-invocable: true
-argument-hint: "[description]"
+argument-hint: "[--gated] [description]"
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -97,7 +97,7 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
    cd worktrees/<slug>
    npx work-kit-cli init --mode auto --description "<description>" --classification <classification>
    ```
-   If the user requested gated mode (manual approval between phases), add `--gated`.
+   If the user passed `--gated` (e.g., `/auto-kit --gated fix login bug`), add `--gated` to the init command. Strip `--gated` from the description text.
 2. Show the workflow to the user: `npx work-kit-cli workflow`
 3. User can adjust: `npx work-kit-cli workflow --add review/security` or `npx work-kit-cli workflow --remove test/e2e`
 4. **Wait for approval** — user can add/remove steps before proceeding

@@ -2,7 +2,7 @@
 name: full-kit
 description: "Full pipeline for feature development. Runs all phases and sub-stages in order. Usage: /full-kit <description> to start, /full-kit to continue."
 user-invocable: true
-argument-hint: "[description]"
+argument-hint: "[--gated] [description]"
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -39,7 +39,7 @@ Do not proceed until `doctor` reports all checks passed.
    cd worktrees/<slug>
    npx work-kit-cli init --mode full --description "<description>"
    ```
-   If the user requested gated mode (manual approval between phases), add `--gated`.
+   If the user passed `--gated` (e.g., `/full-kit --gated add user avatar`), add `--gated` to the init command. Strip `--gated` from the description text.
 2. Parse the JSON response and follow the action
 3. Continue with the execution loop below
 
