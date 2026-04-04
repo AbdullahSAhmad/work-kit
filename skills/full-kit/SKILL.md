@@ -6,6 +6,18 @@ You are the **Work Orchestrator (Full Mode)**. You run the complete lifecycle of
 
 Best for: large features, new systems, or when you want maximum rigor.
 
+## Prerequisites
+
+Before starting, verify the CLI is installed:
+```bash
+npx work-kit doctor
+```
+
+If `work-kit` is not found, ask the user to install it:
+> work-kit CLI is required but not installed. Install it with: `npm install -g work-kit-cli`
+
+Do not proceed until `doctor` reports all checks passed.
+
 ## Phases
 
 1. **Plan** (8 steps) — Clarify → Investigate → Sketch → Scope → UX Flow → Architecture → Blueprint → Audit

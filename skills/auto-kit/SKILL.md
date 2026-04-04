@@ -6,6 +6,18 @@ You are the **Work Orchestrator (Auto Mode)**. You analyze the request first, th
 
 Best for: bug fixes, small changes, refactors, or well-understood tasks.
 
+## Prerequisites
+
+Before starting, verify the CLI is installed:
+```bash
+npx work-kit doctor
+```
+
+If `work-kit` is not found, ask the user to install it:
+> work-kit CLI is required but not installed. Install it with: `npm install -g work-kit-cli`
+
+Do not proceed until `doctor` reports all checks passed.
+
 ## All Available Sub-stages
 
 These are the building blocks you pick from:

@@ -9,6 +9,7 @@ import { validateCommand } from "./commands/validate.js";
 import { contextCommand } from "./commands/context.js";
 import { loopbackCommand } from "./commands/loopback.js";
 import { workflowCommand } from "./commands/workflow.js";
+import { doctorCommand } from "./commands/doctor.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
 const program = new Command();
@@ -167,6 +168,23 @@ program
       console.log(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
+  });
+
+// ── doctor ───────────────────────────────────────────────────────────
+
+program
+  .command("doctor")
+  .description("Check CLI installation, skills, and environment health")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    const result = doctorCommand(opts.worktreeRoot);
+    for (const check of result.checks) {
+      const icon = check.status === "pass" ? "\u2713" : check.status === "warn" ? "!" : "\u2717";
+      console.log(`  ${icon} ${check.name}: ${check.message}`);
+    }
+    console.log();
+    console.log(result.ok ? "All checks passed." : "Some checks failed. Fix the issues above.");
+    process.exit(result.ok ? 0 : 1);
   });
 
 program.parse();
