@@ -18,12 +18,17 @@ import { uninstallCommand } from "./commands/uninstall.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json");
+
 const program = new Command();
 
 program
   .name("work-kit")
   .description("State machine orchestrator for work-kit development workflow")
-  .version("1.0.0");
+  .version(pkg.version);
 
 // ── init ─────────────────────────────────────────────────────────────
 

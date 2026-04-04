@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 (2026-04-04)
+
+### Fixed
+- Bin wrapper now resolves tsx from package's own dependencies (fixes npx execution)
+- Version output reads from package.json dynamically instead of hardcoded
+
 ## 0.1.1 (2026-04-04)
 
 ### Added
