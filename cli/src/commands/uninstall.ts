@@ -4,7 +4,7 @@ import * as readline from "node:readline";
 import { bold, dim, green, red, yellow } from "../utils/colors.js";
 
 const WORK_KIT_SKILLS = [
-  "full-kit", "auto-kit", "plan", "build", "test", "review", "deploy", "wrap-up",
+  "full-kit", "auto-kit", "wk-plan", "wk-build", "wk-test", "wk-review", "wk-deploy", "wk-wrap-up",
 ];
 
 async function promptUser(question: string): Promise<string> {

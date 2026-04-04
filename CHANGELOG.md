@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 (2026-04-04)
+
+### Changed
+- Prefix phase skill directories with `wk-` (plan → wk-plan, build → wk-build, etc.) to avoid conflicts with user skills
+- full-kit and auto-kit skill names unchanged
+- Doctor checks `stateExists()` before reading state — no false warnings on fresh projects
+- Update all cross-references in skill files and CLI code
+
 ## 0.2.0 (2026-04-04)
 
 ### Changed

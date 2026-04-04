@@ -206,7 +206,7 @@ On loop-back: uncheck the target step and any steps after it that need re-runnin
 
 When all steps in `## Workflow` are checked:
 
-Run **Wrap-up** — read `.claude/skills/wrap-up.md` and follow its instructions. It handles writing the work-kit summary, committing it, and cleaning up the worktree.
+Run **Wrap-up** — read `.claude/skills/wk-wrap-up/SKILL.md` and follow its instructions. It handles writing the work-kit summary, committing it, and cleaning up the worktree.
 
 ## Important
 

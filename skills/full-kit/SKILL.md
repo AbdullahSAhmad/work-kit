@@ -163,7 +163,7 @@ state.md grows like this:
 For each phase:
 1. **Check prerequisites** — verify the required prior phase is marked complete in state.md
 2. **Spawn a fresh agent** for the phase — pass it the phase skill file and the relevant Final sections from state.md
-3. The agent reads each sub-stage file when directed (e.g., `.claude/skills/plan/stages/clarify.md`)
+3. The agent reads each sub-stage file when directed (e.g., `.claude/skills/wk-plan/stages/clarify.md`)
 4. The agent updates `.work-kit/state.md` after each sub-stage completes
 5. The agent writes the `### <Phase>: Final` section before exiting
 6. After the agent completes, summarize results to the user and wait for confirmation
@@ -184,7 +184,7 @@ On loop-back: add a `## Loop-back context` section to state.md with what needs t
 
 When all phases are done (or deploy is skipped):
 
-Run **Wrap-up** — read `.claude/skills/wrap-up.md` and follow its instructions. It handles writing the work-kit summary, committing it, and cleaning up the worktree.
+Run **Wrap-up** — read `.claude/skills/wk-wrap-up/SKILL.md` and follow its instructions. It handles writing the work-kit summary, committing it, and cleaning up the worktree.
 
 **Deploy and Wrap-up are MANDATORY.** Deploy handles syncing, PR creation, and merging — fully autonomous, no user confirmation needed. Wrap-up archives the work history so past work is discoverable in future sessions. Always spawn real agents for both — never just mark them complete or skip them.
 

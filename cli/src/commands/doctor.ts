@@ -35,7 +35,7 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
   }
 
   // 3. Phase skill files
-  const phases = ["plan", "build", "test", "review", "deploy", "wrap-up"];
+  const phases = ["wk-plan", "wk-build", "wk-test", "wk-review", "wk-deploy", "wk-wrap-up"];
   let phasesMissing = 0;
   for (const phase of phases) {
     const phasePath = path.join(skillsDir, phase, "SKILL.md");

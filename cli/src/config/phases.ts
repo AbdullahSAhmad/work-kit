@@ -23,9 +23,9 @@ export const PHASE_PREREQUISITES: Record<PhaseName, PhaseName | null> = {
 // ── Skill File Paths ─────────────────────────────────────────────────
 
 export function skillFilePath(phase: PhaseName, subStage?: string): string {
-  if (phase === "wrap-up") return ".claude/skills/wrap-up/SKILL.md";
-  if (!subStage) return `.claude/skills/${phase}/SKILL.md`;
-  return `.claude/skills/${phase}/stages/${subStage}.md`;
+  const dir = `wk-${phase}`;
+  if (!subStage) return `.claude/skills/${dir}/SKILL.md`;
+  return `.claude/skills/${dir}/stages/${subStage}.md`;
 }
 
 // ── Auto-kit Default Workflows ───────────────────────────────────────
