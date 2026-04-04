@@ -101,16 +101,18 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
 
     const subStageKeys = Object.keys(phase.subStages);
     if (subStageKeys.length === 0) {
-      // Use default substages
+      // Use default substages — skip entirely skipped phases
+      if (phase.status === "skipped") continue;
       const defaults = SUBSTAGES_BY_PHASE[phaseName] || [];
       total += defaults.length;
       if (phase.status === "completed") completed += defaults.length;
-      else if (phase.status === "skipped") completed += defaults.length;
     } else {
       for (const key of subStageKeys) {
-        total++;
         const sub = phase.subStages[key];
-        if (sub.status === "completed" || sub.status === "skipped") {
+        // Skip excluded substages — they shouldn't affect progress
+        if (sub.status === "skipped") continue;
+        total++;
+        if (sub.status === "completed") {
           completed++;
         }
       }

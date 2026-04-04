@@ -27,12 +27,17 @@ export function startWatching(
 
   function watchStateFile(worktreeRoot: string): void {
     if (watchers.has(worktreeRoot)) return;
-    const stateFile = path.join(worktreeRoot, ".work-kit", "state.json");
-    if (!fs.existsSync(stateFile)) return;
+    const stateDir = path.join(worktreeRoot, ".work-kit");
+    if (!fs.existsSync(stateDir)) return;
 
     try {
-      const watcher = fs.watch(stateFile, { persistent: false }, () => {
-        debouncedUpdate();
+      // Watch the directory, not the file — writeState uses atomic
+      // rename (write tmp + rename), which replaces the inode and
+      // breaks fs.watch on the file on Linux.
+      const watcher = fs.watch(stateDir, { persistent: false }, (_event, filename) => {
+        if (filename === "state.json") {
+          debouncedUpdate();
+        }
       });
       watcher.on("error", () => {
         watcher.close();
@@ -40,7 +45,7 @@ export function startWatching(
       });
       watchers.set(worktreeRoot, watcher);
     } catch {
-      // File might not exist yet
+      // Directory might not exist yet
     }
   }
 

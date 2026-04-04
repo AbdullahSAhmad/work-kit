@@ -154,7 +154,7 @@ export function initCommand(options: {
     version: 1,
     slug,
     branch,
-    started: new Date().toISOString().split("T")[0],
+    started: new Date().toISOString(),
     mode: modeLabel,
     ...(classification && { classification }),
     status: "in-progress",

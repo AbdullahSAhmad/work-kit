@@ -8,11 +8,22 @@ function formatTimeAgo(dateStr: string): string {
   const then = new Date(dateStr).getTime();
   if (isNaN(then)) return "unknown";
 
+  // If only a date (no time component), show the date string as-is
+  // to avoid misleading hour-level precision
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+
   const diffMs = now - then;
   const minutes = Math.floor(diffMs / 60000);
   const hours = Math.floor(diffMs / 3600000);
   const days = Math.floor(diffMs / 86400000);
   const weeks = Math.floor(days / 7);
+
+  if (isDateOnly) {
+    if (days < 1) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 7) return `${days}d ago`;
+    return `${weeks}w ago`;
+  }
 
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
