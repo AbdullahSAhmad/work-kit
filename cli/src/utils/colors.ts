@@ -9,3 +9,4 @@ export const green = (s: string) => `${code(32)}${s}${reset}`;
 export const yellow = (s: string) => `${code(33)}${s}${reset}`;
 export const red = (s: string) => `${code(31)}${s}${reset}`;
 export const cyan = (s: string) => `${code(36)}${s}${reset}`;
+export const bgYellow = (s: string) => `${code(43)}${code(30)}${s}${reset}`;

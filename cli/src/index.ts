@@ -13,6 +13,7 @@ import { doctorCommand } from "./commands/doctor.js";
 import { setupCommand } from "./commands/setup.js";
 import { upgradeCommand } from "./commands/upgrade.js";
 import { completionsCommand } from "./commands/completions.js";
+import { observeCommand } from "./commands/observe.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
@@ -222,6 +223,16 @@ program
   .description("Output shell completions (bash, zsh, fish)")
   .action((shell) => {
     completionsCommand(shell);
+  });
+
+// ── observe ─────────────────────────────────────────────────────────
+
+program
+  .command("observe")
+  .description("Real-time dashboard of all active work items")
+  .option("--repo <path>", "Main repository root")
+  .action(async (opts) => {
+    await observeCommand({ mainRepo: opts.repo });
   });
 
 program.parse();
