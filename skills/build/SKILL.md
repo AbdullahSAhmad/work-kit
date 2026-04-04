@@ -18,7 +18,7 @@ You are the **Lead Developer**. Execute the implementation plan from the Bluepri
 ## Execution
 
 For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/build/setup.md`)
+1. Read the sub-stage file (e.g., `.claude/skills/build/stages/setup.md`)
 2. Reference the Blueprint in `.work-kit/state.md` — follow its steps for this layer
 3. Write actual code, run actual commands
 4. Update `.work-kit/state.md` with outputs

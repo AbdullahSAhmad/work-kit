@@ -13,7 +13,7 @@ You are the **QA Lead**. Validate the implementation against the Blueprint and a
 ## Execution
 
 For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/test/verify.md`)
+1. Read the sub-stage file (e.g., `.claude/skills/test/stages/verify.md`)
 2. Follow its instructions
 3. Update `.work-kit/state.md` with outputs
 4. Proceed to next sub-stage

@@ -13,7 +13,7 @@ You are the **Release Engineer**. Get this PR merged and deployed safely.
 ## Execution
 
 For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/deploy/merge.md`)
+1. Read the sub-stage file (e.g., `.claude/skills/deploy/stages/merge.md`)
 2. Follow its instructions
 3. Update `.work-kit/state.md` with outputs
 4. Proceed to next sub-stage

@@ -147,7 +147,7 @@ state.md grows like this:
 For each phase:
 1. **Check prerequisites** — verify the required prior phase is marked complete in state.md
 2. **Spawn a fresh agent** for the phase — pass it the phase skill file and the relevant Final sections from state.md
-3. The agent reads each sub-stage file when directed (e.g., `.claude/skills/plan/clarify.md`)
+3. The agent reads each sub-stage file when directed (e.g., `.claude/skills/plan/stages/clarify.md`)
 4. The agent updates `.work-kit/state.md` after each sub-stage completes
 5. The agent writes the `### <Phase>: Final` section before exiting
 6. After the agent completes, summarize results to the user and wait for confirmation

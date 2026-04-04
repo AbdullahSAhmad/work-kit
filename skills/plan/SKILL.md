@@ -18,7 +18,7 @@ You are the **Planning Lead**. Work through 8 focused sub-stages to produce a co
 ## Execution
 
 For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/plan/clarify.md`)
+1. Read the sub-stage file (e.g., `.claude/skills/plan/stages/clarify.md`)
 2. Follow its instructions completely
 3. Write outputs to `.work-kit/state.md` under a section for that sub-stage
 4. Update `**Phase:** plan` and `**Sub-stage:** <current>` in state.md

@@ -15,7 +15,7 @@ You are the **Senior Reviewer**. Perform multi-dimensional code review before th
 ## Execution
 
 For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/review/self-review.md`)
+1. Read the sub-stage file (e.g., `.claude/skills/review/stages/self-review.md`)
 2. Follow its instructions — fix issues directly when possible
 3. Update `.work-kit/state.md` with findings
 4. Proceed to next sub-stage
