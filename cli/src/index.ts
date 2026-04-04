@@ -14,6 +14,7 @@ import { setupCommand } from "./commands/setup.js";
 import { upgradeCommand } from "./commands/upgrade.js";
 import { completionsCommand } from "./commands/completions.js";
 import { observeCommand } from "./commands/observe.js";
+import { uninstallCommand } from "./commands/uninstall.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
@@ -233,6 +234,15 @@ program
   .option("--repo <path>", "Main repository root")
   .action(async (opts) => {
     await observeCommand({ mainRepo: opts.repo });
+  });
+
+// ── uninstall ────────────────────────────────────────────────────────
+
+program
+  .command("uninstall [path]")
+  .description("Remove work-kit skills from a project")
+  .action(async (targetPath) => {
+    await uninstallCommand(targetPath);
   });
 
 program.parse();
