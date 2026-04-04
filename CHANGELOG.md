@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.1 (2026-04-04)
+
+### Added
+- `wk` shortcut alias for `work-kit` binary
+- `uninstall` command to remove skills from a project
+- Real-time observer dashboard (`work-kit observe`)
+- Shell completions for bash, zsh, fish
+- Colored terminal output (respects NO_COLOR)
+- `/release` Claude Code command for automated publishing
+
+### Fixed
+- Scoped package name (`@abdullahsahmad/work-kit`) for npm compatibility
+- Install commands in README and skill files updated
+
 ## 0.1.0 (2026-04-04)
 
 ### Added
