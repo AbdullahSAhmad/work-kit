@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { execFileSync } from "node:child_process";
 import { readState, writeState, findWorktreeRoot, readStateMd } from "../state/store.js";
 import { isPhaseComplete, nextSubStageInPhase } from "../engine/transitions.js";
 import { checkLoopback } from "../engine/loopbacks.js";
@@ -135,8 +136,24 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
 // ── Archive on completion ──────────────────────────────────────────
 
+function resolveMainRepoRoot(worktreeRoot: string): string {
+  try {
+    // git worktree list --porcelain — first "worktree" line is always the main repo
+    const output = execFileSync("git", ["worktree", "list", "--porcelain"], {
+      cwd: worktreeRoot,
+      encoding: "utf-8",
+      timeout: 5000,
+    });
+    const firstLine = output.split("\n").find(l => l.startsWith("worktree "));
+    if (firstLine) return firstLine.slice("worktree ".length).trim();
+  } catch {
+    // fallback
+  }
+  return worktreeRoot;
+}
+
 function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
-  const mainRoot = state.metadata.mainRepoRoot || worktreeRoot;
+  const mainRoot = resolveMainRepoRoot(worktreeRoot);
   const date = new Date().toISOString().split("T")[0];
   const slug = state.slug;
   const wkDir = path.join(mainRoot, ".claude", "work-kit");
