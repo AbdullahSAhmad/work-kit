@@ -1,0 +1,116 @@
+import { describe, it, afterEach } from "node:test";
+import * as assert from "node:assert/strict";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+import { randomUUID } from "node:crypto";
+import { initCommand } from "./init.js";
+
+function makeTmpDir(): string {
+  const dir = path.join(os.tmpdir(), `work-kit-test-${randomUUID()}`);
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+let tmpDirs: string[] = [];
+
+afterEach(() => {
+  for (const dir of tmpDirs) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  tmpDirs = [];
+});
+
+describe("initCommand", () => {
+  it("creates state.json and state.md", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    initCommand({
+      mode: "full",
+      description: "Add user login",
+      worktreeRoot: tmp,
+    });
+
+    assert.ok(fs.existsSync(path.join(tmp, ".work-kit", "state.json")));
+    assert.ok(fs.existsSync(path.join(tmp, ".work-kit", "state.md")));
+
+    const state = JSON.parse(
+      fs.readFileSync(path.join(tmp, ".work-kit", "state.json"), "utf-8")
+    );
+    assert.equal(state.slug, "add-user-login");
+    assert.equal(state.status, "in-progress");
+    assert.equal(state.currentPhase, "plan");
+  });
+
+  it("returns spawn_agent action", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    const result = initCommand({
+      mode: "full",
+      description: "Add user login",
+      worktreeRoot: tmp,
+    });
+
+    assert.equal(result.action, "spawn_agent");
+  });
+
+  it("blocks double init", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    initCommand({
+      mode: "full",
+      description: "First init",
+      worktreeRoot: tmp,
+    });
+
+    const result = initCommand({
+      mode: "full",
+      description: "Second init",
+      worktreeRoot: tmp,
+    });
+
+    assert.equal(result.action, "error");
+    if (result.action === "error") {
+      assert.ok(result.message.includes("already exists"));
+    }
+  });
+
+  it("auto mode requires classification", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    const result = initCommand({
+      mode: "auto",
+      description: "Some task",
+      worktreeRoot: tmp,
+    });
+
+    assert.equal(result.action, "error");
+    if (result.action === "error") {
+      assert.ok(result.message.includes("classification"));
+    }
+  });
+
+  it("auto mode with classification succeeds", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    const result = initCommand({
+      mode: "auto",
+      description: "Fix login bug",
+      classification: "bug-fix",
+      worktreeRoot: tmp,
+    });
+
+    assert.equal(result.action, "spawn_agent");
+
+    const state = JSON.parse(
+      fs.readFileSync(path.join(tmp, ".work-kit", "state.json"), "utf-8")
+    );
+    assert.equal(state.mode, "auto-kit");
+    assert.equal(state.classification, "bug-fix");
+  });
+});
