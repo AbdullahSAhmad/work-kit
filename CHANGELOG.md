@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.5 (2026-04-04)
+
+### Changed
+- Observer: show "Full Kit" / "Auto Kit · classification" instead of raw mode strings
+- Observer: display elapsed time and current phase duration
+- Observer: show substage position within phase (e.g., build/core 3/8)
+- Observer: align completed items in fixed-width columns
+- Simplify index.md parser to single 5-column format (remove legacy parsers)
+- Make deploy and wrap-up mandatory and fully autonomous in skill docs
+
 ## 0.1.4 (2026-04-04)
 
 ### Fixed
