@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.3 (2026-04-04)
+
+### Fixed
+- Observer: store full ISO timestamp for accurate "Started X ago" display
+- Observer: exclude skipped substages from progress bar (auto-kit showed inflated progress)
+- Observer: watch .work-kit directory instead of file to survive atomic writes on Linux
+- Observer: show completed items from worktree state files
+
+### Changed
+- CLI auto-archives state.md and writes to index.md on workflow completion
+- Deploy/merge stage auto-merges after syncing with default branch (no user confirmation)
+- Wrap-up skill cleanup now includes branch deletion
+
 ## 0.1.2 (2026-04-04)
 
 ### Fixed
