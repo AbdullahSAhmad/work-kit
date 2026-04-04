@@ -113,9 +113,15 @@ function statusDot(status: string): string {
 
 // ── Render Work Item ────────────────────────────────────────────────
 
+function formatMode(mode: string, classification?: string): string {
+  const label = mode === "full-kit" ? "Full Kit" : "Auto Kit";
+  return classification ? `${label} · ${classification}` : label;
+}
+
 function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
   const lines: string[] = [];
 
+  // Line 1: slug + branch (right-aligned)
   const slugText = `${statusDot(item.status)} ${bold(item.slug)}`;
   const branchText = dim(item.branch);
   const slugPlainLen = stripAnsi(slugText).length;
@@ -123,18 +129,31 @@ function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
   const gap1 = Math.max(2, innerWidth - slugPlainLen - branchPlainLen);
   lines.push(slugText + " ".repeat(gap1) + branchText);
 
-  const modeText = item.mode + (item.classification ? ` (${item.classification})` : "");
+  // Line 2: mode + timing (right-aligned)
+  const modeText = formatMode(item.mode, item.classification);
   const pausedBadge = item.status === "paused" ? "  " + bgYellow(" PAUSED ") : "";
-  const startedText = dim(`Started: ${formatTimeAgo(item.startedAt)}`);
+  const elapsed = formatTimeAgo(item.startedAt);
+  let timingRight = `Elapsed: ${elapsed}`;
+  if (item.currentPhaseStartedAt) {
+    timingRight += `  Phase: ${formatTimeAgo(item.currentPhaseStartedAt)}`;
+  }
+  const timingText = dim(timingRight);
   const modeStr = `  ${modeText}${pausedBadge}`;
   const modePlainLen = stripAnsi(modeStr).length;
-  const startedPlainLen = stripAnsi(startedText).length;
-  const gap2 = Math.max(2, innerWidth - modePlainLen - startedPlainLen);
-  lines.push(modeStr + " ".repeat(gap2) + startedText);
+  const timingPlainLen = stripAnsi(timingText).length;
+  const gap2 = Math.max(2, innerWidth - modePlainLen - timingPlainLen);
+  lines.push(modeStr + " ".repeat(gap2) + timingText);
 
-  const phaseLabel = item.currentPhase
-    ? (item.currentSubStage ? `${item.currentPhase}/${item.currentSubStage}` : item.currentPhase)
-    : "—";
+  // Line 3: progress bar with phase label + substage position
+  let phaseLabel = "—";
+  if (item.currentPhase) {
+    phaseLabel = item.currentSubStage
+      ? `${item.currentPhase}/${item.currentSubStage}`
+      : item.currentPhase;
+    if (item.currentSubStageIndex != null && item.currentPhaseTotal != null) {
+      phaseLabel += ` (${item.currentSubStageIndex}/${item.currentPhaseTotal})`;
+    }
+  }
   const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 30));
   lines.push("  " + renderProgressBar(
     item.progress.completed,
@@ -144,9 +163,11 @@ function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
     barMaxWidth
   ));
 
+  // Line 4: phase indicators
   const phaseStrs = item.phases.map(p => `${p.name} ${phaseIndicator(p.status)}`);
   lines.push("  " + phaseStrs.join("  "));
 
+  // Line 5 (optional): loopbacks
   if (item.loopbacks.count > 0) {
     const lb = item.loopbacks;
     let loopStr = `  ${cyan("⟳")} ${lb.count} loopback${lb.count > 1 ? "s" : ""}`;
@@ -164,14 +185,29 @@ function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
 
 // ── Render Completed Item ───────────────────────────────────────────
 
-function renderCompletedItem(item: CompletedItemView, innerWidth: number): string {
+interface CompletedColumnWidths {
+  slug: number;
+  pr: number;
+  date: number;
+}
+
+function computeCompletedWidths(items: CompletedItemView[]): CompletedColumnWidths {
+  let slug = 4, pr = 2, date = 4; // minimums
+  for (const item of items) {
+    slug = Math.max(slug, item.slug.length);
+    pr = Math.max(pr, (item.pr || "—").length);
+    date = Math.max(date, (item.completedAt || "").length);
+  }
+  return { slug, pr, date };
+}
+
+function renderCompletedItem(item: CompletedItemView, cols: CompletedColumnWidths): string {
   const check = green("✓");
-  const slug = item.slug;
-  const pr = item.pr ? `  ${dim(item.pr)}` : "";
-  const date = item.completedAt ? `  ${dim(item.completedAt)}` : "";
-  const phases = item.phases ? `  ${dim(item.phases)}` : "";
-  const content = `${check} ${slug}${pr}${date}${phases}`;
-  return content;
+  const slug = padRight(item.slug, cols.slug);
+  const pr = padRight(dim(item.pr || "—"), cols.pr);
+  const date = padRight(dim(item.completedAt || ""), cols.date);
+  const phases = item.phases ? dim(item.phases) : "";
+  return `${check} ${slug}  ${pr}  ${date}  ${phases}`;
 }
 
 // ── Main Render Function ────────────────────────────────────────────
@@ -243,8 +279,9 @@ export function renderDashboard(
 
       const maxCompleted = 5;
       const displayed = data.completedItems.slice(0, maxCompleted);
+      const cols = computeCompletedWidths(displayed);
       for (const item of displayed) {
-        const content = renderCompletedItem(item, innerWidth);
+        const content = renderCompletedItem(item, cols);
         allLines.push(boxLine("  " + content, innerWidth));
       }
       if (data.completedItems.length > maxCompleted) {

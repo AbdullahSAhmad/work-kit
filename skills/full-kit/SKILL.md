@@ -28,7 +28,7 @@ Do not proceed until `doctor` reports all checks passed.
 2. **Build** (8 steps) — Setup → Migration → Red → Core → UI → Refactor → Integration → Commit
 3. **Test** (3 steps) — Verify → E2E → Validate
 4. **Review** (5 steps) — Self-Review → Security → Performance → Compliance → Handoff
-5. **Deploy** (3 steps, optional) — Merge → Monitor → Remediate
+5. **Deploy** (3 steps) — Merge → Monitor → Remediate
 6. **Wrap-up** — Synthesize work-kit summary, clean up worktree
 
 ## Starting New Work (`/full-kit <description>`)
@@ -185,6 +185,8 @@ On loop-back: add a `## Loop-back context` section to state.md with what needs t
 When all phases are done (or deploy is skipped):
 
 Run **Wrap-up** — read `.claude/skills/wrap-up.md` and follow its instructions. It handles writing the work-kit summary, committing it, and cleaning up the worktree.
+
+**Deploy and Wrap-up are MANDATORY.** Deploy handles syncing, PR creation, and merging — fully autonomous, no user confirmation needed. Wrap-up archives the work history so past work is discoverable in future sessions. Always spawn real agents for both — never just mark them complete or skip them.
 
 ## Important
 

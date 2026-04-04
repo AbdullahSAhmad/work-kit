@@ -54,4 +54,6 @@ description: "Deploy sub-stage: Get the PR merged safely."
 - NEVER merge with failing CI
 - If CI fails, diagnose the issue — don't just retry
 - If rebase conflicts are non-trivial, explain them to the user before resolving
-- Merge is automatic — do NOT ask the user for permission (review phase already approved it)
+- Merge is fully autonomous — do NOT ask the user for permission at any step (review phase already approved it)
+- Push, create PR, and merge without stopping for confirmation
+- The entire sync → push → PR → merge flow should complete in one agent pass

@@ -15,9 +15,12 @@ export interface WorkItemView {
   status: string;
   currentPhase: string | null;
   currentSubStage: string | null;
+  currentPhaseStartedAt?: string;
+  currentSubStageIndex?: number;
+  currentPhaseTotal?: number;
   startedAt: string;
   progress: { completed: number; total: number; percent: number };
-  phases: { name: string; status: string }[];
+  phases: { name: string; status: string; startedAt?: string; completedAt?: string }[];
   loopbacks: { count: number; lastReason?: string; lastFrom?: string; lastTo?: string };
 }
 
@@ -81,11 +84,16 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
   // Compute progress
   let completed = 0;
   let total = 0;
-  const phaseViews: { name: string; status: string }[] = [];
+  const phaseViews: { name: string; status: string; startedAt?: string; completedAt?: string }[] = [];
 
   const phaseList: PhaseName[] = state.mode === "auto-kit" && state.workflow
     ? getAutoKitPhases(state)
     : [...PHASE_NAMES];
+
+  // Track current phase substage position
+  let currentPhaseStartedAt: string | undefined;
+  let currentSubStageIndex: number | undefined;
+  let currentPhaseTotal: number | undefined;
 
   for (const phaseName of phaseList) {
     const phase = state.phases[phaseName];
@@ -97,7 +105,12 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
       continue;
     }
 
-    phaseViews.push({ name: phaseName, status: phase.status });
+    phaseViews.push({
+      name: phaseName,
+      status: phase.status,
+      startedAt: phase.startedAt,
+      completedAt: phase.completedAt,
+    });
 
     const subStageKeys = Object.keys(phase.subStages);
     if (subStageKeys.length === 0) {
@@ -107,14 +120,24 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
       total += defaults.length;
       if (phase.status === "completed") completed += defaults.length;
     } else {
-      for (const key of subStageKeys) {
+      let phaseIdx = 0;
+      const activeKeys = subStageKeys.filter(k => phase.subStages[k].status !== "skipped");
+      for (const key of activeKeys) {
         const sub = phase.subStages[key];
-        // Skip excluded substages — they shouldn't affect progress
-        if (sub.status === "skipped") continue;
         total++;
+        phaseIdx++;
         if (sub.status === "completed") {
           completed++;
         }
+      }
+      // Track position within current phase
+      if (phaseName === state.currentPhase) {
+        currentPhaseStartedAt = phase.startedAt;
+        currentPhaseTotal = activeKeys.length;
+        const idx = state.currentSubStage
+          ? activeKeys.indexOf(state.currentSubStage)
+          : -1;
+        currentSubStageIndex = idx >= 0 ? idx + 1 : undefined;
       }
     }
   }
@@ -142,6 +165,9 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
     status: state.status,
     currentPhase: state.currentPhase,
     currentSubStage: state.currentSubStage,
+    currentPhaseStartedAt,
+    currentSubStageIndex,
+    currentPhaseTotal,
     startedAt: state.started,
     progress: { completed, total, percent },
     phases: phaseViews,
@@ -173,49 +199,19 @@ export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[]
   }
 
   const items: CompletedItemView[] = [];
-  // Parse markdown table or list entries
   // Format: | Date | Slug | PR | Status | Phases |
-  // or list format: - slug (#PR) - date - phases
   const lines = content.split("\n");
   for (const line of lines) {
-    // Try 5-column table: | Date | Slug | PR | Status | Phases |
-    const table5Match = line.match(/^\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
-    if (table5Match) {
-      const col1 = table5Match[1].trim();
-      if (col1 === "Date" || col1 === "---" || col1.startsWith("-")) continue; // skip header
-      items.push({
-        slug: table5Match[2].trim(),
-        pr: table5Match[3].trim() !== "n/a" ? table5Match[3].trim() : undefined,
-        completedAt: col1,
-        phases: table5Match[5].trim(),
-      });
-      continue;
-    }
-
-    // Try 4-column table: | slug | PR | date | phases |
-    const table4Match = line.match(/^\|\s*(.+?)\s*\|\s*(#?\d+)?\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
-    if (table4Match) {
-      const slug = table4Match[1].trim();
-      if (slug === "Slug" || slug === "---" || slug.startsWith("-")) continue;
-      items.push({
-        slug,
-        pr: table4Match[2]?.trim() || undefined,
-        completedAt: table4Match[3].trim(),
-        phases: table4Match[4].trim(),
-      });
-      continue;
-    }
-
-    // Try list format: - **slug** (#38) completed 2d ago — plan→review
-    const listMatch = line.match(/^[-*]\s+\*?\*?(.+?)\*?\*?\s+\(?(#\d+)?\)?\s*[-—]?\s*(.+?)?\s*[-—]\s*(.+)$/);
-    if (listMatch) {
-      items.push({
-        slug: listMatch[1].trim(),
-        pr: listMatch[2]?.trim() || undefined,
-        completedAt: listMatch[3]?.trim() || "",
-        phases: listMatch[4]?.trim() || "",
-      });
-    }
+    const match = line.match(/^\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
+    if (!match) continue;
+    const col1 = match[1].trim();
+    if (col1 === "Date" || col1.startsWith("-")) continue;
+    items.push({
+      slug: match[2].trim(),
+      pr: match[3].trim() !== "n/a" ? match[3].trim() : undefined,
+      completedAt: col1,
+      phases: match[5].trim(),
+    });
   }
 
   return items;

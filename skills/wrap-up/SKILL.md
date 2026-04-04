@@ -73,10 +73,9 @@ After writing the summary:
    git add .claude/work-kit/
    git commit -m "work-kit: <slug>"
    ```
-3. Ask the user: "Remove the worktree `worktrees/<slug>` and delete branch `feature/<slug>`?"
-4. If yes:
+3. Remove the worktree and delete the feature branch (merge already happened, cleanup is safe):
    ```bash
-   git worktree remove worktrees/<slug>
-   git branch -d feature/<slug>
+   git worktree remove worktrees/<slug> --force
+   git branch -d feature/<slug> 2>/dev/null || true
    ```
-5. Report: summary written, worktree removed, branch deleted, done.
+4. Report: summary written, worktree removed, branch deleted, done.

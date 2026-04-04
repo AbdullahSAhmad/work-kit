@@ -79,13 +79,15 @@ Based on the classification, select sub-stages. Use this table as a starting poi
 | **Review: Performance**| skip    | skip         | YES      | skip    | YES           |
 | **Review: Compliance** | skip    | skip         | skip     | YES     | YES           |
 | **Review: Handoff**    | YES     | YES          | YES      | YES     | YES           |
-| **Deploy**             | optional| optional     | optional | optional| optional      |
+| **Deploy: Merge**      | YES     | YES          | YES      | YES     | YES           |
 | **Wrap-up**            | YES     | YES          | YES      | YES     | YES           |
 
 The table is a guide, not a rigid rule. Adjust based on the actual request:
 - A bug fix that touches auth → add Security review
 - A refactor that changes DB queries → add Migration, Performance review
 - A small-change that affects public API → add Investigate, Blueprint
+
+**Deploy and Wrap-up are MANDATORY and cannot be removed from any workflow.** Deploy handles syncing with the default branch, creating a PR, and merging it — fully autonomous, no user confirmation needed. Wrap-up archives the work history so past work is discoverable in future sessions. Always spawn real agents for both — never just mark them complete.
 
 ### Step 3: Initialize
 
