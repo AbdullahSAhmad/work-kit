@@ -18,7 +18,7 @@ npx work-kit doctor
 ```
 
 If `work-kit` is not found, ask the user to install it:
-> work-kit CLI is required but not installed. Install it with: `npm install -g work-kit-cli`
+> work-kit CLI is required but not installed. Install it with: `npm install -g @abdullahsahmad/work-kit`
 
 Do not proceed until `doctor` reports all checks passed.
 
