@@ -1,5 +1,8 @@
 ---
+name: plan
 description: "Run the Plan phase — 8 sub-stages from Clarify to Audit."
+user-invocable: false
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Planning Lead**. Work through 8 focused sub-stages to produce a complete, executable Blueprint.

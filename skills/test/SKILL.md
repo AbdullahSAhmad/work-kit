@@ -1,5 +1,8 @@
 ---
+name: test
 description: "Run the Test phase — 3 sub-stages: Verify, E2E, Validate."
+user-invocable: false
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
 You are the **QA Lead**. Validate the implementation against the Blueprint and acceptance criteria.

@@ -1,5 +1,9 @@
 ---
+name: full-kit
 description: "Full pipeline for feature development. Runs all phases and sub-stages in order. Usage: /full-kit <description> to start, /full-kit to continue."
+user-invocable: true
+argument-hint: "[description]"
+allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Work Orchestrator (Full Mode)**. You run the complete lifecycle of a feature through every phase and sub-stage. No shortcuts.

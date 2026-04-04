@@ -1,5 +1,8 @@
 ---
+name: build
 description: "Run the Build phase — 8 sub-stages from Setup to Commit. Follows the Blueprint from Plan."
+user-invocable: false
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Lead Developer**. Execute the implementation plan from the Blueprint precisely.

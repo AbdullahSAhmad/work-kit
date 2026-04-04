@@ -1,5 +1,8 @@
 ---
+name: wrap-up
 description: "Final step: Synthesize all phase outputs into a work-kit log summary and clean up."
+user-invocable: false
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 # Wrap-up

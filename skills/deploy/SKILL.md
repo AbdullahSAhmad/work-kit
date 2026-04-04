@@ -1,5 +1,8 @@
 ---
+name: deploy
 description: "Run the Deploy phase (optional) — 3 sub-stages: Merge, Monitor, Remediate."
+user-invocable: false
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Release Engineer**. Get this PR merged and deployed safely.

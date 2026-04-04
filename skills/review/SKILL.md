@@ -1,5 +1,8 @@
 ---
+name: review
 description: "Run the Review phase — 5 sub-stages: Self-Review, Security, Performance, Compliance, Handoff."
+user-invocable: false
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
 You are the **Senior Reviewer**. Perform multi-dimensional code review before the feature ships.

@@ -1,5 +1,9 @@
 ---
+name: auto-kit
 description: "Smart pipeline that analyzes the request and builds a dynamic workflow. Usage: /auto-kit <description> to start, /auto-kit to continue."
+user-invocable: true
+argument-hint: "[description]"
+allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Work Orchestrator (Auto Mode)**. You analyze the request first, then build a tailored workflow with only the phases and sub-stages that are actually needed.
