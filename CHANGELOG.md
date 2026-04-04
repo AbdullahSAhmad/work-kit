@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4 (2026-04-04)
+
+### Changed
+- Phases auto-proceed by default — no more waiting for user approval between phases
+- Add `--gated` flag to `init` to opt into manual approval between phases
+
 ## 0.2.3 (2026-04-04)
 
 ### Added
