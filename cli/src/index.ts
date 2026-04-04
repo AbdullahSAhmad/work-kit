@@ -10,6 +10,7 @@ import { contextCommand } from "./commands/context.js";
 import { loopbackCommand } from "./commands/loopback.js";
 import { workflowCommand } from "./commands/workflow.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { setupCommand } from "./commands/setup.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
 const program = new Command();
@@ -185,6 +186,15 @@ program
     console.log();
     console.log(result.ok ? "All checks passed." : "Some checks failed. Fix the issues above.");
     process.exit(result.ok ? 0 : 1);
+  });
+
+// ── setup ────────────────────────────────────────────────────────────
+
+program
+  .command("setup [path]")
+  .description("Install work-kit skills into a project")
+  .action(async (targetPath) => {
+    await setupCommand(targetPath);
   });
 
 program.parse();
