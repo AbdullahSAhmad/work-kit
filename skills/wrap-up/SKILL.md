@@ -12,12 +12,12 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 
 ## Instructions
 
+> **Note:** Archiving state.md and appending to `.claude/work-kit/index.md` are handled automatically by the CLI when you run `work-kit complete` on the last sub-stage. You do NOT need to do these manually.
+
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
-2. **Archive the full state** — copy `.work-kit/state.md` to `.claude/work-kit/archive/<YYYY-MM-DD>-<slug>.md` on the **main branch** (this is the unedited, complete record)
-3. **Synthesize the work-kit log entry** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
-4. **Write the summary file** to `.claude/work-kit/<date>-<slug>.md` on the **main branch** (not the worktree)
-5. **Append to the index** in `.claude/work-kit/index.md`
-6. **Ask the user** if they want the worktree removed
+2. **Synthesize the work-kit log entry** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
+3. **Write the summary file** to `.claude/work-kit/<date>-<slug>.md` on the **main branch** (not the worktree)
+4. **Ask the user** if they want the worktree and branch removed
 
 ## Work-Kit Log Entry Format
 
@@ -48,14 +48,6 @@ status: <completed | partial | rolled-back>
 - <what changed and why>
 ```
 
-## Index Entry
-
-Append one row to `.claude/work-kit/index.md`:
-
-```
-| <YYYY-MM-DD> | <slug> | <#PR or n/a> | <completed/partial/rolled-back> | <phases completed, e.g. "all 6" or "plan→review (no deploy)"> |
-```
-
 ## What to Include vs. Exclude
 
 **Include:**
@@ -71,27 +63,9 @@ Append one row to `.claude/work-kit/index.md`:
 - Internal process notes ("ran tests 3 times before they passed")
 - Anything derivable from the git diff or PR description
 
-## Archive
-
-The archive is the full, unedited copy of `.work-kit/state.md` — every phase output, every decision, every deviation. It exists so you can always go back to the complete record.
-
-When archiving, prepend a reference header to the copy so the archive knows where its summary lives:
-
-```markdown
-> **Summary:** [<YYYY-MM-DD>-<slug>](../<YYYY-MM-DD>-<slug>.md)
-
-<rest of state.md content>
-```
-
-```bash
-# From the worktree, copy state to the archive on main
-cp .work-kit/state.md <main-repo-root>/.claude/work-kit/archive/<YYYY-MM-DD>-<slug>.md
-# Then prepend the summary reference to the archive file
-```
-
 ## Cleanup
 
-After writing the archive, summary, and index:
+After writing the summary:
 
 1. Switch to main branch: `cd` back to the main repo root
 2. Stage and commit all work-kit log files:
@@ -99,9 +73,10 @@ After writing the archive, summary, and index:
    git add .claude/work-kit/
    git commit -m "work-kit: <slug>"
    ```
-3. Ask the user: "Remove the worktree `worktrees/<slug>`?"
+3. Ask the user: "Remove the worktree `worktrees/<slug>` and delete branch `feature/<slug>`?"
 4. If yes:
    ```bash
    git worktree remove worktrees/<slug>
+   git branch -d feature/<slug>
    ```
-5. Report: summary written, worktree status, done.
+5. Report: summary written, worktree removed, branch deleted, done.

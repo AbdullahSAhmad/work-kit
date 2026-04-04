@@ -1,9 +1,11 @@
-import { readState, writeState, findWorktreeRoot } from "../state/store.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { readState, writeState, findWorktreeRoot, readStateMd } from "../state/store.js";
 import { isPhaseComplete } from "../engine/transitions.js";
 import { checkLoopback } from "../engine/loopbacks.js";
 import { PHASE_ORDER } from "../config/phases.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
-import type { Action, PhaseName } from "../state/schema.js";
+import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
 
 export function completeCommand(target: string, outcome?: string, worktreeRoot?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();
@@ -101,6 +103,7 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
       state.currentPhase = null;
       state.currentSubStage = null;
       writeState(root, state);
+      archiveCompleted(root, state);
       return { action: "complete", message: "All phases complete. Work-kit finished." };
     }
 
@@ -120,4 +123,41 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
     action: "wait_for_user",
     message: `${phase}/${subStage} complete${outcome ? ` (outcome: ${outcome})` : ""}. Run \`npx work-kit next\` to continue.`,
   };
+}
+
+// ── Archive on completion ──────────────────────────────────────────
+
+function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
+  const mainRoot = state.metadata.mainRepoRoot || worktreeRoot;
+  const date = new Date().toISOString().split("T")[0];
+  const slug = state.slug;
+  const wkDir = path.join(mainRoot, ".claude", "work-kit");
+  const archiveDir = path.join(wkDir, "archive");
+
+  // Ensure directories exist
+  fs.mkdirSync(archiveDir, { recursive: true });
+
+  // Archive state.md
+  const stateMd = readStateMd(worktreeRoot);
+  if (stateMd) {
+    const archivePath = path.join(archiveDir, `${date}-${slug}.md`);
+    fs.writeFileSync(archivePath, stateMd, "utf-8");
+  }
+
+  // Compute completed phases
+  const completedPhases = PHASE_ORDER
+    .filter(p => state.phases[p].status === "completed")
+    .join("→");
+
+  // Append to index.md
+  const indexPath = path.join(wkDir, "index.md");
+  let indexContent = "";
+  if (fs.existsSync(indexPath)) {
+    indexContent = fs.readFileSync(indexPath, "utf-8");
+  }
+  if (!indexContent.includes("| Date ")) {
+    indexContent = "| Date | Slug | PR | Status | Phases |\n| --- | --- | --- | --- | --- |\n";
+  }
+  indexContent += `| ${date} | ${slug} | n/a | completed | ${completedPhases} |\n`;
+  fs.writeFileSync(indexPath, indexContent, "utf-8");
 }

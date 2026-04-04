@@ -23,7 +23,7 @@ For each sub-stage:
 
 ## Key Principle
 
-**Verify before acting, monitor after acting.** Never merge without checking CI. Never walk away after merge without checking deployment.
+**Verify before acting, monitor after acting.** Never merge with failing CI. Merge is automatic after review approval — no user confirmation needed. Never walk away after merge without checking deployment.
 
 ## Recording
 

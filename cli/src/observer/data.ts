@@ -212,10 +212,22 @@ export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[]
 export function collectDashboardData(mainRepoRoot: string, cachedWorktrees?: string[]): DashboardData {
   const worktrees = cachedWorktrees ?? discoverWorktrees(mainRepoRoot);
   const activeItems: WorkItemView[] = [];
+  const completedFromWorktrees: CompletedItemView[] = [];
 
   for (const wt of worktrees) {
     const item = collectWorkItem(wt);
-    if (item && item.status !== "completed") {
+    if (!item) continue;
+    if (item.status === "completed") {
+      const phaseNames = item.phases
+        .filter(p => p.status === "completed")
+        .map(p => p.name)
+        .join("→");
+      completedFromWorktrees.push({
+        slug: item.slug,
+        completedAt: item.startedAt,
+        phases: phaseNames,
+      });
+    } else {
       activeItems.push(item);
     }
   }
@@ -229,7 +241,13 @@ export function collectDashboardData(mainRepoRoot: string, cachedWorktrees?: str
     return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime();
   });
 
-  const completedItems = collectCompletedItems(mainRepoRoot);
+  // Merge completed items from worktrees and index file, dedup by slug
+  const indexItems = collectCompletedItems(mainRepoRoot);
+  const seen = new Set(completedFromWorktrees.map(i => i.slug));
+  const completedItems = [
+    ...completedFromWorktrees,
+    ...indexItems.filter(i => !seen.has(i.slug)),
+  ];
 
   return {
     activeItems,
