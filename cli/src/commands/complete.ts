@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { readState, writeState, findWorktreeRoot, readStateMd } from "../state/store.js";
-import { isPhaseComplete } from "../engine/transitions.js";
+import { isPhaseComplete, nextSubStageInPhase } from "../engine/transitions.js";
 import { checkLoopback } from "../engine/loopbacks.js";
 import { PHASE_ORDER } from "../config/phases.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
@@ -115,6 +115,14 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
       action: "wait_for_user",
       message: `${phase} phase complete. Ready to start ${nextPhase}. Proceed?`,
     };
+  }
+
+  // Advance currentSubStage to the next pending sub-stage so the observer refreshes
+  const nextSS = nextSubStageInPhase(state, phase);
+  if (nextSS) {
+    state.currentSubStage = nextSS;
+  } else {
+    state.currentSubStage = null;
   }
 
   writeState(root, state);

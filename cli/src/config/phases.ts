@@ -41,7 +41,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "test/verify": "YES", "test/e2e": "skip", "test/validate": "YES",
     "review/self-review": "YES", "review/security": "skip", "review/performance": "skip",
     "review/compliance": "skip", "review/handoff": "YES",
-    "deploy/merge": "optional", "deploy/monitor": "optional", "deploy/remediate": "optional",
+    "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
     "wrap-up/wrap-up": "YES",
   },
   "small-change": {
@@ -52,7 +52,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "test/verify": "YES", "test/e2e": "skip", "test/validate": "skip",
     "review/self-review": "YES", "review/security": "skip", "review/performance": "skip",
     "review/compliance": "skip", "review/handoff": "YES",
-    "deploy/merge": "optional", "deploy/monitor": "optional", "deploy/remediate": "optional",
+    "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
     "wrap-up/wrap-up": "YES",
   },
   refactor: {
@@ -63,7 +63,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "test/verify": "YES", "test/e2e": "skip", "test/validate": "skip",
     "review/self-review": "YES", "review/security": "skip", "review/performance": "YES",
     "review/compliance": "skip", "review/handoff": "YES",
-    "deploy/merge": "optional", "deploy/monitor": "optional", "deploy/remediate": "optional",
+    "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
     "wrap-up/wrap-up": "YES",
   },
   feature: {
@@ -74,7 +74,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "test/verify": "YES", "test/e2e": "if UI", "test/validate": "YES",
     "review/self-review": "YES", "review/security": "YES", "review/performance": "skip",
     "review/compliance": "YES", "review/handoff": "YES",
-    "deploy/merge": "optional", "deploy/monitor": "optional", "deploy/remediate": "optional",
+    "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
     "wrap-up/wrap-up": "YES",
   },
   "large-feature": {
@@ -85,7 +85,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "test/verify": "YES", "test/e2e": "YES", "test/validate": "YES",
     "review/self-review": "YES", "review/security": "YES", "review/performance": "YES",
     "review/compliance": "YES", "review/handoff": "YES",
-    "deploy/merge": "optional", "deploy/monitor": "optional", "deploy/remediate": "optional",
+    "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
     "wrap-up/wrap-up": "YES",
   },
 };
@@ -110,9 +110,7 @@ export function buildFullWorkflow(): WorkflowStep[] {
   const steps: WorkflowStep[] = [];
   for (const phase of PHASE_ORDER) {
     for (const subStage of SUBSTAGES_BY_PHASE[phase]) {
-      // Deploy is optional by default
-      const included = phase !== "deploy";
-      steps.push({ phase, subStage, included });
+      steps.push({ phase, subStage, included: true });
     }
   }
   return steps;

@@ -144,16 +144,8 @@ function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
   const gap2 = Math.max(2, innerWidth - modePlainLen - timingPlainLen);
   lines.push(modeStr + " ".repeat(gap2) + timingText);
 
-  // Line 3: progress bar with phase label + substage position
-  let phaseLabel = "—";
-  if (item.currentPhase) {
-    phaseLabel = item.currentSubStage
-      ? `${item.currentPhase}/${item.currentSubStage}`
-      : item.currentPhase;
-    if (item.currentSubStageIndex != null && item.currentPhaseTotal != null) {
-      phaseLabel += ` (${item.currentSubStageIndex}/${item.currentPhaseTotal})`;
-    }
-  }
+  // Line 3: progress bar with phase label only (no sub-stage inline)
+  const phaseLabel = item.currentPhase || "—";
   const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 30));
   lines.push("  " + renderProgressBar(
     item.progress.completed,
@@ -163,9 +155,18 @@ function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
     barMaxWidth
   ));
 
-  // Line 4: phase indicators
+  // Line 4: phase indicators with sub-stage shown under current phase
   const phaseStrs = item.phases.map(p => `${p.name} ${phaseIndicator(p.status)}`);
   lines.push("  " + phaseStrs.join("  "));
+
+  // Line 5 (optional): current sub-stage detail under the phase line
+  if (item.currentSubStage && item.currentPhase) {
+    let subLabel = `↳ ${item.currentSubStage}`;
+    if (item.currentSubStageIndex != null && item.currentPhaseTotal != null) {
+      subLabel += ` (${item.currentSubStageIndex}/${item.currentPhaseTotal})`;
+    }
+    lines.push("    " + dim(subLabel));
+  }
 
   // Line 5 (optional): loopbacks
   if (item.loopbacks.count > 0) {

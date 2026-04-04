@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 (2026-04-04)
+
+### Fixed
+- Deploy merge now included by default in both full-kit and auto-kit (was incorrectly marked optional/skipped)
+- Observer: advance currentSubStage on complete so dashboard refreshes correctly
+- Observer: show current sub-stage on its own line below phase indicators for clarity
+
 ## 0.2.1 (2026-04-04)
 
 ### Changed
