@@ -4,9 +4,10 @@
   "description": "Structured development workflow for Claude Code. Two modes, 6 phases, 27 sub-stages.",
   "type": "module",
   "bin": {
-    "work-kit": "./cli/src/index.ts"
+    "work-kit": "cli/bin/work-kit.mjs"
   },
   "files": [
+    "cli/bin/",
     "cli/src/",
     "skills/"
   ],
@@ -25,7 +26,12 @@
     "type": "git",
     "url": "git+https://github.com/AbdullahSAhmad/work-kit.git"
   },
-  "keywords": ["claude-code", "workflow", "skills", "development"],
+  "keywords": [
+    "claude-code",
+    "workflow",
+    "skills",
+    "development"
+  ],
   "author": "Abdullah Ahmad",
   "license": "ISC",
   "dependencies": {
