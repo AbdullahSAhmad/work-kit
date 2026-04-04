@@ -95,9 +95,10 @@ export function initCommand(options: {
   mode: "full" | "auto";
   description: string;
   classification?: Classification;
+  gated?: boolean;
   worktreeRoot?: string;
 }): Action {
-  const { mode, description, classification } = options;
+  const { mode, description, classification, gated } = options;
   const worktreeRoot = options.worktreeRoot || process.cwd();
 
   // Guard: don't overwrite existing state
@@ -156,6 +157,7 @@ export function initCommand(options: {
     branch,
     started: new Date().toISOString(),
     mode: modeLabel,
+    ...(gated && { gated: true }),
     ...(classification && { classification }),
     status: "in-progress",
     currentPhase: firstPhase,

@@ -75,12 +75,16 @@ export function determineNextStep(state: WorkKitState): NextStep {
     for (const phase of remainingPhases) {
       const ps = state.phases[phase];
       if (ps.status !== "skipped") {
-        // Phase boundary — wait for user confirmation before crossing
-        return {
-          type: "wait-for-user",
-          phase,
-          message: `${currentPhase} phase complete. Ready to start ${phase}. Proceed?`,
-        };
+        if (state.gated) {
+          // Gated mode — wait for user confirmation before crossing
+          return {
+            type: "wait-for-user",
+            phase,
+            message: `${currentPhase} phase complete. Ready to start ${phase}. Proceed?`,
+          };
+        }
+        // Default — auto-proceed to next phase
+        return { type: "phase-boundary", phase, message: `${currentPhase} complete → starting ${phase}` };
       }
     }
 

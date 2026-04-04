@@ -97,6 +97,7 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
    cd worktrees/<slug>
    npx work-kit-cli init --mode auto --description "<description>" --classification <classification>
    ```
+   If the user requested gated mode (manual approval between phases), add `--gated`.
 2. Show the workflow to the user: `npx work-kit-cli workflow`
 3. User can adjust: `npx work-kit-cli workflow --add review/security` or `npx work-kit-cli workflow --remove test/e2e`
 4. **Wait for approval** — user can add/remove steps before proceeding
@@ -216,5 +217,5 @@ Run **Wrap-up** — read `.claude/skills/wk-wrap-up/SKILL.md` and follow its ins
 
 - **Always work inside the worktree directory** — `cd worktrees/<slug>` before running any commands
 - **Commit state after each phase boundary** — `git add .work-kit/ && git commit -m "work-kit: complete <phase>"`
-- **Human stays in control** — stop between phases, don't auto-proceed
+- **Auto-proceed by default** — phases flow continuously unless `--gated` was passed at init, in which case stop between phases for user approval
 - **One feature per session** — each session handles a single feature. To work on multiple features in parallel, use separate terminal sessions

@@ -39,6 +39,7 @@ Do not proceed until `doctor` reports all checks passed.
    cd worktrees/<slug>
    npx work-kit-cli init --mode full --description "<description>"
    ```
+   If the user requested gated mode (manual approval between phases), add `--gated`.
 2. Parse the JSON response and follow the action
 3. Continue with the execution loop below
 
@@ -62,7 +63,7 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 3. Follow the action type:
    - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit-cli complete <phase>/<sub-stage> --outcome <outcome>`
    - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `npx work-kit-cli complete <onComplete target>`
-   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit-cli next` again.
+   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit-cli next` again. (Only appears in `--gated` mode.)
    - **`loopback`**: Report the loopback to the user, then run `npx work-kit-cli next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.
    - **`error`**: Report the error and suggestion to the user. Stop.
@@ -197,5 +198,5 @@ Run **Wrap-up** — read `.claude/skills/wk-wrap-up/SKILL.md` and follow its ins
 - **Always work inside the worktree directory** — `cd worktrees/<slug>` before running any commands
 - **Commit state after each phase** — `git add .work-kit/ && git commit -m "work-kit: complete <phase>"`
 - **Don't skip phases** — even if a phase seems unnecessary, run it and let it determine "nothing to do"
-- **Human stays in control** — stop between phases, don't auto-proceed
+- **Auto-proceed by default** — phases flow continuously unless `--gated` was passed at init, in which case stop between phases for user approval
 - **One feature per session** — each session handles a single feature. To work on multiple features in parallel, use separate terminal sessions

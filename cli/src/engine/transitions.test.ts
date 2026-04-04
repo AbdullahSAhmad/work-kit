@@ -104,8 +104,20 @@ describe("determineNextStep", () => {
     assert.equal(step.subStage, "clarify");
   });
 
-  it("returns wait-for-user when current phase is complete", () => {
+  it("auto-proceeds to next phase by default when current phase is complete", () => {
     const state = makeState();
+    state.currentPhase = "plan";
+    for (const ss of Object.values(state.phases.plan.subStages)) {
+      ss.status = "completed";
+    }
+    const step = determineNextStep(state);
+    assert.equal(step.type, "phase-boundary");
+    assert.equal(step.phase, "build");
+  });
+
+  it("returns wait-for-user when gated and current phase is complete", () => {
+    const state = makeState();
+    state.gated = true;
     state.currentPhase = "plan";
     for (const ss of Object.values(state.phases.plan.subStages)) {
       ss.status = "completed";

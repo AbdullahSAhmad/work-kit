@@ -81,6 +81,7 @@ export interface WorkKitState {
   branch: string;
   started: string;
   mode: "full-kit" | "auto-kit";
+  gated?: boolean;
   classification?: Classification;
   status: "in-progress" | "paused" | "completed" | "failed";
   currentPhase: PhaseName | null;

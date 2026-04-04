@@ -39,6 +39,7 @@ program
   .requiredOption("--mode <mode>", "Workflow mode: full or auto")
   .requiredOption("--description <text>", "Description of the work")
   .option("--classification <type>", "Work classification (auto mode): bug-fix, small-change, refactor, feature, large-feature")
+  .option("--gated", "Wait for user approval between phases (default: auto-proceed)")
   .option("--worktree-root <path>", "Override worktree root directory")
   .action((opts) => {
     try {
@@ -46,6 +47,7 @@ program
         mode: opts.mode as "full" | "auto",
         description: opts.description,
         classification: opts.classification as Classification | undefined,
+        gated: opts.gated || false,
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));
