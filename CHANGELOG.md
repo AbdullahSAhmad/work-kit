@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 (2026-04-04)
+
+### Fixed
+- Observer index parser now handles 5-column table format (Date|Slug|PR|Status|Phases) to prevent duplicate completed items
+
+### Changed
+- Release skill runs non-interactively when bump type is provided as argument
+
 ## 0.1.3 (2026-04-04)
 
 ### Fixed
