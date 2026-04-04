@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
-import { findWorktreeRoot, readState } from "../state/store.js";
+import { findWorktreeRoot, readState, stateExists } from "../state/store.js";
 
 interface Check {
   name: string;
@@ -59,7 +59,7 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
 
   // 5. State file health (if in a worktree)
   const root = worktreeRoot ? worktreeRoot : findWorktreeRoot();
-  if (root) {
+  if (root && stateExists(root)) {
     try {
       const state = readState(root);
       if (state.version === 1 && state.slug && state.status) {
@@ -71,7 +71,7 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
       checks.push({ name: "state", status: "warn", message: `state.json error: ${e.message}` });
     }
   } else {
-    checks.push({ name: "state", status: "pass", message: "No active worktree (OK — run `work-kit init` to start)" });
+    checks.push({ name: "state", status: "pass", message: "No active work-kit (OK — run `work-kit init` to start)" });
   }
 
   const ok = checks.every((c) => c.status !== "fail");

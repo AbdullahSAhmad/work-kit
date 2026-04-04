@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 (2026-04-04)
+
+### Changed
+- Rename package from `@abdullahsahmad/work-kit` to `work-kit-cli` (unscoped, simpler `npx work-kit-cli` usage)
+- Update all skill files, CLI output, README, and PLAN.md to use new package name
+- Doctor no longer errors when no state.json exists (expected state for fresh projects)
+- Observer: show "Full Kit" / "Auto Kit · classification" labels, elapsed + phase timing, substage position, aligned completed columns
+- Simplify index.md parser to single 5-column format
+
 ## 0.1.5 (2026-04-04)
 
 ### Changed

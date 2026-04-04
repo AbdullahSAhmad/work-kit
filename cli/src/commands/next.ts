@@ -115,7 +115,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
           subStage: seqSS,
           skillFile: skillFilePath(phase, seqSS),
           agentPrompt: buildAgentPrompt(root, state, phase, seqSS, stateMd),
-          onComplete: `npx work-kit complete ${phase}/${seqSS}`,
+          onComplete: `npx work-kit-cli complete ${phase}/${seqSS}`,
         };
       }
       return { action: "error", message: `No active sub-stages in parallel group for ${phase}` };
@@ -130,7 +130,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
         subStage: agent.subStage,
         skillFile: agent.skillFile,
         agentPrompt: agent.agentPrompt,
-        onComplete: `npx work-kit complete ${agent.phase}/${agent.subStage}`,
+        onComplete: `npx work-kit-cli complete ${agent.phase}/${agent.subStage}`,
       };
     }
 
@@ -154,7 +154,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
       action: "spawn_parallel_agents",
       agents,
       thenSequential,
-      onComplete: `npx work-kit complete ${phase}/${parallelGroup.thenSequential || parallelGroup.parallel[parallelGroup.parallel.length - 1]}`,
+      onComplete: `npx work-kit-cli complete ${phase}/${parallelGroup.thenSequential || parallelGroup.parallel[parallelGroup.parallel.length - 1]}`,
     };
   }
 
@@ -167,6 +167,6 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     subStage,
     skillFile: skill,
     agentPrompt: prompt,
-    onComplete: `npx work-kit complete ${phase}/${subStage}`,
+    onComplete: `npx work-kit-cli complete ${phase}/${subStage}`,
   };
 }

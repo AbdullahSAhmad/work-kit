@@ -179,6 +179,6 @@ export function initCommand(options: {
     subStage: firstSubStage,
     skillFile: skillFilePath(firstPhase, firstSubStage),
     agentPrompt: `You are starting the ${firstPhase} phase. Begin with the ${firstSubStage} sub-stage. Read the skill file and follow its instructions. Write outputs to .work-kit/state.md.`,
-    onComplete: `npx work-kit complete ${firstPhase}/${firstSubStage}`,
+    onComplete: `npx work-kit-cli complete ${firstPhase}/${firstSubStage}`,
   };
 }

@@ -63,7 +63,7 @@ export function buildAgentPrompt(
   if (subStage === "wrap-up") {
     parts.push(`Follow the wrap-up skill file instructions for archiving and cleanup.`);
   } else {
-    parts.push(`When done, report your outcome so the orchestrator can run: \`npx work-kit complete ${phase}/${subStage} --outcome <outcome>\``);
+    parts.push(`When done, report your outcome so the orchestrator can run: \`npx work-kit-cli complete ${phase}/${subStage} --outcome <outcome>\``);
   }
 
   return parts.join("\n");

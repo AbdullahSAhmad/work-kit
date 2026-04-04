@@ -16,15 +16,15 @@ The goal is to add a **TypeScript CLI** that acts as the state machine controlle
 Claude calls the CLI via Bash. The CLI returns JSON telling Claude exactly what to do next.
 
 ```
-Claude: npx work-kit init --mode full --description "add user avatar"
+Claude: npx work-kit-cli init --mode full --description "add user avatar"
   → { action: "spawn_agent", phase: "plan", skillFile: "...", agentPrompt: "..." }
 
 Claude: (spawns Plan agent using Agent tool)
 
-Claude: npx work-kit complete plan --outcome done
+Claude: npx work-kit-cli complete plan --outcome done
   → { action: "wait_for_user", message: "Plan complete. Proceed?" }
 
-Claude: npx work-kit next
+Claude: npx work-kit-cli next
   → { action: "spawn_agent", phase: "build", ... }
 ```
 
@@ -284,29 +284,29 @@ The orchestrator skills (`full-kit.md`, `auto-kit.md`) get updated to call the C
 ```markdown
 ## How to Execute
 
-1. Run `npx work-kit next` to get the next action
+1. Run `npx work-kit-cli next` to get the next action
 2. Parse the JSON response
 3. Follow the action type:
    - "spawn_agent": Use the Agent tool with the provided agentPrompt
    - "spawn_parallel_agents": Spawn all agents in parallel, wait, then spawn thenSequential
    - "wait_for_user": Report message and stop
-   - "loopback": Report to user, then run `npx work-kit next`
+   - "loopback": Report to user, then run `npx work-kit-cli next`
    - "complete": Done — run wrap-up
    - "error": Report and stop
-4. After each agent completes: `npx work-kit complete <phase>/<sub-stage> --outcome <outcome>`
-5. Then `npx work-kit next` again
+4. After each agent completes: `npx work-kit-cli complete <phase>/<sub-stage> --outcome <outcome>`
+5. Then `npx work-kit-cli next` again
 ```
 
 Sub-stage .md files stay the same, with one addition: each ends with "Report your outcome" instruction.
 
 ## Verification
 
-1. `npx work-kit init --mode full --description "test feature"` → creates worktree + state.json
-2. `npx work-kit next` → returns spawn_agent for plan/clarify
-3. `npx work-kit complete plan/clarify` → advances to plan/investigate
-4. `npx work-kit validate build` → returns error (plan not complete)
-5. Complete all plan sub-stages → `npx work-kit next` returns wait_for_user
-6. `npx work-kit next` → returns spawn_agent for build/setup
+1. `npx work-kit-cli init --mode full --description "test feature"` → creates worktree + state.json
+2. `npx work-kit-cli next` → returns spawn_agent for plan/clarify
+3. `npx work-kit-cli complete plan/clarify` → advances to plan/investigate
+4. `npx work-kit-cli validate build` → returns error (plan not complete)
+5. Complete all plan sub-stages → `npx work-kit-cli next` returns wait_for_user
+6. `npx work-kit-cli next` → returns spawn_agent for build/setup
 7. Test parallel: complete build → test phase returns spawn_parallel_agents with verify+e2e
 8. Test loopback: `work-kit complete review/handoff --outcome changes_requested` → returns loopback action
 

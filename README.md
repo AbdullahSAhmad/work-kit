@@ -7,7 +7,7 @@ Structured development workflow for [Claude Code](https://claude.com/claude-code
 **One-step setup** (recommended):
 
 ```bash
-npx @abdullahsahmad/work-kit setup
+npx work-kit-cli setup
 ```
 
 This auto-detects Claude Code projects in your workspace and installs the skill files. If multiple projects are found, it lists them for you to choose.
@@ -15,14 +15,14 @@ This auto-detects Claude Code projects in your workspace and installs the skill 
 **Global install**:
 
 ```bash
-npm install -g @abdullahsahmad/work-kit
+npm install -g work-kit-cli
 ```
 
 ## Quick start
 
 ```bash
 # 1. Set up work-kit in your project
-npx @abdullahsahmad/work-kit setup
+npx work-kit-cli setup
 
 # 2. In Claude Code, start a workflow
 /full-kit add user avatar upload    # strict, all phases

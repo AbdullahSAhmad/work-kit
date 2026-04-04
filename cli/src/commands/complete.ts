@@ -121,7 +121,7 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
   return {
     action: "wait_for_user",
-    message: `${phase}/${subStage} complete${outcome ? ` (outcome: ${outcome})` : ""}. Run \`npx work-kit next\` to continue.`,
+    message: `${phase}/${subStage} complete${outcome ? ` (outcome: ${outcome})` : ""}. Run \`npx work-kit-cli next\` to continue.`,
   };
 }
 
