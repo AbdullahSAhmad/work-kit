@@ -1,10 +1,11 @@
 import { readStateMd } from "../state/store.js";
+import { redactIgnoredBlocks } from "./redactor.js";
 
 /**
  * Extract a specific ### section from state.md by heading.
  * Returns the content between the heading and the next ### heading (or end of file).
  */
-export function extractSection(stateMd: string, heading: string): string | null {
+export function extractSection(stateMd: string, heading: string, redact?: boolean): string | null {
   // Normalize heading — ensure it starts with ###
   const prefix = heading.startsWith("###") ? heading : `### ${heading}`;
   const lines = stateMd.split("\n");
@@ -25,13 +26,15 @@ export function extractSection(stateMd: string, heading: string): string | null 
     }
   }
 
-  return captured.length > 0 ? captured.join("\n").trim() : null;
+  if (captured.length === 0) return null;
+  const content = captured.join("\n").trim();
+  return redact ? redactIgnoredBlocks(content) : content;
 }
 
 /**
  * Extract a ## section (top-level section like Description, Criteria).
  */
-export function extractTopSection(stateMd: string, heading: string): string | null {
+export function extractTopSection(stateMd: string, heading: string, redact?: boolean): string | null {
   const prefix = heading.startsWith("##") ? heading : `## ${heading}`;
   const lines = stateMd.split("\n");
   let capturing = false;
@@ -51,7 +54,9 @@ export function extractTopSection(stateMd: string, heading: string): string | nu
     }
   }
 
-  return captured.length > 0 ? captured.join("\n").trim() : null;
+  if (captured.length === 0) return null;
+  const content = captured.join("\n").trim();
+  return redact ? redactIgnoredBlocks(content) : content;
 }
 
 /**

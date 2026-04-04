@@ -58,3 +58,11 @@ description: "Plan sub-stage: Produce a full ordered step-by-step implementation
 - If a step is "update 5 files", break it into 5 steps
 - The Blueprint is the contract — Build phase follows it literally
 - Include commands to run (migrations, test commands) as steps
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "High-level steps are sufficient, exact paths aren't needed" | Vague steps like "update the API" become ambiguous during Build. Exact file paths eliminate guesswork and prevent the wrong file from being modified. |
+| "The Architecture section already covers the implementation plan" | Architecture describes structure. Blueprint describes execution order. Without a step-by-step plan, the Build agent will invent its own order — often wrong. |
+| "Adding more detail will just slow things down" | A detailed Blueprint is the single highest-leverage artifact in the entire pipeline. Every minute here saves ten in Build. |

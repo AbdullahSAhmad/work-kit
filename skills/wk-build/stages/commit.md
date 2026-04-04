@@ -41,3 +41,11 @@ description: "Build sub-stage: Create clean commits, push branch, create PR."
 - If there are secrets or env files staged, remove them
 - Prefer multiple focused commits over one giant commit
 - PR description should be useful to a reviewer — not a wall of text
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "One big commit is fine for this feature" | Atomic commits make review possible, bisection useful, and reverts safe. A 500-line single commit is a review nightmare and an unrevertable blob. |
+| "The PR description can be minimal since reviewers have context" | Reviewers do not have your context. The PR description is the first thing they read — it determines whether they understand or misunderstand every line of your diff. |
+| "I'll clean up the commit history later" | You will not. Commit hygiene happens at commit time or not at all. Write the message as if you are explaining this change to someone six months from now. |

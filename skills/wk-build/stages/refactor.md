@@ -27,6 +27,8 @@ description: "Build sub-stage: Improve code quality while keeping all tests gree
 **Refactoring Summary:**
 - <what was improved and why>
 
+**Changes Made:** <N> files touched
+**Tests:** before=<N> passing, after=<N> passing
 **Test Status:** passing | broken
 
 **If broken:**
@@ -46,3 +48,11 @@ description: "Build sub-stage: Improve code quality while keeping all tests gree
 - Don't refactor code you didn't write/modify in this feature
 - If code is already clean, say so and move on — don't refactor for its own sake
 - Small, incremental changes — not a big-bang rewrite
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "The code is fine as-is, nothing to refactor" | Fresh code always has cleanup opportunities — redundant variables, unclear names, duplicated logic. Read your code as if reviewing someone else's PR. |
+| "I should refactor this unrelated code too" | Refactor only touches code you wrote or modified in this feature. Unrelated refactoring expands the diff, makes review harder, and risks regressions in code you don't fully understand. |
+| "Tests are flaky, the refactoring didn't really break them" | If tests fail after refactoring, the refactoring changed behavior. Flaky tests that suddenly fail consistently are not flaky — they caught something. Investigate before dismissing. |

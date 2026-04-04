@@ -104,10 +104,14 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
 
 ## Continuing Work (`/auto-kit` with no args)
 
-1. Find the active worktree — check `git worktree list` or look for `.work-kit/state.md`
-2. Run `npx work-kit-cli status` to see current state
-3. Run `npx work-kit-cli next` to get the next action
-4. Follow the execution loop below
+1. Run `npx work-kit-cli bootstrap` to detect session state
+2. Parse the JSON response:
+   - If `active: false` — no session found, ask the user for a description and start new work
+   - If `recovery` is set — report the recovery suggestion to the user before continuing
+   - If `active: true` — report current state (slug, phase, sub-stage) to the user
+3. `cd` into the worktree directory
+4. Run `npx work-kit-cli next` to get the next action
+5. Follow the execution loop below
 
 ## Step Validation
 

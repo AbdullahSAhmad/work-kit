@@ -59,3 +59,11 @@ Update the `## Criteria` section with acceptance criteria, then append:
 - **Do ask questions** — ambiguity caught here saves hours later
 - If the request is crystal clear, don't invent questions just to ask them
 - Ask questions only when the answer materially changes what gets built
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "The request is clear enough, no questions needed" | Ambiguity hides in assumptions. One clarifying question now prevents a wrong turn that wastes an entire Build phase. |
+| "I should start reading code to understand better" | That is Investigate's job. Clarify defines *what* to build; Investigate discovers *how*. Mixing them leads to solution-driven requirements. |
+| "Acceptance criteria can be refined later" | Vague criteria produce vague implementations. If you cannot write a testable criterion now, you do not understand the request yet. |

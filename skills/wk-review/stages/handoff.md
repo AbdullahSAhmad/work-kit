@@ -35,6 +35,9 @@ description: "Review sub-stage: Finalize PR, make ship/no-ship decision."
 **Concerns:**
 - <any remaining concerns — or "None">
 
+**Criteria Met:** <N>/<total>
+**Blockers:** <N> (list each if > 0)
+
 **Decision:** approved | changes_requested | rejected
 
 **If changes_requested:**
@@ -57,3 +60,11 @@ description: "Review sub-stage: Finalize PR, make ship/no-ship decision."
 - Don't block on cosmetic issues — fix them directly before finalizing
 - The PR should be ready for a human reviewer after this step
 - If you're unsure between approved and changes_requested, ask the user
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "Changes_requested would slow things down, it's good enough" | Shipping known issues to "save time" moves the cost to production users and the next developer. Requesting changes now is faster than a hotfix later. |
+| "The gaps are minor, we can fix them after merge" | After merge, the context is gone, the branch is deleted, and the priority shifts. Post-merge fixes have a completion rate near zero. Fix it now or accept it will never be fixed. |
+| "Requesting changes will frustrate the developer" | A clear, specific change request is more respectful than silently approving broken code. Developers prefer honest feedback over discovering issues in production. |

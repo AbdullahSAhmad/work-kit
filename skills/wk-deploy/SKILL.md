@@ -42,6 +42,25 @@ This phase runs as a **fresh agent**. Read only these sections from `.work-kit/s
 - `### Build: Final` — PR URL, branch
 - `## Criteria` — for final confirmation
 
+## Boundaries
+
+### Always
+- Check CI status before merging
+- Rebase on the default branch before merging to catch integration issues
+- Verify the merge actually completed successfully
+- Monitor deployment status after merge (where applicable)
+
+### Ask First
+- Resolving non-trivial rebase conflicts (show conflicts to the user first)
+- Rolling back a deployment (except for data corruption or security — those are immediate)
+
+### Never
+- Force push to main or master
+- Merge with failing CI checks
+- Skip the rebase step to "save time"
+- Delete branches before confirming the merge succeeded
+- Proceed past a failed deployment without fixing or rolling back
+
 ## Final Output
 
 After all sub-stages are done, append a `### Deploy: Final` section to state.md. This is what **Wrap-up reads**.
@@ -49,6 +68,7 @@ After all sub-stages are done, append a `### Deploy: Final` section to state.md.
 ```markdown
 ### Deploy: Final
 
+**Verdict:** shipped | fix_needed | rolled_back
 **PR:** #<number>
 **Merge status:** merged | fix_needed | abort
 **Deploy status:** deployed | failed | not_applicable

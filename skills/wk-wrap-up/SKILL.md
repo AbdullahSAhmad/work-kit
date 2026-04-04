@@ -63,6 +63,24 @@ status: <completed | partial | rolled-back>
 - Internal process notes ("ran tests 3 times before they passed")
 - Anything derivable from the git diff or PR description
 
+## Boundaries
+
+### Always
+- Read the full state.md before writing the summary
+- Include every non-obvious decision in the Key Decisions section
+- Include every deviation from the Blueprint in the Deviations section
+- Write the archive to the main branch, not the worktree
+
+### Ask First
+- Deleting the worktree and feature branch (confirm with user)
+- Omitting sections from the summary
+
+### Never
+- Copy-paste full phase outputs into the summary (distill, don't dump)
+- Include routine implementation details (file lists, command logs)
+- Skip the criteria checklist in the summary
+- Commit the archive on the feature branch instead of main
+
 ## Cleanup
 
 After writing the summary:

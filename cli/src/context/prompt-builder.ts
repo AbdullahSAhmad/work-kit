@@ -3,6 +3,7 @@ import { getContextFor } from "../config/agent-map.js";
 import { extractSection, extractTopSection } from "./extractor.js";
 import { readStateMd } from "../state/store.js";
 import { skillFilePath } from "../config/phases.js";
+import { redactIgnoredBlocks } from "./redactor.js";
 
 /**
  * Build a complete agent prompt for a given phase/sub-stage.
@@ -66,5 +67,5 @@ export function buildAgentPrompt(
     parts.push(`When done, report your outcome so the orchestrator can run: \`npx work-kit-cli complete ${phase}/${subStage} --outcome <outcome>\``);
   }
 
-  return parts.join("\n");
+  return redactIgnoredBlocks(parts.join("\n"));
 }

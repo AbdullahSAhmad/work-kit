@@ -15,6 +15,7 @@ import { upgradeCommand } from "./commands/upgrade.js";
 import { completionsCommand } from "./commands/completions.js";
 import { observeCommand } from "./commands/observe.js";
 import { uninstallCommand } from "./commands/uninstall.js";
+import { bootstrapCommand } from "./commands/bootstrap.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
@@ -248,6 +249,22 @@ program
   .description("Remove work-kit skills from a project")
   .action(async (targetPath) => {
     await uninstallCommand(targetPath);
+  });
+
+// ── bootstrap ───────────────────────────────────────────────────────
+
+program
+  .command("bootstrap")
+  .description("Detect work-kit state and output session orientation")
+  .option("--json", "Output as JSON", true)
+  .action((opts) => {
+    try {
+      const result = bootstrapCommand();
+      console.log(JSON.stringify(result, null, 2));
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
   });
 
 program.parse();

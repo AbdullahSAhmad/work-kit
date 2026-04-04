@@ -45,3 +45,13 @@ description: "Plan sub-stage: Read codebase systematically, trace paths, map bla
 - Do NOT propose solutions yet — that's Sketch
 - Note file paths precisely — these will be referenced in Blueprint
 - If the codebase has no tests for affected areas, note that as a risk
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "I already understand the codebase from the description" | You understand the *intent*, not the *implementation*. Blast radius, existing patterns, and hidden dependencies live in the code, not the request. |
+| "Checking more files would waste context" | Skipping investigation wastes far more context when you discover mid-Build that your assumptions were wrong and must restart. |
+| "The blast radius is obvious, no need to trace paths" | Obvious blast radius is the most common source of missed side-effects. Trace the actual call chain — surprises live one hop beyond what seems obvious. |
+
+> **Note:** If you encounter `[redacted: N lines — @wk-ignore]` placeholders in source code, these blocks are intentionally hidden. Do not attempt to reconstruct or work around them.

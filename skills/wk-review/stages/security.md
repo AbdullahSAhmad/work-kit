@@ -29,6 +29,9 @@ Fix issues directly when possible. Document what you can't fix.
 ```markdown
 ### Review: Security
 
+> **Note:** If you encounter `[redacted: N lines — @wk-ignore]` placeholders, these blocks are excluded from security review. If you suspect a security issue may exist within a redacted area, flag it for human review rather than attempting to reconstruct the code.
+
+**Verdict:** clear | risks_noted | blocked
 **Findings:**
 - <finding with severity: critical/high/medium/low — or "None">
 
@@ -47,3 +50,11 @@ Fix issues directly when possible. Document what you can't fix.
 - Not every feature touches all 10 categories — skip irrelevant ones
 - Don't add security theater (unnecessary complexity for non-existent threats)
 - If you find a critical issue, fix it immediately and note it prominently
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "This feature doesn't touch auth, so there are no security concerns" | Security is not just authentication. Input validation, data exposure, injection, CSRF, and insecure defaults exist in every feature that handles user data or external input. |
+| "Input validation is handled elsewhere" | Verify that claim. "Handled elsewhere" is the most common source of security gaps — each layer assumes another layer validates. Check the actual validation at every boundary. |
+| "This is internal-only, security doesn't matter" | Internal APIs become external when architectures change. Internal networks get compromised. Treat every input as potentially hostile — the cost of basic validation is negligible. |

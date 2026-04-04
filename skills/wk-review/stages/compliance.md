@@ -28,9 +28,9 @@ description: "Review sub-stage: Compare final code against Blueprint."
 
 **Result:** compliant | deviations_found
 
-**Blueprint Steps:**
-- Step 1: <implemented | deviated | missing>
-- Step 2: <implemented | deviated | missing>
+**Blueprint Steps:** (every step MUST appear with a status)
+- Step 1: <done | deviated | skipped>
+- Step 2: <done | deviated | skipped>
 - ...
 
 **Deviations:**
@@ -46,3 +46,11 @@ description: "Review sub-stage: Compare final code against Blueprint."
 - But deviations need justification — "I felt like it" is not acceptable
 - Missing steps are a red flag — they need to be implemented or explicitly dropped with reason
 - Scope creep should be called out even if the extra code is good
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "The deviations are improvements over the Blueprint" | Improvements still need documentation. If the implementation differs from the plan, record why — future readers need to know the deviation was intentional, not accidental. |
+| "The Blueprint was wrong, so compliance doesn't apply" | If the Blueprint was wrong, that is itself a finding worth recording. Compliance review catches plan-vs-reality drift — both accidental deviations and deliberate corrections need documentation. |
+| "Minor scope additions don't count as scope creep" | Minor additions compound. Each one is "just a small thing" until the PR is 3x the original scope. If it was not in the Blueprint, it is scope creep — document it as a Deviation. |

@@ -64,6 +64,27 @@ Each writes its own `### Review: <sub-stage>` section to state.md.
 
 **Handoff agent** reads all 4 review sections + Test: Final → makes the ship decision.
 
+## Boundaries
+
+### Always
+- Read the full git diff before making any review judgments
+- Fix issues directly when fixable in under 5 minutes
+- Run the test suite after any fixes made during review
+- Check every Blueprint step in the Compliance review
+- Produce a clear ship/no-ship verdict with specific reasoning
+
+### Ask First
+- Approving with known failing criteria (explain which and why acceptable)
+- Rejecting a PR (confirm the fundamental problem is not fixable)
+- Making architectural changes during review
+
+### Never
+- Approve a PR with critical or high severity security issues
+- Approve without checking acceptance criteria status
+- Rubber-stamp without reading the diff ("looks good" is not a review)
+- Make changes_requested without specifying exactly what needs to change
+- Skip any of the 4 parallel review sub-stages
+
 ## Final Output
 
 After Handoff completes, append a `### Review: Final` section to state.md. This is what **Deploy and Wrap-up read**.
@@ -71,7 +92,7 @@ After Handoff completes, append a `### Review: Final` section to state.md. This 
 ```markdown
 ### Review: Final
 
-**Decision:** approved | changes_requested | rejected
+**Verdict:** approved | changes_requested | rejected
 
 **Summary:** <1-2 sentences — overall assessment>
 

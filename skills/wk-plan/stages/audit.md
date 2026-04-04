@@ -25,6 +25,12 @@ description: "Plan sub-stage: Audit the Blueprint for gaps, contradictions, and 
 ### Plan: Audit
 
 **Result:** proceed | revise
+**Checklist:**
+- [ ] Every criterion maps to at least one Blueprint step
+- [ ] Every Blueprint step has exact file paths
+- [ ] Dependencies are ordered correctly
+- [ ] Error/edge cases are addressed
+- [ ] No scope creep beyond what Scope defined
 
 **Gaps Found:**
 - <gap description — or "None">
@@ -56,3 +62,11 @@ description: "Plan sub-stage: Audit the Blueprint for gaps, contradictions, and 
 - "Proceed" means you'd bet money this plan works
 - "Revise" is not failure — it's the audit doing its job
 - Max 2 revision loops — after that, proceed with noted caveats
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "The Blueprint looks complete, proceed without nitpicking" | Audit exists because plans always have gaps. If you cannot find any, you are not looking hard enough — check criterion coverage, missing error paths, and dependency order. |
+| "Revising would waste time, the gaps are minor" | A 'minor' gap in the plan becomes a major blocker in Build. Sending back to Blueprint now costs minutes; discovering the gap mid-implementation costs hours. |
+| "I already wrote the Blueprint, so I know it's correct" | Self-review bias is real. Audit requires you to read the Blueprint as if someone else wrote it. Check each criterion against the steps — does every criterion have a step that delivers it? |

@@ -53,6 +53,25 @@ Agent: E2E    ──┘
 
 Each sub-agent reads the same Context Input sections and writes its own `### Test: <sub-stage>` section to state.md.
 
+## Boundaries
+
+### Always
+- Run the full test suite, not just new tests
+- Provide explicit evidence for every satisfied criterion (test name, output, or code reference)
+- Report honest confidence levels — do not inflate confidence
+- Fix regressions immediately rather than documenting them for later
+
+### Ask First
+- Marking a criterion as "not testable" (explain why and get confirmation)
+- Changing or reinterpreting acceptance criteria discovered during testing
+- Disabling or modifying pre-existing tests
+
+### Never
+- Skip failing tests or disable them to make the suite pass
+- Claim a criterion is satisfied without specific evidence
+- Write E2E tests that test implementation details rather than user behavior
+- Modify feature code during Test phase (report issues, don't fix)
+
 ## Final Output
 
 After all sub-stages are done, append a `### Test: Final` section to state.md. This is what **Review agents read**.
@@ -60,6 +79,7 @@ After all sub-stages are done, append a `### Test: Final` section to state.md. T
 ```markdown
 ### Test: Final
 
+**Verdict:** pass | gaps_found
 **Suite status:** all passing | <N> failures
 **Total tests:** <count> (passing: <N>, failing: <N>)
 

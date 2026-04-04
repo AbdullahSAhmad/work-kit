@@ -46,3 +46,13 @@ description: "Build sub-stage: Make failing tests pass — service layer, API, b
 - Don't build UI yet — that's the UI sub-stage
 - If a test expectation seems wrong, fix the test only if the Blueprint supports it
 - Match existing code patterns exactly — naming, file structure, error handling
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "The Blueprint approach won't work, let me redesign" | Adapt, don't redesign. If the Blueprint truly cannot work, record a Deviation and make the minimal change needed. Full redesigns during Build invalidate the entire Plan phase. |
+| "I should add this extra feature while I'm here" | Scope creep disguised as efficiency. Every addition not in the Blueprint is untested, unreviewed, and unplanned. Add it to a follow-up task instead. |
+| "This pattern is better than what the codebase uses" | Consistency beats local optimization. The next developer expects the established pattern. Introduce new patterns in dedicated refactoring work, not mid-feature. |
+
+> **Note:** If you encounter `[redacted: N lines — @wk-ignore]` placeholders in source code, these blocks are intentionally hidden. Do not attempt to reconstruct or work around them.

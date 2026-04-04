@@ -54,6 +54,8 @@ After all sub-stages are done, append a `### Plan: Final` section to state.md. T
 ```markdown
 ### Plan: Final
 
+**Verdict:** ready | revised_with_caveats
+
 **Blueprint:**
 <the full ordered implementation plan from Blueprint sub-stage — copy it here>
 
@@ -75,3 +77,24 @@ After all sub-stages are done, append a `### Plan: Final` section to state.md. T
 Then:
 - Update state: `**Phase:** plan (complete)`
 - Commit state: `git add .work-kit/ && git commit -m "work-kit: complete plan"`
+
+## Boundaries
+
+### Always
+- Read every file referenced in the Description before proposing solutions
+- Ask clarifying questions when requirements have multiple valid interpretations
+- Map blast radius by tracing actual code paths, not guessing from file names
+- Include exact file paths in Blueprint steps
+- Map every acceptance criterion to at least one Blueprint step
+
+### Ask First
+- Changing the scope after Clarify (user must approve scope changes)
+- Adding acceptance criteria the user did not request
+- Recommending a complexity rating of x-large (confirm before proceeding)
+
+### Never
+- Propose solutions during Clarify (that is Sketch's job)
+- Skip Investigate to "save time" — code understanding prevents rework
+- Write vague Blueprint steps like "update relevant files" without exact paths
+- Assume the codebase follows standard patterns without verifying in Investigate
+- Proceed past Audit with unresolved gaps in the Blueprint

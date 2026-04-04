@@ -27,6 +27,7 @@ Fix what you can. Document what needs deeper investigation.
 ```markdown
 ### Review: Performance
 
+**Verdict:** clear | issues_noted
 **Findings:**
 - <finding — or "None">
 

@@ -40,6 +40,29 @@ Throughout every sub-stage, capture three things in the shared state.md sections
 
 These feed into the final work-kit log summary. If you don't record them here, they're lost.
 
+## Boundaries
+
+### Always
+- Follow the Blueprint step order unless a dependency requires reordering
+- Run the test suite after every sub-stage that changes code
+- Record every deviation from the Blueprint in the ## Deviations section
+- Match existing codebase patterns found during Plan/Investigate
+- Commit .work-kit/ files separately from feature code
+
+### Ask First
+- Redesigning any part of the Blueprint (adapt minimally, don't redesign)
+- Adding dependencies not specified in the Blueprint
+- Changing the data model beyond what Architecture specified
+- Skipping the Red (failing tests) sub-stage
+
+### Never
+- Write implementation code before writing failing tests (Red comes before Core)
+- Introduce new conventions that differ from existing codebase patterns
+- Refactor code you did not write or modify in this feature
+- Force push to any branch
+- Include .env files, secrets, or credentials in commits
+- Proceed with failing pre-existing tests without explaining why they changed
+
 ## Loop-back
 
 If **Refactor** returns "broken" (tests failing after refactor):
@@ -64,6 +87,7 @@ After all sub-stages are done, append a `### Build: Final` section to state.md. 
 ```markdown
 ### Build: Final
 
+**Verdict:** complete | complete_with_issues
 **PR:** #<number> — <title>
 **PR URL:** <url>
 **Branch:** feature/<slug>

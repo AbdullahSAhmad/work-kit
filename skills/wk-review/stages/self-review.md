@@ -27,6 +27,9 @@ description: "Review sub-stage: Review your own diff for obvious issues."
 ```markdown
 ### Review: Self-Review
 
+> **Note:** If you encounter `[redacted: N lines — @wk-ignore]` placeholders in source code, these blocks are intentionally hidden. Do not attempt to reconstruct or work around them.
+
+**Verdict:** clean | issues_remain
 **Issues Found:** <N>
 **Issues Fixed:** <M>
 **Remaining Concerns:**
@@ -39,3 +42,11 @@ description: "Review sub-stage: Review your own diff for obvious issues."
 - Remove ALL debug code (console.log, debugger statements, etc.)
 - This is about catching careless mistakes, not redesigning the architecture
 - Be honest — pretending your code is perfect helps no one
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "My code is already clean, nothing to review" | You wrote it minutes ago — you cannot objectively review your own fresh code. Read it as if someone else wrote it. Look for naming issues, missing error handling, and unclear logic. |
+| "These are minor style issues, not worth fixing" | Accumulated minor issues make code hard to read and maintain. Fix them now while the context is fresh — they take seconds each but compound into significant tech debt. |
+| "The linter didn't flag anything, so the code is fine" | Linters catch syntax and formatting. They do not catch unclear names, missing edge cases, redundant logic, or poor abstractions. Self-review catches what linters cannot. |

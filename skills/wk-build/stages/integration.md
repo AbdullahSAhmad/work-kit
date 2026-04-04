@@ -42,3 +42,11 @@ description: "Build sub-stage: Wire everything together, verify full data flow e
 - Check TypeScript types across boundaries — mismatches here cause runtime bugs
 - If the dev server is available, actually navigate the flow
 - Document any issues found — they indicate gaps in the Blueprint for future reference
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "Unit tests passing means integration is fine" | Unit tests mock boundaries. Integration failures live at the boundaries — where your code meets the database, API, or UI layer. |
+| "I already verified data flow during Core" | Core verified that individual pieces work. Integration verifies they work together. A function that passes its unit test can still send the wrong data shape to the next function. |
+| "Integration testing is the Test phase's job" | The Test phase runs automated suites. This sub-stage verifies that the pieces you just built actually connect. Finding a wiring bug here takes 5 minutes; finding it in Test takes 30. |

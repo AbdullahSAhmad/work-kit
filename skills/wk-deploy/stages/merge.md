@@ -35,8 +35,8 @@ description: "Deploy sub-stage: Get the PR merged safely."
 ```markdown
 ### Deploy: Merge
 
+**CI Status:** passing | failing | N/A
 **PR:** #<number>
-**CI Status:** passing | failing
 **Conflicts:** none | resolved
 **Merge Method:** squash | merge | rebase
 **Result:** merged | fix_needed | abort
@@ -57,3 +57,11 @@ description: "Deploy sub-stage: Get the PR merged safely."
 - Merge is fully autonomous — do NOT ask the user for permission at any step (review phase already approved it)
 - Push, create PR, and merge without stopping for confirmation
 - The entire sync → push → PR → merge flow should complete in one agent pass
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "CI is probably fine, no need to wait for the check" | "Probably" is not evidence. CI exists to catch what you missed. Wait for the green check — it takes minutes and prevents shipping broken code. |
+| "The conflict is trivial, I'll just force through" | Trivial conflicts still need manual resolution. Force-merging overwrites someone else's work. Resolve conflicts properly — if they are truly trivial, it takes 30 seconds. |
+| "Rebasing will mess up my history, better to merge directly" | A clean rebase on the default branch catches integration issues before they reach main. The few minutes spent rebasing prevent broken builds that affect the entire team. |

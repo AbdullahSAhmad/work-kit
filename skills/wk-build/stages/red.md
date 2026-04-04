@@ -30,6 +30,8 @@ description: "Build sub-stage: Write failing tests BEFORE implementation (TDD re
 **Test Output:**
 <summary of test run — X tests, Y failing, Z passing (pre-existing)>
 
+**Coverage:** <N>/<total> criteria have failing tests
+
 **Criteria Coverage:**
 - "<criterion>" → tested by <test name>
 ```
@@ -42,3 +44,11 @@ description: "Build sub-stage: Write failing tests BEFORE implementation (TDD re
 - Existing tests must still pass — only NEW tests should fail
 - Match the project's existing test patterns and frameworks
 - If the project has no test framework set up, set one up as part of this step
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "Writing tests after implementation is more efficient" | Writing tests first defines the contract. Tests written after implementation test what you built, not what you should have built — they encode bugs as features. |
+| "The code is simple enough it doesn't need tests" | Simple code is the easiest to test. If you skip tests here, you will also skip them for complex code with a different excuse. The Red stage exists to build the safety net before you need it. |
+| "The Test phase will cover this" | The Test phase verifies the feature works end-to-end. Unit-level coverage must exist before that. Discovering a logic error in Test means rebuilding from Core. |

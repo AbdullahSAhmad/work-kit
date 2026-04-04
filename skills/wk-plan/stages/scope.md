@@ -44,3 +44,11 @@ description: "Plan sub-stage: Define in/out scope, estimate complexity, refine c
 - If Clarify criteria are too vague, sharpen them now
 - "Out of scope" is a decision, not a deferral — explain why
 - Complexity estimate should factor in blast radius from Investigate
+
+## Anti-Rationalization
+
+| Excuse | Reality |
+|--------|---------|
+| "Everything is in scope, no need to exclude anything" | Unbounded scope is how features balloon. Explicitly listing what is out of scope prevents drift during Build. |
+| "This is too small to scope formally" | Small tasks with unclear boundaries grow silently. A 2-line scope section costs nothing and prevents "while I'm here" additions. |
+| "The scope is implied by the acceptance criteria" | Criteria say what must work. Scope says what you will and will not touch. A criterion can be met many ways — scope constrains which way. |
