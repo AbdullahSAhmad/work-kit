@@ -174,20 +174,34 @@ export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[]
 
   const items: CompletedItemView[] = [];
   // Parse markdown table or list entries
-  // Expected format: | slug | PR | date | phases |
+  // Format: | Date | Slug | PR | Status | Phases |
   // or list format: - slug (#PR) - date - phases
   const lines = content.split("\n");
   for (const line of lines) {
-    // Try table format: | slug | #PR | date | phases |
-    const tableMatch = line.match(/^\|\s*(.+?)\s*\|\s*(#?\d+)?\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
-    if (tableMatch) {
-      const slug = tableMatch[1].trim();
-      if (slug === "Slug" || slug === "---" || slug.startsWith("-")) continue; // skip header
+    // Try 5-column table: | Date | Slug | PR | Status | Phases |
+    const table5Match = line.match(/^\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
+    if (table5Match) {
+      const col1 = table5Match[1].trim();
+      if (col1 === "Date" || col1 === "---" || col1.startsWith("-")) continue; // skip header
+      items.push({
+        slug: table5Match[2].trim(),
+        pr: table5Match[3].trim() !== "n/a" ? table5Match[3].trim() : undefined,
+        completedAt: col1,
+        phases: table5Match[5].trim(),
+      });
+      continue;
+    }
+
+    // Try 4-column table: | slug | PR | date | phases |
+    const table4Match = line.match(/^\|\s*(.+?)\s*\|\s*(#?\d+)?\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
+    if (table4Match) {
+      const slug = table4Match[1].trim();
+      if (slug === "Slug" || slug === "---" || slug.startsWith("-")) continue;
       items.push({
         slug,
-        pr: tableMatch[2]?.trim() || undefined,
-        completedAt: tableMatch[3].trim(),
-        phases: tableMatch[4].trim(),
+        pr: table4Match[2]?.trim() || undefined,
+        completedAt: table4Match[3].trim(),
+        phases: table4Match[4].trim(),
       });
       continue;
     }

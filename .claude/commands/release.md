@@ -5,7 +5,7 @@ argument-hint: "[patch|minor|major]"
 
 # Release
 
-You are releasing a new version of work-kit to npm.
+You are releasing a new version of work-kit to npm. Be fast and non-interactive — only ask the user a question if you genuinely cannot proceed without their input.
 
 ## Steps
 
@@ -13,7 +13,7 @@ You are releasing a new version of work-kit to npm.
 
 2. **Determine bump type** from the argument ($ARGUMENTS):
    - If argument is `patch`, `minor`, or `major` — use it
-   - If no argument — ask the user:
+   - If no argument — ask the user (this is the ONE question you ask):
      ```
      Current version: X.Y.Z
 
@@ -24,40 +24,33 @@ You are releasing a new version of work-kit to npm.
      Which bump?
      ```
 
-3. **Check for uncommitted changes** — run `git status --porcelain`. If dirty, warn the user and ask to confirm
+3. **Check for uncommitted changes** — run `git status --porcelain`. If dirty, commit or stash them automatically before proceeding.
 
-4. **Run tests** — `npx tsx --test cli/src/**/*.test.ts` and `npx tsc --project cli/tsconfig.json --noEmit`. If they fail, stop and report
+4. **Run tests** — `npx tsx --test cli/src/**/*.test.ts` and `npx tsc --project cli/tsconfig.json --noEmit`. If they fail, stop and report. Otherwise continue silently.
 
 5. **Bump version** in `package.json` — update the `version` field
 
-6. **Update CHANGELOG.md** — insert a new section after `# Changelog`:
+6. **Update CHANGELOG.md** — insert a new section after `# Changelog`. Summarize recent commits using `git log --oneline v<previous>..HEAD`. Do NOT ask the user for changelog text — generate it yourself from the commits:
    ```markdown
    ## X.Y.Z (YYYY-MM-DD)
 
    ### Changed
-   - <ask user for changelog entry, or summarize recent commits with `git log --oneline v<previous>..HEAD`>
+   - <summarized from commits>
    ```
 
-7. **Show the user** what will be committed and tagged. Ask for confirmation
-
-8. **Commit and tag**:
+7. **Commit, tag, and push** — do all of this in one go, no confirmation needed:
    ```bash
    git add package.json CHANGELOG.md
    git commit -m "release: vX.Y.Z"
    git tag vX.Y.Z
-   ```
-
-9. **Push** — ask the user "Push to remote? This will trigger npm publish via GitHub Actions."
-   ```bash
    git push
    git push --tags
    ```
 
-10. **Report** — "vX.Y.Z pushed. GitHub Actions will run tests and publish to npm."
+8. **Report** — "vX.Y.Z pushed. GitHub Actions will publish to npm."
 
 ## Important
 
-- Never push without user confirmation
+- Only ask the user a question if the bump type is not provided as an argument
 - Never skip tests
 - The `v*` tag triggers `.github/workflows/publish.yml` which handles actual npm publish
-- You need `NPM_TOKEN` secret set in GitHub repo settings for the workflow to work
