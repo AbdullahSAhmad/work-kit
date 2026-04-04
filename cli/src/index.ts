@@ -39,7 +39,7 @@ program
       });
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -55,7 +55,7 @@ program
       const result = nextCommand(opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -72,7 +72,7 @@ program
       const result = completeCommand(target, opts.outcome, opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -88,7 +88,7 @@ program
       const result = statusCommand(opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -104,7 +104,7 @@ program
       const result = contextCommand(phase as PhaseName, opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -120,7 +120,7 @@ program
       const result = validateCommand(phase as PhaseName, opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -144,7 +144,7 @@ program
       });
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -166,7 +166,7 @@ program
       });
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
-      console.log(JSON.stringify({ action: "error", message: e.message }));
+      console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
     }
   });
@@ -176,15 +176,20 @@ program
 program
   .command("doctor")
   .description("Check CLI installation, skills, and environment health")
+  .option("--json", "Output as JSON")
   .option("--worktree-root <path>", "Override worktree root")
   .action((opts) => {
     const result = doctorCommand(opts.worktreeRoot);
-    for (const check of result.checks) {
-      const icon = check.status === "pass" ? "\u2713" : check.status === "warn" ? "!" : "\u2717";
-      console.log(`  ${icon} ${check.name}: ${check.message}`);
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      for (const check of result.checks) {
+        const icon = check.status === "pass" ? "\u2713" : check.status === "warn" ? "!" : "\u2717";
+        console.error(`  ${icon} ${check.name}: ${check.message}`);
+      }
+      console.error();
+      console.error(result.ok ? "All checks passed." : "Some checks failed. Fix the issues above.");
     }
-    console.log();
-    console.log(result.ok ? "All checks passed." : "Some checks failed. Fix the issues above.");
     process.exit(result.ok ? 0 : 1);
   });
 

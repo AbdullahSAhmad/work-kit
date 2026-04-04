@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { randomUUID } from "node:crypto";
 import { WorkKitState } from "./schema.js";
 
 const STATE_DIR = ".work-kit";
@@ -55,7 +56,10 @@ export function writeState(worktreeRoot: string, state: WorkKitState): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(statePath(worktreeRoot), JSON.stringify(state, null, 2) + "\n", "utf-8");
+  const target = statePath(worktreeRoot);
+  const tmp = target + "." + randomUUID().slice(0, 8) + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n", "utf-8");
+  fs.renameSync(tmp, target);
 }
 
 // ── State.md ─────────────────────────────────────────────────────────
@@ -65,7 +69,10 @@ export function writeStateMd(worktreeRoot: string, content: string): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(stateMdPath(worktreeRoot), content, "utf-8");
+  const target = stateMdPath(worktreeRoot);
+  const tmp = target + "." + randomUUID().slice(0, 8) + ".tmp";
+  fs.writeFileSync(tmp, content, "utf-8");
+  fs.renameSync(tmp, target);
 }
 
 export function readStateMd(worktreeRoot: string): string | null {
