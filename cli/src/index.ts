@@ -16,6 +16,7 @@ import { completionsCommand } from "./commands/completions.js";
 import { observeCommand } from "./commands/observe.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 import { bootstrapCommand } from "./commands/bootstrap.js";
+import { cancelCommand } from "./commands/cancel.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
@@ -263,6 +264,23 @@ program
     try {
       const result = bootstrapCommand();
       console.log(JSON.stringify(result, null, 2));
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── cancel ──────────────────────────────────────────────────────────
+
+program
+  .command("cancel")
+  .description("Cancel the active work-kit, remove worktree and branch")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      const result = cancelCommand(opts.worktreeRoot);
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(result.action === "error" ? 1 : 0);
     } catch (e: any) {
       console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);
