@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6 (2026-04-06)
+
+### Changed
+- Add `/cancel-kit` slash command and `work-kit cancel` CLI to stop and clean up active sessions
+
 ## 0.2.5 (2026-04-06)
 
 ### Changed
