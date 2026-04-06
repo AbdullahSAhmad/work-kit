@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.8 (2026-04-06)
+
+### Changed
+- Show phase timing below each phase in pipeline (completed duration + live elapsed for active)
+- Bold phase names for better visual hierarchy
+- Add `⎇` icon for branch name and `⌂` icon for worktree path
+
 ## 0.2.7 (2026-04-06)
 
 ### Changed
