@@ -16,6 +16,7 @@ export interface WorkItemView {
   currentPhase: string | null;
   currentSubStage: string | null;
   currentPhaseStartedAt?: string;
+  currentSubStageStatus?: string;
   currentSubStageIndex?: number;
   currentPhaseTotal?: number;
   startedAt: string;
@@ -92,6 +93,7 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
 
   // Track current phase substage position
   let currentPhaseStartedAt: string | undefined;
+  let currentSubStageStatus: string | undefined;
   let currentSubStageIndex: number | undefined;
   let currentPhaseTotal: number | undefined;
 
@@ -105,9 +107,11 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
       continue;
     }
 
+    // If any sub-stage is "waiting", show the phase as waiting in the view
+    const hasWaiting = Object.values(phase.subStages).some(ss => ss.status === "waiting");
     phaseViews.push({
       name: phaseName,
-      status: phase.status,
+      status: hasWaiting ? "waiting" : phase.status,
       startedAt: phase.startedAt,
       completedAt: phase.completedAt,
     });
@@ -134,10 +138,12 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
       if (phaseName === state.currentPhase) {
         currentPhaseStartedAt = phase.startedAt;
         currentPhaseTotal = activeKeys.length;
-        const idx = state.currentSubStage
-          ? activeKeys.indexOf(state.currentSubStage)
-          : -1;
-        currentSubStageIndex = idx >= 0 ? idx + 1 : undefined;
+        if (state.currentSubStage) {
+          const idx = activeKeys.indexOf(state.currentSubStage);
+          currentSubStageIndex = idx >= 0 ? idx + 1 : undefined;
+          const ss = phase.subStages[state.currentSubStage];
+          currentSubStageStatus = ss?.status;
+        }
       }
     }
   }
@@ -166,6 +172,7 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
     currentPhase: state.currentPhase,
     currentSubStage: state.currentSubStage,
     currentPhaseStartedAt,
+    currentSubStageStatus,
     currentSubStageIndex,
     currentPhaseTotal,
     startedAt: state.started,
@@ -188,7 +195,7 @@ function getAutoKitPhases(state: WorkKitState): PhaseName[] {
 // ── Collect Completed Items ─────────────────────────────────────────
 
 export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[] {
-  const indexPath = path.join(mainRepoRoot, ".claude", "work-kit", "index.md");
+  const indexPath = path.join(mainRepoRoot, ".work-kit-tracker", "index.md");
   if (!fs.existsSync(indexPath)) return [];
 
   let content: string;
@@ -252,11 +259,13 @@ export function collectDashboardData(mainRepoRoot: string, cachedWorktrees?: str
   });
 
   // Merge completed items from worktrees and index file, dedup by slug
+  // Also exclude any slug that is currently active (re-initialized features)
+  const activeSlugs = new Set(activeItems.map(i => i.slug));
   const indexItems = collectCompletedItems(mainRepoRoot);
   const seen = new Set(completedFromWorktrees.map(i => i.slug));
   const completedItems = [
-    ...completedFromWorktrees,
-    ...indexItems.filter(i => !seen.has(i.slug)),
+    ...completedFromWorktrees.filter(i => !activeSlugs.has(i.slug)),
+    ...indexItems.filter(i => !seen.has(i.slug) && !activeSlugs.has(i.slug)),
   ];
 
   return {

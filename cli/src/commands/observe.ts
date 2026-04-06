@@ -30,11 +30,16 @@ export async function observeCommand(opts: { mainRepo?: string }): Promise<void>
     : findMainRepoRoot(process.cwd());
 
   let scrollOffset = 0;
+  let tick = 0;
+  let tickInterval: ReturnType<typeof setInterval> | null = null;
   let cleanedUp = false;
 
   function cleanup(): void {
     if (cleanedUp) return;
     cleanedUp = true;
+
+    // Stop tick interval
+    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
 
     // Restore terminal
     exitAlternateScreen();
@@ -54,7 +59,7 @@ export async function observeCommand(opts: { mainRepo?: string }): Promise<void>
     }
 
     const data = collectDashboardData(mainRepoRoot, watcher.getWorktrees());
-    const frame = moveCursorHome() + renderDashboard(data, width, height, scrollOffset);
+    const frame = moveCursorHome() + renderDashboard(data, width, height, scrollOffset, tick);
     process.stdout.write(frame);
   }
 
@@ -79,6 +84,12 @@ export async function observeCommand(opts: { mainRepo?: string }): Promise<void>
 
     // Initial render
     render();
+
+    // Tick interval for flashing active stage indicator
+    tickInterval = setInterval(() => {
+      tick++;
+      render();
+    }, 500);
 
     // Handle terminal resize
     process.stdout.on("resize", () => {

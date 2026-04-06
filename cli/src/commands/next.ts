@@ -48,7 +48,7 @@ export function nextCommand(worktreeRoot?: string): Action {
       state.phases[phase].startedAt = new Date().toISOString();
 
       const subStages = Object.entries(state.phases[phase].subStages);
-      const firstActive = subStages.find(([_, ss]) => ss.status === "pending");
+      const firstActive = subStages.find(([_, ss]) => ss.status === "pending" || ss.status === "waiting");
 
       if (!firstActive) {
         return { action: "error", message: `No pending sub-stages in ${phase}` };

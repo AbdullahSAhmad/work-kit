@@ -35,7 +35,7 @@ export type Classification = "bug-fix" | "small-change" | "refactor" | "feature"
 // ── Phase & Sub-stage State ──────────────────────────────────────────
 
 export type PhaseStatus = "pending" | "in-progress" | "completed" | "skipped";
-export type SubStageStatus = "pending" | "in-progress" | "completed" | "skipped";
+export type SubStageStatus = "pending" | "in-progress" | "completed" | "skipped" | "waiting";
 
 export interface SubStageState {
   status: SubStageStatus;

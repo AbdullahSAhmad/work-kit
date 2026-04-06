@@ -108,8 +108,16 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
       return { action: "complete", message: "All phases complete. Work-kit finished." };
     }
 
-    state.currentPhase = null;
-    state.currentSubStage = null;
+    // Mark the first pending sub-stage of the next phase as "waiting"
+    // so the observer can distinguish "running" from "waiting for human"
+    const nextSubs = Object.entries(state.phases[nextPhase].subStages);
+    const firstPending = nextSubs.find(([_, ss]) => ss.status === "pending");
+    if (firstPending) {
+      firstPending[1].status = "waiting";
+    }
+
+    state.currentPhase = nextPhase;
+    state.currentSubStage = firstPending ? firstPending[0] : null;
     writeState(root, state);
 
     return {
@@ -156,7 +164,7 @@ function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
   const mainRoot = resolveMainRepoRoot(worktreeRoot);
   const date = new Date().toISOString().split("T")[0];
   const slug = state.slug;
-  const wkDir = path.join(mainRoot, ".claude", "work-kit");
+  const wkDir = path.join(mainRoot, ".work-kit-tracker");
   const archiveDir = path.join(wkDir, "archive");
 
   // Ensure directories exist

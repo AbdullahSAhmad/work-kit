@@ -17,7 +17,7 @@ export function nextSubStageInPhase(state: WorkKitState, phase: PhaseName): stri
 
   for (const ss of subStages) {
     const ssState = phaseState.subStages[ss];
-    if (ssState && (ssState.status === "pending" || ssState.status === "in-progress")) {
+    if (ssState && (ssState.status === "pending" || ssState.status === "in-progress" || ssState.status === "waiting")) {
       return ss;
     }
   }

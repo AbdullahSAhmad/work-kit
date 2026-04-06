@@ -91,6 +91,19 @@ ${description}
   return md;
 }
 
+function ensureGitignored(worktreeRoot: string): void {
+  const gitignorePath = path.join(worktreeRoot, ".gitignore");
+  const entry = ".work-kit/";
+
+  if (fs.existsSync(gitignorePath)) {
+    const content = fs.readFileSync(gitignorePath, "utf-8");
+    if (content.split("\n").some((line) => line.trim() === entry)) return;
+    fs.appendFileSync(gitignorePath, `\n${entry}\n`);
+  } else {
+    fs.writeFileSync(gitignorePath, `${entry}\n`);
+  }
+}
+
 export function initCommand(options: {
   mode: "full" | "auto";
   description: string;
@@ -170,6 +183,9 @@ export function initCommand(options: {
       mainRepoRoot: worktreeRoot, // will be set properly by caller
     },
   };
+
+  // Ensure .work-kit/ is gitignored (temp working state, not for commits)
+  ensureGitignored(worktreeRoot);
 
   // Write state files
   writeState(worktreeRoot, state);

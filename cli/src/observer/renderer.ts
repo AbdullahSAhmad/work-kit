@@ -90,10 +90,11 @@ function renderProgressBar(
 
 // ── Phase Status Indicators ─────────────────────────────────────────
 
-function phaseIndicator(status: string): string {
+function phaseIndicator(status: string, tick: number = 0): string {
   switch (status) {
     case "completed": return green("✓");
-    case "in-progress": return cyan("▶");
+    case "in-progress": return tick % 2 === 0 ? cyan("▶") : dim("▶");
+    case "waiting": return tick % 2 === 0 ? yellow("◉") : dim("◉");
     case "pending": return dim("·");
     case "skipped": return dim("⊘");
     case "failed": return red("✗");
@@ -118,7 +119,7 @@ function formatMode(mode: string, classification?: string): string {
   return classification ? `${label} · ${classification}` : label;
 }
 
-function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
+function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number = 0): string[] {
   const lines: string[] = [];
 
   // Line 1: slug + branch (right-aligned)
@@ -156,16 +157,22 @@ function renderWorkItem(item: WorkItemView, innerWidth: number): string[] {
   ));
 
   // Line 4: phase indicators with sub-stage shown under current phase
-  const phaseStrs = item.phases.map(p => `${p.name} ${phaseIndicator(p.status)}`);
+  const phaseStrs = item.phases.map(p => `${p.name} ${phaseIndicator(p.status, tick)}`);
   lines.push("  " + phaseStrs.join("  "));
 
   // Line 5 (optional): current sub-stage detail under the phase line
   if (item.currentSubStage && item.currentPhase) {
+    const isWaiting = item.currentSubStageStatus === "waiting";
     let subLabel = `↳ ${item.currentSubStage}`;
     if (item.currentSubStageIndex != null && item.currentPhaseTotal != null) {
       subLabel += ` (${item.currentSubStageIndex}/${item.currentPhaseTotal})`;
     }
-    lines.push("    " + dim(subLabel));
+    if (isWaiting) {
+      const badge = tick % 2 === 0 ? bgYellow(" WAITING ") : dim(" WAITING ");
+      lines.push("    " + yellow(subLabel) + "  " + badge);
+    } else {
+      lines.push("    " + (tick % 2 === 0 ? cyan(subLabel) : dim(subLabel)));
+    }
   }
 
   // Line 5 (optional): loopbacks
@@ -217,7 +224,8 @@ export function renderDashboard(
   data: DashboardData,
   width: number,
   height: number,
-  scrollOffset: number = 0
+  scrollOffset: number = 0,
+  tick: number = 0
 ): string {
   const maxWidth = Math.min(width, 120);
   const innerWidth = maxWidth - 4; // account for "║ " and " ║"
@@ -261,7 +269,7 @@ export function renderDashboard(
 
       for (let i = 0; i < data.activeItems.length; i++) {
         const item = data.activeItems[i];
-        const itemLines = renderWorkItem(item, innerWidth);
+        const itemLines = renderWorkItem(item, innerWidth, tick);
         for (const line of itemLines) {
           allLines.push(boxLine(line, innerWidth));
         }

@@ -38,7 +38,7 @@ export function resetToLocation(state: WorkKitState, location: Location): void {
   let reset = false;
   for (const [ss, ssState] of Object.entries(targetPhaseState.subStages)) {
     if (ss === location.subStage) reset = true;
-    if (reset && ssState.status === "completed") {
+    if (reset && (ssState.status === "completed" || ssState.status === "waiting")) {
       ssState.status = "pending";
       delete ssState.completedAt;
       delete ssState.outcome;

@@ -30,7 +30,7 @@ export function statusCommand(worktreeRoot?: string): StatusOutput {
       if (ss.status === "skipped") continue;
       total++;
       if (ss.status === "completed") completed++;
-      else if (ss.status === "in-progress") active++;
+      else if (ss.status === "in-progress" || ss.status === "waiting") active++;
     }
     phases[phase] = { status: ps.status, completed, total, active };
   }
