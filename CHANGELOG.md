@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.7 (2026-04-06)
+
+### Changed
+- Redesign observer dashboard: braille spinner, pulse animations, progress bar gradient, sub-stage detail box with per-step timing
+- Add animated mascot (gear with sparks when active, sleeping when idle)
+- Show all sub-stages of current phase in a bordered box with status icons and durations
+- Add colored mode/gated/status badges, phase pipeline with connectors
+- Rename state.json to tracker.json, restructure archive to folder-based layout
+- Fix observer rendering ghost frames (clear to end of screen after each draw)
+
 ## 0.2.6 (2026-04-06)
 
 ### Changed
