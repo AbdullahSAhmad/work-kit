@@ -1,6 +1,6 @@
 {
   "name": "work-kit-cli",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Structured development workflow for Claude Code. Two modes, 6 phases, 27 sub-stages.",
   "type": "module",
   "bin": {

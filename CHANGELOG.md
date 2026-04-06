@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.5 (2026-04-06)
+
+### Changed
+- Add "waiting" sub-stage status with flashing indicators in observer
+- Auto-add `.work-kit/` to `.gitignore` on init to prevent committing temp state
+- Fix observer showing same feature in both active and completed sections
+- Move tracker/archive path from `.claude/work-kit/` to `.work-kit-tracker/`
+- Support `--gated` flag in `/full-kit` and `/auto-kit` slash commands
+
 ## 0.2.4 (2026-04-04)
 
 ### Changed
