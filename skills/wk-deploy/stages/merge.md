@@ -13,7 +13,7 @@ description: "Deploy sub-stage: Get the PR merged safely."
    ```bash
    git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main"
    ```
-2. Remove `.work-kit/` from git tracking before merging (state is transient — the archive in `.claude/work-kit/` is the permanent record):
+2. Remove `.work-kit/` from git tracking before merging (state is transient — the archive in `.work-kit-tracker/` is the permanent record):
    ```bash
    git rm -r --cached .work-kit/ 2>/dev/null && git commit -m "work-kit: remove transient state before merge" || true
    ```

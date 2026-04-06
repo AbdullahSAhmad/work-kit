@@ -104,7 +104,7 @@ Any stage can route back to a previous stage. Each route is enforced with a max 
 ### Output
 
 ```
-.claude/work-kit/
+.work-kit-tracker/
   2026-04-03-avatar-upload.md        # distilled summary
   archive/
     2026-04-03-avatar-upload.md      # full state.md copy

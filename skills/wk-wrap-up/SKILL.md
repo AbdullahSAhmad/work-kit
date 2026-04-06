@@ -12,16 +12,16 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 
 ## Instructions
 
-> **Note:** Archiving state.md and appending to `.claude/work-kit/index.md` are handled automatically by the CLI when you run `work-kit complete` on the last sub-stage. You do NOT need to do these manually.
+> **Note:** Archiving state.md and appending to `.work-kit-tracker/index.md` are handled automatically by the CLI when you run `work-kit complete` on the last sub-stage. You do NOT need to do these manually.
 
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
 2. **Synthesize the work-kit log entry** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
-3. **Write the summary file** to `.claude/work-kit/<date>-<slug>.md` on the **main branch** (not the worktree)
+3. **Write the summary file** to `.work-kit-tracker/<date>-<slug>.md` on the **main branch** (not the worktree)
 4. **Ask the user** if they want the worktree and branch removed
 
 ## Work-Kit Log Entry Format
 
-Write to `.claude/work-kit/<YYYY-MM-DD>-<slug>.md`:
+Write to `.work-kit-tracker/<YYYY-MM-DD>-<slug>.md`:
 
 ```markdown
 ---
@@ -88,7 +88,7 @@ After writing the summary:
 1. Switch to main branch: `cd` back to the main repo root
 2. Stage and commit all work-kit log files:
    ```bash
-   git add .claude/work-kit/
+   git add .work-kit-tracker/
    git commit -m "work-kit: <slug>"
    ```
 3. Remove the worktree and delete the feature branch (merge already happened, cleanup is safe):
