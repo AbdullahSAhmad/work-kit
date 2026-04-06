@@ -1,5 +1,5 @@
 import { readState, writeState, findWorktreeRoot } from "../state/store.js";
-import { SUBSTAGES_BY_PHASE, PHASE_NAMES } from "../state/schema.js";
+import { STEPS_BY_PHASE, PHASE_NAMES } from "../state/schema.js";
 import { parseLocation } from "../state/helpers.js";
 import type { Action } from "../state/schema.js";
 
@@ -31,13 +31,13 @@ export function workflowCommand(opts: {
   }
 
   if (opts.add) {
-    const { phase, subStage } = parseLocation(opts.add);
+    const { phase, step } = parseLocation(opts.add);
 
-    if (!PHASE_NAMES.includes(phase) || !SUBSTAGES_BY_PHASE[phase].includes(subStage)) {
+    if (!PHASE_NAMES.includes(phase) || !STEPS_BY_PHASE[phase].includes(step)) {
       return { action: "error", message: `Invalid step: ${opts.add}` };
     }
 
-    const existing = state.workflow.find((s) => s.phase === phase && s.subStage === subStage);
+    const existing = state.workflow.find((s) => s.phase === phase && s.step === step);
     if (existing) {
       if (existing.included) {
         return { action: "error", message: `${opts.add} is already in the workflow.` };
@@ -45,31 +45,31 @@ export function workflowCommand(opts: {
       existing.included = true;
     } else {
       const phaseIdx = PHASE_NAMES.indexOf(phase);
-      const subStageIdx = SUBSTAGES_BY_PHASE[phase].indexOf(subStage);
+      const stepIdx = STEPS_BY_PHASE[phase].indexOf(step);
 
       let insertIdx = state.workflow.length;
       for (let i = 0; i < state.workflow.length; i++) {
         const wi = state.workflow[i];
         const wiPhaseIdx = PHASE_NAMES.indexOf(wi.phase);
-        const wiSubIdx = SUBSTAGES_BY_PHASE[wi.phase].indexOf(wi.subStage);
+        const wiStepIdx = STEPS_BY_PHASE[wi.phase].indexOf(wi.step);
 
-        if (wiPhaseIdx > phaseIdx || (wiPhaseIdx === phaseIdx && wiSubIdx > subStageIdx)) {
+        if (wiPhaseIdx > phaseIdx || (wiPhaseIdx === phaseIdx && wiStepIdx > stepIdx)) {
           insertIdx = i;
           break;
         }
       }
 
-      state.workflow.splice(insertIdx, 0, { phase, subStage, included: true });
+      state.workflow.splice(insertIdx, 0, { phase, step, included: true });
     }
 
-    const currentSS = state.phases[phase].subStages[subStage];
-    if (currentSS?.status === "completed") {
+    const currentStep = state.phases[phase].steps[step];
+    if (currentStep?.status === "completed") {
       return { action: "error", message: `Cannot add ${opts.add} — it's already completed.` };
     }
-    if (!currentSS) {
-      state.phases[phase].subStages[subStage] = { status: "pending" };
-    } else if (currentSS.status === "skipped") {
-      currentSS.status = "pending";
+    if (!currentStep) {
+      state.phases[phase].steps[step] = { status: "pending" };
+    } else if (currentStep.status === "skipped") {
+      currentStep.status = "pending";
     }
 
     if (state.phases[phase].status === "skipped") {
@@ -81,28 +81,28 @@ export function workflowCommand(opts: {
   }
 
   if (opts.remove) {
-    const { phase, subStage } = parseLocation(opts.remove);
+    const { phase, step } = parseLocation(opts.remove);
 
-    const step = state.workflow.find((s) => s.phase === phase && s.subStage === subStage);
-    if (!step) {
+    const ws = state.workflow.find((s) => s.phase === phase && s.step === step);
+    if (!ws) {
       return { action: "error", message: `${opts.remove} is not in the workflow.` };
     }
 
-    const ssState = state.phases[phase]?.subStages[subStage];
-    if (ssState?.status === "completed") {
+    const stepState = state.phases[phase]?.steps[step];
+    if (stepState?.status === "completed") {
       return { action: "error", message: `Cannot remove ${opts.remove} — it's already completed.` };
     }
-    if (ssState?.status === "in-progress") {
+    if (stepState?.status === "in-progress") {
       return { action: "error", message: `Cannot remove ${opts.remove} — it's currently in progress.` };
     }
 
-    step.included = false;
+    ws.included = false;
 
-    if (ssState) {
-      ssState.status = "skipped";
+    if (stepState) {
+      stepState.status = "skipped";
     }
 
-    const allSkipped = Object.values(state.phases[phase].subStages).every(
+    const allSkipped = Object.values(state.phases[phase].steps).every(
       (s) => s.status === "skipped"
     );
     if (allSkipped) {
@@ -117,8 +117,8 @@ export function workflowCommand(opts: {
   const workflow = state.workflow
     .filter((s) => s.included)
     .map((s) => ({
-      step: `${s.phase}/${s.subStage}`,
-      status: state.phases[s.phase]?.subStages[s.subStage]?.status || "unknown",
+      step: `${s.phase}/${s.step}`,
+      status: state.phases[s.phase]?.steps[s.step]?.status || "unknown",
     }));
 
   return { action: "workflow_status", workflow };

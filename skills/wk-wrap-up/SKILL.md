@@ -12,7 +12,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 
 ## Instructions
 
-> **Note:** The CLI automatically archives `state.md`, `tracker.json`, and a placeholder `summary.md` into `.work-kit-tracker/archive/<slug>-<date>/` when the last sub-stage completes. It also appends a row to `.work-kit-tracker/index.md`. Your job is to **replace the placeholder summary.md** with a real distilled summary.
+> **Note:** The CLI automatically archives `state.md`, `tracker.json`, and a placeholder `summary.md` into `.work-kit-tracker/archive/<slug>-<date>/` when the last step completes. It also appends a row to `.work-kit-tracker/index.md`. Your job is to **replace the placeholder summary.md** with a real distilled summary.
 
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
 2. **Synthesize the summary** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful

@@ -25,7 +25,7 @@ Cancels the active work-kit session and cleans up all artifacts.
 2. If no active session: tell the user there's nothing to cancel
 3. If active: show the user what will be cancelled:
    - Slug and branch name
-   - Current phase and sub-stage
+   - Current phase and step
    - Any uncommitted work in the worktree will be lost
 4. **Ask the user to confirm** — do not proceed without explicit confirmation
 5. `cd` into the worktree directory

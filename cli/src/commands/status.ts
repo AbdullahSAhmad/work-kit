@@ -8,7 +8,7 @@ interface StatusOutput {
   classification?: string;
   status: string;
   currentPhase: string | null;
-  currentSubStage: string | null;
+  currentStep: string | null;
   started: string;
   phases: Record<string, { status: string; completed: number; total: number; active: number }>;
   loopbackCount: number;
@@ -26,11 +26,11 @@ export function statusCommand(worktreeRoot?: string): StatusOutput {
   for (const phase of PHASE_NAMES) {
     const ps = state.phases[phase];
     let completed = 0, total = 0, active = 0;
-    for (const ss of Object.values(ps.subStages)) {
-      if (ss.status === "skipped") continue;
+    for (const s of Object.values(ps.steps)) {
+      if (s.status === "skipped") continue;
       total++;
-      if (ss.status === "completed") completed++;
-      else if (ss.status === "in-progress" || ss.status === "waiting") active++;
+      if (s.status === "completed") completed++;
+      else if (s.status === "in-progress" || s.status === "waiting") active++;
     }
     phases[phase] = { status: ps.status, completed, total, active };
   }
@@ -42,7 +42,7 @@ export function statusCommand(worktreeRoot?: string): StatusOutput {
     ...(state.classification && { classification: state.classification }),
     status: state.status,
     currentPhase: state.currentPhase,
-    currentSubStage: state.currentSubStage,
+    currentStep: state.currentStep,
     started: state.started,
     phases,
     loopbackCount: state.loopbacks.length,

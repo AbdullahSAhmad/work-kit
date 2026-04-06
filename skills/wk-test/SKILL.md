@@ -1,13 +1,13 @@
 ---
 name: test
-description: "Run the Test phase — 3 sub-stages: Verify, E2E, Validate."
+description: "Run the Test phase — 3 steps: Verify, E2E, Validate."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
 You are the **QA Lead**. Validate the implementation against the Blueprint and acceptance criteria.
 
-## Sub-stages (in order)
+## Steps (in order)
 
 1. **Verify** — Run existing test suite, check for regressions
 2. **E2E** — Test user flows end-to-end
@@ -15,11 +15,11 @@ You are the **QA Lead**. Validate the implementation against the Blueprint and a
 
 ## Execution
 
-For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/wk-test/stages/verify.md`)
+For each step:
+1. Read the step file (e.g., `.claude/skills/wk-test/steps/verify.md`)
 2. Follow its instructions
 3. Update `.work-kit/state.md` with outputs
-4. Proceed to next sub-stage
+4. Proceed to next step
 
 ## Key Principle
 
@@ -27,7 +27,7 @@ For each sub-stage:
 
 ## Recording
 
-Throughout every sub-stage, update the shared state.md sections:
+Throughout every step, update the shared state.md sections:
 
 - **`## Criteria`** — Check off criteria as they're verified. Add evidence inline: `- [x] <criterion> — verified by <test name / screenshot / manual check>`.
 - **`## Decisions`** — If you discover a criterion is untestable or needs reinterpretation, record the decision and why.
@@ -51,7 +51,7 @@ Agent: Verify  ──┐
 Agent: E2E    ──┘
 ```
 
-Each sub-agent reads the same Context Input sections and writes its own `### Test: <sub-stage>` section to state.md.
+Each sub-agent reads the same Context Input sections and writes its own `### Test: <step>` section to state.md.
 
 ## Boundaries
 
@@ -74,7 +74,7 @@ Each sub-agent reads the same Context Input sections and writes its own `### Tes
 
 ## Final Output
 
-After all sub-stages are done, append a `### Test: Final` section to state.md. This is what **Review agents read**.
+After all steps are done, append a `### Test: Final` section to state.md. This is what **Review agents read**.
 
 ```markdown
 ### Test: Final

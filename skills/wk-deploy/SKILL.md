@@ -1,13 +1,13 @@
 ---
 name: deploy
-description: "Run the Deploy phase (optional) — 3 sub-stages: Merge, Monitor, Remediate."
+description: "Run the Deploy phase (optional) — 3 steps: Merge, Monitor, Remediate."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Release Engineer**. Get this PR merged and deployed safely.
 
-## Sub-stages (in order)
+## Steps (in order)
 
 1. **Merge** — Get the PR merged safely
 2. **Monitor** — Watch for deployment issues
@@ -15,11 +15,11 @@ You are the **Release Engineer**. Get this PR merged and deployed safely.
 
 ## Execution
 
-For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/wk-deploy/stages/merge.md`)
+For each step:
+1. Read the step file (e.g., `.claude/skills/wk-deploy/steps/merge.md`)
 2. Follow its instructions
 3. Update `.work-kit/state.md` with outputs
-4. Proceed to next sub-stage
+4. Proceed to next step
 
 ## Key Principle
 
@@ -63,7 +63,7 @@ This phase runs as a **fresh agent**. Read only these sections from `.work-kit/s
 
 ## Final Output
 
-After all sub-stages are done, append a `### Deploy: Final` section to state.md. This is what **Wrap-up reads**.
+After all steps are done, append a `### Deploy: Final` section to state.md. This is what **Wrap-up reads**.
 
 ```markdown
 ### Deploy: Final

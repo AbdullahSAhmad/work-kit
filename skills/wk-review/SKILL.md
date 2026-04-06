@@ -1,13 +1,13 @@
 ---
 name: review
-description: "Run the Review phase — 5 sub-stages: Self-Review, Security, Performance, Compliance, Handoff."
+description: "Run the Review phase — 5 steps: Self-Review, Security, Performance, Compliance, Handoff."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
 You are the **Senior Reviewer**. Perform multi-dimensional code review before the feature ships.
 
-## Sub-stages (in order)
+## Steps (in order)
 
 1. **Self-Review** — Check your own diff for obvious issues
 2. **Security** — OWASP top 10 security review
@@ -17,11 +17,11 @@ You are the **Senior Reviewer**. Perform multi-dimensional code review before th
 
 ## Execution
 
-For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/wk-review/stages/self-review.md`)
+For each step:
+1. Read the step file (e.g., `.claude/skills/wk-review/steps/self-review.md`)
 2. Follow its instructions — fix issues directly when possible
 3. Update `.work-kit/state.md` with findings
-4. Proceed to next sub-stage
+4. Proceed to next step
 
 ## Key Principle
 
@@ -29,10 +29,10 @@ For each sub-stage:
 
 ## Recording
 
-Throughout every sub-stage, update the shared state.md sections:
+Throughout every step, update the shared state.md sections:
 
 - **`## Decisions`** — If you make judgment calls during review (e.g., "accepted this deviation because..."), record them.
-- **`## Deviations`** — Compliance sub-stage will audit these. If you fix a deviation during review, note that it was resolved.
+- **`## Deviations`** — Compliance step will audit these. If you fix a deviation during review, note that it was resolved.
 
 Review findings feed directly into the Handoff decision and the final work-kit log.
 
@@ -58,9 +58,9 @@ Agent: Compliance   ──┘
 Each sub-agent receives:
 - The git diff (`git diff main...HEAD`)
 - The relevant Context Input sections
-- Its sub-stage skill file instructions
+- Its step skill file instructions
 
-Each writes its own `### Review: <sub-stage>` section to state.md.
+Each writes its own `### Review: <step>` section to state.md.
 
 **Handoff agent** reads all 4 review sections + Test: Final → makes the ship decision.
 
@@ -83,7 +83,7 @@ Each writes its own `### Review: <sub-stage>` section to state.md.
 - Approve without checking acceptance criteria status
 - Rubber-stamp without reading the diff ("looks good" is not a review)
 - Make changes_requested without specifying exactly what needs to change
-- Skip any of the 4 parallel review sub-stages
+- Skip any of the 4 parallel review steps
 
 ## Final Output
 

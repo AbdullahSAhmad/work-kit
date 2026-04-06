@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { WorkKitState, PhaseState, PhaseName, PHASE_NAMES, SUBSTAGES_BY_PHASE, WorkflowStep, Classification } from "../state/schema.js";
-import { writeState, writeStateMd, stateExists } from "../state/store.js";
-import { buildFullWorkflow, buildDefaultWorkflow, skillFilePath } from "../config/phases.js";
+import { WorkKitState, PhaseState, PhaseName, PHASE_NAMES, STEPS_BY_PHASE, WorkflowStep, Classification, MODE_FULL, MODE_AUTO } from "../state/schema.js";
+import { writeState, writeStateMd, stateExists, STATE_DIR } from "../state/store.js";
+import { buildFullWorkflow, buildDefaultWorkflow, skillFilePath } from "../config/workflow.js";
+import { BRANCH_PREFIX, CLI_NPX_BINARY } from "../config/constants.js";
 import type { Action } from "../state/schema.js";
 
 function toSlug(description: string): string {
@@ -18,23 +19,23 @@ function buildPhases(workflow?: WorkflowStep[]): Record<PhaseName, PhaseState> {
   const phases = {} as Record<PhaseName, PhaseState>;
 
   for (const phase of PHASE_NAMES) {
-    const subStages: Record<string, { status: "pending" | "skipped" }> = {};
-    const allSubStages = SUBSTAGES_BY_PHASE[phase];
+    const steps: Record<string, { status: "pending" | "skipped" }> = {};
+    const allSteps = STEPS_BY_PHASE[phase];
 
-    for (const ss of allSubStages) {
+    for (const s of allSteps) {
       if (workflow) {
-        const step = workflow.find((s) => s.phase === phase && s.subStage === ss);
-        subStages[ss] = { status: step?.included ? "pending" : "skipped" };
+        const ws = workflow.find((w) => w.phase === phase && w.step === s);
+        steps[s] = { status: ws?.included ? "pending" : "skipped" };
       } else {
-        subStages[ss] = { status: "pending" };
+        steps[s] = { status: "pending" };
       }
     }
 
-    // Check if entire phase is skipped (all sub-stages skipped)
-    const allSkipped = Object.values(subStages).every((s) => s.status === "skipped");
+    // Check if entire phase is skipped (all steps skipped)
+    const allSkipped = Object.values(steps).every((s) => s.status === "skipped");
     phases[phase] = {
       status: allSkipped ? "skipped" : "pending",
-      subStages,
+      steps,
     };
   }
 
@@ -58,7 +59,7 @@ function generateStateMd(slug: string, branch: string, mode: string, description
   }
 
   md += `**Phase:** plan
-**Sub-stage:** clarify
+**Step:** clarify
 **Status:** in-progress
 
 ## Description
@@ -67,9 +68,9 @@ ${description}
 
   if (workflow) {
     md += `\n## Workflow\n`;
-    for (const step of workflow) {
-      if (step.included) {
-        const label = `${step.phase.charAt(0).toUpperCase() + step.phase.slice(1)}: ${step.subStage.charAt(0).toUpperCase() + step.subStage.slice(1)}`;
+    for (const ws of workflow) {
+      if (ws.included) {
+        const label = `${ws.phase.charAt(0).toUpperCase() + ws.phase.slice(1)}: ${ws.step.charAt(0).toUpperCase() + ws.step.slice(1)}`;
         md += `- [ ] ${label}\n`;
       }
     }
@@ -93,7 +94,7 @@ ${description}
 
 function ensureGitignored(worktreeRoot: string): void {
   const gitignorePath = path.join(worktreeRoot, ".gitignore");
-  const entry = ".work-kit/";
+  const entry = `${STATE_DIR}/`;
 
   if (fs.existsSync(gitignorePath)) {
     const content = fs.readFileSync(gitignorePath, "utf-8");
@@ -140,8 +141,8 @@ export function initCommand(options: {
   }
 
   const slug = toSlug(description);
-  const branch = `feature/${slug}`;
-  const modeLabel = mode === "full" ? "full-kit" : "auto-kit";
+  const branch = `${BRANCH_PREFIX}${slug}`;
+  const modeLabel = mode === "full" ? MODE_FULL : MODE_AUTO;
 
   // Build workflow
   let workflow: WorkflowStep[] | undefined;
@@ -151,21 +152,21 @@ export function initCommand(options: {
     workflow = buildFullWorkflow();
   }
 
-  // Find first active sub-stage
+  // Find first active step
   let firstPhase: PhaseName = "plan";
-  let firstSubStage = "clarify";
+  let firstStep = "clarify";
 
   if (workflow) {
     const first = workflow.find((s) => s.included);
     if (first) {
       firstPhase = first.phase;
-      firstSubStage = first.subStage;
+      firstStep = first.step;
     }
   }
 
   // Build state
   const state: WorkKitState = {
-    version: 1,
+    version: 2,
     slug,
     branch,
     started: new Date().toISOString(),
@@ -174,7 +175,7 @@ export function initCommand(options: {
     ...(classification && { classification }),
     status: "in-progress",
     currentPhase: firstPhase,
-    currentSubStage: firstSubStage,
+    currentStep: firstStep,
     phases: buildPhases(workflow),
     ...(mode === "auto" && workflow && { workflow }),
     loopbacks: [],
@@ -194,9 +195,9 @@ export function initCommand(options: {
   return {
     action: "spawn_agent",
     phase: firstPhase,
-    subStage: firstSubStage,
-    skillFile: skillFilePath(firstPhase, firstSubStage),
-    agentPrompt: `You are starting the ${firstPhase} phase. Begin with the ${firstSubStage} sub-stage. Read the skill file and follow its instructions. Write outputs to .work-kit/state.md.`,
-    onComplete: `npx work-kit-cli complete ${firstPhase}/${firstSubStage}`,
+    step: firstStep,
+    skillFile: skillFilePath(firstPhase, firstStep),
+    agentPrompt: `You are starting the ${firstPhase} phase. Begin with the ${firstStep} step. Read the skill file and follow its instructions. Write outputs to .work-kit/state.md.`,
+    onComplete: `${CLI_NPX_BINARY} complete ${firstPhase}/${firstStep}`,
   };
 }

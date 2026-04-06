@@ -2,9 +2,14 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
 import { bold, dim, green, red, yellow } from "../utils/colors.js";
+import { PHASE_NAMES } from "../state/schema.js";
+import { SKILL_DIR_PREFIX } from "../config/constants.js";
+import { STATE_DIR, STATE_FILE } from "../state/store.js";
 
 const WORK_KIT_SKILLS = [
-  "full-kit", "auto-kit", "wk-plan", "wk-build", "wk-test", "wk-review", "wk-deploy", "wk-wrap-up",
+  "full-kit", "auto-kit", "cancel-kit",
+  ...PHASE_NAMES.map(p => `${SKILL_DIR_PREFIX}${p}`),
+  `${SKILL_DIR_PREFIX}bootstrap`,
 ];
 
 async function promptUser(question: string): Promise<string> {
@@ -52,9 +57,9 @@ export async function uninstallCommand(targetPath?: string): Promise<void> {
   }
 
   // Check for active state
-  const trackerFile = path.join(projectDir, ".work-kit", "tracker.json");
+  const trackerFile = path.join(projectDir, STATE_DIR, STATE_FILE);
   if (fs.existsSync(trackerFile)) {
-    console.error(yellow("\nWarning: Active work-kit state found (.work-kit/tracker.json)."));
+    console.error(yellow(`\nWarning: Active work-kit state found (${STATE_DIR}/${STATE_FILE}).`));
     console.error(yellow("Uninstalling will not remove in-progress state files."));
   }
 

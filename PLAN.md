@@ -34,7 +34,7 @@ Claude: npx work-kit-cli next
 |---------|---------|
 | `work-kit init --mode <full\|auto> --description "<text>"` | Create worktree, initialize state |
 | `work-kit next` | Get the next action (spawn agent, wait, loopback, complete) |
-| `work-kit complete <phase>/<sub-stage> [--outcome <value>]` | Mark step done, validate transition |
+| `work-kit complete <phase>/<step> [--outcome <value>]` | Mark step done, validate transition |
 | `work-kit status` | Current state summary |
 | `work-kit context <phase>` | Extract Final sections needed for a phase's agent |
 | `work-kit loopback --from <src> --to <target> --reason "<text>"` | Register loop-back |
@@ -76,7 +76,7 @@ work-kit/
       store.ts                  # Read/write tracker.json, find worktree
       validators.ts             # Prerequisite checks
     engine/
-      phases.ts                 # Phase definitions + sub-stage ordering
+      phases.ts                 # Phase definitions + step ordering
       transitions.ts            # State machine transition logic
       loopbacks.ts              # Loop-back route definitions
       agent-specs.ts            # Per-phase agent spawn specs
@@ -85,7 +85,7 @@ work-kit/
       extractor.ts              # Parse ### Final sections from state.md
       prompt-builder.ts         # Build agent prompts from skill files + context
     config/
-      phases.ts                 # Static: phase order, sub-stages, prerequisites
+      phases.ts                 # Static: phase order, steps, prerequisites
       loopback-routes.ts        # Static: trigger→target map
       agent-map.ts              # Static: which agent reads which sections
   package.json
@@ -93,7 +93,7 @@ work-kit/
   .claude/skills/               # Existing, updated minimally
     full-kit.md                 # Updated to call CLI
     auto-kit.md                 # Updated to call CLI
-    ...                         # Sub-stage files stay mostly the same
+    ...                         # Step files stay mostly the same
 ```
 
 ## Key Types
@@ -109,7 +109,7 @@ interface WorkKitState {
   classification?: "bug-fix" | "small-change" | "refactor" | "feature" | "large-feature";
   status: "in-progress" | "paused" | "completed" | "failed";
   currentPhase: PhaseName | null;
-  currentSubStage: string | null;
+  currentStep: string | null;
   phases: Record<PhaseName, PhaseState>;
   workflow?: WorkflowStep[];      // auto-kit only
   loopbacks: LoopbackRecord[];
@@ -122,10 +122,10 @@ interface PhaseState {
   status: "pending" | "in-progress" | "complete" | "skipped";
   startedAt?: string;
   completedAt?: string;
-  subStages: Record<string, SubStageState>;
+  steps: Record<string, StepState>;
 }
 
-interface SubStageState {
+interface StepState {
   status: "pending" | "in-progress" | "complete" | "skipped";
   startedAt?: string;
   completedAt?: string;
@@ -135,22 +135,22 @@ interface SubStageState {
 
 interface WorkflowStep {
   phase: PhaseName;
-  subStage: string;
+  step: string;
   included: boolean;
   completed: boolean;
 }
 
 interface LoopbackRecord {
   timestamp: string;
-  from: { phase: PhaseName; subStage: string };
-  to: { phase: PhaseName; subStage: string };
+  from: { phase: PhaseName; step: string };
+  to: { phase: PhaseName; step: string };
   reason: string;
   iteration: number;
 }
 
 // Actions returned by CLI
 type Action =
-  | { action: "spawn_agent"; phase: string; subStage: string; skillFile: string; agentPrompt: string; onComplete: string }
+  | { action: "spawn_agent"; phase: string; step: string; skillFile: string; agentPrompt: string; onComplete: string }
   | { action: "spawn_parallel_agents"; agents: AgentSpec[]; thenSequential?: AgentSpec; onComplete: string }
   | { action: "wait_for_user"; message: string }
   | { action: "loopback"; from: Location; to: Location; reason: string }
@@ -173,10 +173,10 @@ const PHASE_PREREQUISITES: Record<PhaseName, PhaseName[]> = {
 };
 ```
 
-### Sub-stage Order Per Phase
+### Step Order Per Phase
 
 ```typescript
-const PHASE_SUB_STAGES: Record<PhaseName, string[]> = {
+const PHASE_STEPS: Record<PhaseName, string[]> = {
   "plan": ["clarify", "investigate", "sketch", "scope", "ux-flow", "architecture", "blueprint", "audit"],
   "build": ["setup", "migration", "red", "core", "ui", "refactor", "integration", "commit"],
   "test": ["verify", "e2e", "validate"],
@@ -190,16 +190,16 @@ const PHASE_SUB_STAGES: Record<PhaseName, string[]> = {
 
 ```typescript
 const LOOPBACK_ROUTES = [
-  { trigger: { phase: "plan", subStage: "audit", outcome: "revise" },
-    target: { phase: "plan", subStage: "blueprint" }, maxIterations: 2 },
-  { trigger: { phase: "build", subStage: "refactor", outcome: "broken" },
-    target: { phase: "build", subStage: "core" }, maxIterations: 2 },
-  { trigger: { phase: "review", subStage: "handoff", outcome: "changes_requested" },
-    target: { phase: "build", subStage: "core" }, maxIterations: 2 },
-  { trigger: { phase: "deploy", subStage: "merge", outcome: "fix_needed" },
-    target: { phase: "build", subStage: "core" }, maxIterations: 2 },
-  { trigger: { phase: "deploy", subStage: "remediate", outcome: "fix_and_redeploy" },
-    target: { phase: "build", subStage: "core" }, maxIterations: 2 },
+  { trigger: { phase: "plan", step: "audit", outcome: "revise" },
+    target: { phase: "plan", step: "blueprint" }, maxIterations: 2 },
+  { trigger: { phase: "build", step: "refactor", outcome: "broken" },
+    target: { phase: "build", step: "core" }, maxIterations: 2 },
+  { trigger: { phase: "review", step: "handoff", outcome: "changes_requested" },
+    target: { phase: "build", step: "core" }, maxIterations: 2 },
+  { trigger: { phase: "deploy", step: "merge", outcome: "fix_needed" },
+    target: { phase: "build", step: "core" }, maxIterations: 2 },
+  { trigger: { phase: "deploy", step: "remediate", outcome: "fix_and_redeploy" },
+    target: { phase: "build", step: "core" }, maxIterations: 2 },
 ];
 ```
 
@@ -274,7 +274,7 @@ const PARALLEL_GROUPS = {
 
 ### Phase 6: Skill File Updates
 - Update `full-kit.md` and `auto-kit.md` to use CLI
-- Add outcome reporting to sub-stage files
+- Add outcome reporting to step files
 - End-to-end testing
 
 ## Skill File Changes
@@ -293,11 +293,11 @@ The orchestrator skills (`full-kit.md`, `auto-kit.md`) get updated to call the C
    - "loopback": Report to user, then run `npx work-kit-cli next`
    - "complete": Done — run wrap-up
    - "error": Report and stop
-4. After each agent completes: `npx work-kit-cli complete <phase>/<sub-stage> --outcome <outcome>`
+4. After each agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
 5. Then `npx work-kit-cli next` again
 ```
 
-Sub-stage .md files stay the same, with one addition: each ends with "Report your outcome" instruction.
+Step .md files stay the same, with one addition: each ends with "Report your outcome" instruction.
 
 ## Verification
 
@@ -305,7 +305,7 @@ Sub-stage .md files stay the same, with one addition: each ends with "Report you
 2. `npx work-kit-cli next` → returns spawn_agent for plan/clarify
 3. `npx work-kit-cli complete plan/clarify` → advances to plan/investigate
 4. `npx work-kit-cli validate build` → returns error (plan not complete)
-5. Complete all plan sub-stages → `npx work-kit-cli next` returns wait_for_user
+5. Complete all plan steps → `npx work-kit-cli next` returns wait_for_user
 6. `npx work-kit-cli next` → returns spawn_agent for build/setup
 7. Test parallel: complete build → test phase returns spawn_parallel_agents with verify+e2e
 8. Test loopback: `work-kit complete review/handoff --outcome changes_requested` → returns loopback action

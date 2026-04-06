@@ -11,7 +11,7 @@ Run `npx work-kit-cli bootstrap` to detect work-kit state.
 
 ## If active work exists
 
-- Report current state to the user: slug, phase, sub-stage, status
+- Report current state to the user: slug, phase, step, status
 - If recovery is suggested: follow the recovery instruction
 - Otherwise: run `npx work-kit-cli next` to continue the workflow
 

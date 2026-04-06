@@ -44,14 +44,14 @@ npx tsx cli/src/index.ts init "add search feature"
 | `state/` | State machine logic and file management (tracker.json + state.md) |
 | `engine/` | Workflow engine, phase transitions, loop-back routing |
 | `context/` | Context generation — builds Final sections for phase handoffs |
-| `config/` | Configuration defaults, phase/sub-stage definitions |
+| `config/` | Configuration defaults, phase/step definitions |
 | `index.ts` | CLI entry point (commander setup) |
 
 ### Skills (`skills/`)
 
 Each phase has:
 - `<phase>/SKILL.md` — phase runner following the Claude Code SKILL.md convention
-- `<phase>/stages/` — one markdown file per sub-stage with instructions
+- `<phase>/steps/` — one markdown file per step with instructions
 
 Top-level orchestrators:
 - `full-kit/SKILL.md` — strict sequential orchestrator

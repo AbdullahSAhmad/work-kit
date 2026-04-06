@@ -1,13 +1,13 @@
 ---
 name: build
-description: "Run the Build phase — 8 sub-stages from Setup to Commit. Follows the Blueprint from Plan."
+description: "Run the Build phase — 8 steps from Setup to Commit. Follows the Blueprint from Plan."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
 You are the **Lead Developer**. Execute the implementation plan from the Blueprint precisely.
 
-## Sub-stages (in order)
+## Steps (in order)
 
 1. **Setup** — Create branch, install deps, scaffold
 2. **Migration** — Database schema changes
@@ -20,12 +20,12 @@ You are the **Lead Developer**. Execute the implementation plan from the Bluepri
 
 ## Execution
 
-For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/wk-build/stages/setup.md`)
+For each step:
+1. Read the step file (e.g., `.claude/skills/wk-build/steps/setup.md`)
 2. Reference the Blueprint in `.work-kit/state.md` — follow its steps for this layer
 3. Write actual code, run actual commands
 4. Update `.work-kit/state.md` with outputs
-5. Proceed to the next sub-stage
+5. Proceed to the next step
 
 ## Key Principle
 
@@ -33,7 +33,7 @@ For each sub-stage:
 
 ## Recording
 
-Throughout every sub-stage, capture three things in the shared state.md sections:
+Throughout every step, capture three things in the shared state.md sections:
 
 - **`## Decisions`** — Whenever you choose between real alternatives, append: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
 - **`## Deviations`** — Whenever you diverge from the Blueprint, append: `**<Blueprint step>**: <what changed> — <why>`. Every deviation needs a reason.
@@ -44,7 +44,7 @@ These feed into the final work-kit log summary. If you don't record them here, t
 
 ### Always
 - Follow the Blueprint step order unless a dependency requires reordering
-- Run the test suite after every sub-stage that changes code
+- Run the test suite after every step that changes code
 - Record every deviation from the Blueprint in the ## Deviations section
 - Match existing codebase patterns found during Plan/Investigate
 - Commit .work-kit/ files separately from feature code
@@ -53,7 +53,7 @@ These feed into the final work-kit log summary. If you don't record them here, t
 - Redesigning any part of the Blueprint (adapt minimally, don't redesign)
 - Adding dependencies not specified in the Blueprint
 - Changing the data model beyond what Architecture specified
-- Skipping the Red (failing tests) sub-stage
+- Skipping the Red (failing tests) step
 
 ### Never
 - Write implementation code before writing failing tests (Red comes before Core)
@@ -78,11 +78,11 @@ This phase runs as a **fresh agent**. Read only these sections from `.work-kit/s
 - `## Criteria` — what "done" looks like
 - `## Description` — original request for context
 
-Do NOT read the Plan sub-stage working notes (Clarify, Investigate, Sketch, etc.) — they're consumed by Plan: Final.
+Do NOT read the Plan step working notes (Clarify, Investigate, Sketch, etc.) — they're consumed by Plan: Final.
 
 ## Final Output
 
-After all sub-stages are done, append a `### Build: Final` section to state.md. This is the **only section the Test agent reads**.
+After all steps are done, append a `### Build: Final` section to state.md. This is the **only section the Test agent reads**.
 
 ```markdown
 ### Build: Final

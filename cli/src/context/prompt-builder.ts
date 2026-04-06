@@ -2,27 +2,28 @@ import { WorkKitState, PhaseName } from "../state/schema.js";
 import { getContextFor } from "../config/agent-map.js";
 import { extractSection, extractTopSection } from "./extractor.js";
 import { readStateMd } from "../state/store.js";
-import { skillFilePath } from "../config/phases.js";
+import { skillFilePath } from "../config/workflow.js";
 import { redactIgnoredBlocks } from "./redactor.js";
+import { CLI_NPX_BINARY } from "../config/constants.js";
 
 /**
- * Build a complete agent prompt for a given phase/sub-stage.
+ * Build a complete agent prompt for a given phase/step.
  * Accepts optional pre-read stateMd to avoid repeated file reads in parallel scenarios.
  */
 export function buildAgentPrompt(
   worktreeRoot: string,
   state: WorkKitState,
   phase: PhaseName,
-  subStage: string,
+  step: string,
   stateMd?: string | null
 ): string {
-  const ctx = getContextFor(phase, subStage);
+  const ctx = getContextFor(phase, step);
   const md = stateMd ?? readStateMd(worktreeRoot);
-  const skill = skillFilePath(phase, subStage);
+  const skill = skillFilePath(phase, step);
 
   const parts: string[] = [];
 
-  parts.push(`# Agent: ${phase}/${subStage}`);
+  parts.push(`# Agent: ${phase}/${step}`);
   parts.push(`**Worktree:** ${worktreeRoot}`);
   parts.push(`**Slug:** ${state.slug}`);
   parts.push(`**Branch:** ${state.branch}`);
@@ -59,12 +60,12 @@ export function buildAgentPrompt(
   }
 
   parts.push(`## Output`);
-  parts.push(`Write your outputs to \`.work-kit/state.md\` under a section for this sub-stage.`);
+  parts.push(`Write your outputs to \`.work-kit/state.md\` under a section for this step.`);
 
-  if (subStage === "wrap-up") {
+  if (step === "wrap-up") {
     parts.push(`Follow the wrap-up skill file instructions for archiving and cleanup.`);
   } else {
-    parts.push(`When done, report your outcome so the orchestrator can run: \`npx work-kit-cli complete ${phase}/${subStage} --outcome <outcome>\``);
+    parts.push(`When done, report your outcome so the orchestrator can run: \`${CLI_NPX_BINARY} complete ${phase}/${step} --outcome <outcome>\``);
   }
 
   return redactIgnoredBlocks(parts.join("\n"));

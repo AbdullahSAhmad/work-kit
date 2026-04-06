@@ -6,7 +6,7 @@ argument-hint: "[--gated] [description]"
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
-You are the **Work Orchestrator (Auto Mode)**. You analyze the request first, then build a tailored workflow with only the phases and sub-stages that are actually needed.
+You are the **Work Orchestrator (Auto Mode)**. You analyze the request first, then build a tailored workflow with only the phases and steps that are actually needed.
 
 Best for: bug fixes, small changes, refactors, or well-understood tasks.
 
@@ -22,7 +22,7 @@ If `work-kit` is not found, ask the user to install it:
 
 Do not proceed until `doctor` reports all checks passed.
 
-## All Available Sub-stages
+## All Available Steps
 
 These are the building blocks you pick from:
 
@@ -47,13 +47,13 @@ Before creating the worktree, perform a quick analysis:
    - **feature** — new capability (small to medium scope)
    - **large-feature** — new capability (large scope, multiple systems)
 3. **Scan the codebase** — quick look at affected areas (not a full investigation)
-4. **Build the workflow** — select only the sub-stages needed
+4. **Build the workflow** — select only the steps needed
 
 ### Step 2: Build Dynamic Workflow
 
-Based on the classification, select sub-stages. Use this table as a starting point, then adjust based on the specific request:
+Based on the classification, select steps. Use this table as a starting point, then adjust based on the specific request:
 
-| Sub-stage              | bug-fix | small-change | refactor | feature | large-feature |
+| Step              | bug-fix | small-change | refactor | feature | large-feature |
 |------------------------|---------|--------------|----------|---------|---------------|
 | **Plan: Clarify**      | YES     | YES          | YES      | YES     | YES           |
 | **Plan: Investigate**  | YES     | skip         | YES      | YES     | YES           |
@@ -109,7 +109,7 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
 2. Parse the JSON response:
    - If `active: false` — no session found, ask the user for a description and start new work
    - If `recovery` is set — report the recovery suggestion to the user before continuing
-   - If `active: true` — report current state (slug, phase, sub-stage) to the user
+   - If `active: true` — report current state (slug, phase, step) to the user
 3. `cd` into the worktree directory
 4. Run `npx work-kit-cli next` to get the next action
 5. Follow the execution loop below
@@ -118,11 +118,11 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
 
 All validation is handled by the CLI. The `next` command enforces order, phase boundaries, and prerequisites automatically.
 
-To add/remove steps mid-work: `npx work-kit-cli workflow --add <phase/sub-stage>` or `--remove <phase/sub-stage>`. Completed steps cannot be removed.
+To add/remove steps mid-work: `npx work-kit-cli workflow --add <phase/step>` or `--remove <phase/step>`. Completed steps cannot be removed.
 
 ## Agent Architecture
 
-Same as full-kit: each phase runs as a **fresh agent** to keep context focused. The difference is that each agent only runs the sub-stages in the `## Workflow` checklist.
+Same as full-kit: each phase runs as a **fresh agent** to keep context focused. The difference is that each agent only runs the steps in the `## Workflow` checklist.
 
 ```
 Orchestrator (main agent — you)
@@ -177,7 +177,7 @@ Orchestrator (main agent — you)
 
 Each phase writes a `### <Phase>: Final` section — a self-contained summary. The next agent reads **only** the Final sections it needs.
 
-If a phase has fewer sub-stages in the workflow, the Final section still covers the same output — just with less detail where sub-stages were skipped.
+If a phase has fewer steps in the workflow, the Final section still covers the same output — just with less detail where steps were skipped.
 
 ## Execution Loop
 
@@ -186,13 +186,13 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 1. Run `npx work-kit-cli next` to get the next action
 2. Parse the JSON response
 3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit-cli complete <phase>/<sub-stage> --outcome <outcome>`
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
    - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `npx work-kit-cli complete <onComplete target>`
    - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit-cli next` again.
    - **`loopback`**: Report the loopback to the user, then run `npx work-kit-cli next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.
    - **`error`**: Report the error and suggestion to the user. Stop.
-4. After each agent completes: `npx work-kit-cli complete <phase>/<sub-stage> --outcome <outcome>`
+4. After each agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
 5. Then `npx work-kit-cli next` again to continue
 
 ## Loop-Back Rules

@@ -1,6 +1,6 @@
 # work-kit
 
-Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 6 phases, 27 sub-stages — orchestrated by a TypeScript CLI with reusable skill files.
+Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 6 phases, 27 steps — orchestrated by a TypeScript CLI with reusable skill files.
 
 ## Installation
 
@@ -33,13 +33,13 @@ npx work-kit-cli setup
 
 ### `/full-kit <description>`
 
-Runs every phase and sub-stage in strict order. No shortcuts.
+Runs every phase and step in strict order. No shortcuts.
 
 Best for: large features, new systems, maximum rigor.
 
 ### `/auto-kit <description>`
 
-Classifies the request (bug-fix, small-change, refactor, feature, large-feature) and builds a dynamic workflow with only the sub-stages needed.
+Classifies the request (bug-fix, small-change, refactor, feature, large-feature) and builds a dynamic workflow with only the steps needed.
 
 Best for: bug fixes, small changes, refactors, well-understood tasks.
 
@@ -48,9 +48,9 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 | Command | Description |
 |---------|-------------|
 | `init <description>` | Initialize a new workflow with a task description |
-| `next` | Advance to the next sub-stage |
-| `complete` | Mark the current sub-stage as complete |
-| `status` | Show current workflow state (phase, sub-stage, progress) |
+| `next` | Advance to the next step |
+| `complete` | Mark the current step as complete |
+| `status` | Show current workflow state (phase, step, progress) |
 | `context` | Generate context summary for the current phase |
 | `validate` | Validate state integrity and phase prerequisites |
 | `loopback` | Route back to a previous stage (max 2 per route) |
@@ -60,7 +60,7 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 
 ## Phases
 
-| Phase | Sub-stages | Agent |
+| Phase | Steps | Agent |
 |-------|-----------|-------|
 | **Plan** | Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit | Single |
 | **Build** | Setup, Migration, Red, Core, UI, Refactor, Integration, Commit | Single |
@@ -81,7 +81,7 @@ Phases communicate through **Final sections** in `.work-kit/state.md`. Each phas
 
 Dual state files in `.work-kit/`:
 
-- **tracker.json** — state machine (current phase, sub-stage, transitions, loop-back counts)
+- **tracker.json** — state machine (current phase, step, transitions, loop-back counts)
 - **state.md** — content (working notes, Final sections, accumulated context)
 
 All writes are atomic to prevent state corruption.
@@ -129,15 +129,15 @@ work-kit/
     full-kit/SKILL.md   # /full-kit orchestrator
     auto-kit/SKILL.md   # /auto-kit orchestrator
     plan/SKILL.md       # Plan phase runner
-    plan/stages/        # 8 stage files
+    plan/steps/        # 8 step files
     build/SKILL.md      # Build phase runner
-    build/stages/       # 8 stage files
+    build/steps/       # 8 step files
     test/SKILL.md       # Test phase runner
-    test/stages/        # 3 stage files
+    test/steps/        # 3 step files
     review/SKILL.md     # Review phase runner
-    review/stages/      # 5 stage files
+    review/steps/      # 5 step files
     deploy/SKILL.md     # Deploy phase runner
-    deploy/stages/      # 3 stage files
+    deploy/steps/      # 3 step files
     wrap-up/SKILL.md    # Final summary + cleanup
   package.json
 ```

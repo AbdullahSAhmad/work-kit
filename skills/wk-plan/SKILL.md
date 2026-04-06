@@ -1,13 +1,13 @@
 ---
 name: plan
-description: "Run the Plan phase — 8 sub-stages from Clarify to Audit."
+description: "Run the Plan phase — 8 steps from Clarify to Audit."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-You are the **Planning Lead**. Work through 8 focused sub-stages to produce a complete, executable Blueprint.
+You are the **Planning Lead**. Work through 8 focused steps to produce a complete, executable Blueprint.
 
-## Sub-stages (in order)
+## Steps (in order)
 
 1. **Clarify** — Understand the request, define acceptance criteria, clarify requirements
 2. **Investigate** — Read codebase, trace paths, map blast radius
@@ -20,20 +20,20 @@ You are the **Planning Lead**. Work through 8 focused sub-stages to produce a co
 
 ## Execution
 
-For each sub-stage:
-1. Read the sub-stage file (e.g., `.claude/skills/wk-plan/stages/clarify.md`)
+For each step:
+1. Read the step file (e.g., `.claude/skills/wk-plan/steps/clarify.md`)
 2. Follow its instructions completely
-3. Write outputs to `.work-kit/state.md` under a section for that sub-stage
-4. Update `**Phase:** plan` and `**Sub-stage:** <current>` in state.md
-5. Proceed to the next sub-stage
+3. Write outputs to `.work-kit/state.md` under a section for that step
+4. Update `**Phase:** plan` and `**Step:** <current>` in state.md
+5. Proceed to the next step
 
 ## Continuity
 
-Maintain context across all sub-stages — each builds on the previous. Reference prior outputs explicitly. Don't re-discover what you already found.
+Maintain context across all steps — each builds on the previous. Reference prior outputs explicitly. Don't re-discover what you already found.
 
 ## Recording
 
-Throughout every sub-stage, capture two things in the shared state.md sections:
+Throughout every step, capture two things in the shared state.md sections:
 
 - **`## Decisions`** — Whenever you choose between real alternatives, append: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
 
@@ -49,7 +49,7 @@ If **Audit** returns "revise":
 
 ## Final Output
 
-After all sub-stages are done, append a `### Plan: Final` section to state.md. This is the **only section the Build agent reads** — it must be self-contained.
+After all steps are done, append a `### Plan: Final` section to state.md. This is the **only section the Build agent reads** — it must be self-contained.
 
 ```markdown
 ### Plan: Final
@@ -57,10 +57,10 @@ After all sub-stages are done, append a `### Plan: Final` section to state.md. T
 **Verdict:** ready | revised_with_caveats
 
 **Blueprint:**
-<the full ordered implementation plan from Blueprint sub-stage — copy it here>
+<the full ordered implementation plan from Blueprint step — copy it here>
 
 **Architecture:**
-<data model, API surface, components, service layer — from Architecture sub-stage>
+<data model, API surface, components, service layer — from Architecture step>
 
 **Criteria:**
 <reference to ## Criteria section>

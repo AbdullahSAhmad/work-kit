@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { readState, findWorktreeRoot, stateDir } from "../state/store.js";
+import { readState, findWorktreeRoot, stateDir, resolveMainRepoRoot } from "../state/store.js";
 
 export interface CancelResult {
   action: "cancelled" | "error";
@@ -10,21 +10,6 @@ export interface CancelResult {
   worktreeRemoved: boolean;
   branchDeleted: boolean;
   message: string;
-}
-
-function resolveMainRepoRoot(worktreeRoot: string): string {
-  try {
-    const output = execFileSync("git", ["worktree", "list", "--porcelain"], {
-      cwd: worktreeRoot,
-      encoding: "utf-8",
-      timeout: 5000,
-    });
-    const firstLine = output.split("\n").find(l => l.startsWith("worktree "));
-    if (firstLine) return firstLine.slice("worktree ".length).trim();
-  } catch {
-    // fallback
-  }
-  return worktreeRoot;
 }
 
 export function cancelCommand(worktreeRoot?: string): CancelResult {

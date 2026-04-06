@@ -1,7 +1,7 @@
 import { PhaseName } from "../state/schema.js";
 
 /**
- * Maps each phase/sub-stage to the sections it needs from state.md.
+ * Maps each phase/step to the sections it needs from state.md.
  * "##" prefix = top-level section, "###" prefix = Final section.
  */
 
@@ -32,14 +32,14 @@ export const PHASE_CONTEXT: Record<PhaseName, AgentContext> = {
   },
 };
 
-// Sub-stage-level context (for parallel sub-agents that need specific sections)
-export const SUBSTAGE_CONTEXT: Record<string, AgentContext> = {
-  // Test sub-agents
+// Step-level context (for parallel sub-agents that need specific sections)
+export const STEP_CONTEXT: Record<string, AgentContext> = {
+  // Test steps
   "test/verify": { sections: ["### Build: Final", "## Criteria"] },
   "test/e2e": { sections: ["### Build: Final", "### Plan: Final"] },
   "test/validate": { sections: ["### Test: Verify", "### Test: E2E", "## Criteria"] },
 
-  // Review sub-agents
+  // Review steps
   "review/self-review": { sections: ["### Build: Final"], needsGitDiff: true },
   "review/security": { sections: ["### Build: Final"], needsGitDiff: true },
   "review/performance": { sections: ["### Build: Final"], needsGitDiff: true },
@@ -53,10 +53,10 @@ export const SUBSTAGE_CONTEXT: Record<string, AgentContext> = {
   },
 };
 
-export function getContextFor(phase: PhaseName, subStage?: string): AgentContext {
-  if (subStage) {
-    const key = `${phase}/${subStage}`;
-    if (SUBSTAGE_CONTEXT[key]) return SUBSTAGE_CONTEXT[key];
+export function getContextFor(phase: PhaseName, step?: string): AgentContext {
+  if (step) {
+    const key = `${phase}/${step}`;
+    if (STEP_CONTEXT[key]) return STEP_CONTEXT[key];
   }
   return PHASE_CONTEXT[phase];
 }

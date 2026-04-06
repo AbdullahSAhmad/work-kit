@@ -1,9 +1,10 @@
 import { readState, writeState, findWorktreeRoot, readStateMd } from "../state/store.js";
-import { determineNextStep } from "../engine/transitions.js";
+import { determineNextStep } from "../workflow/transitions.js";
 import { validatePhasePrerequisites } from "../state/validators.js";
 import { buildAgentPrompt } from "../context/prompt-builder.js";
-import { getParallelGroup } from "../engine/parallel.js";
-import { skillFilePath } from "../config/phases.js";
+import { getParallelGroup } from "../workflow/parallel.js";
+import { skillFilePath } from "../config/workflow.js";
+import { CLI_NPX_BINARY } from "../config/constants.js";
 import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
 
 export function nextCommand(worktreeRoot?: string): Action {
@@ -22,17 +23,17 @@ export function nextCommand(worktreeRoot?: string): Action {
     return { action: "error", message: "Work-kit is in failed state.", suggestion: "Review the state and restart." };
   }
 
-  const step = determineNextStep(state);
+  const nextStep = determineNextStep(state);
 
-  switch (step.type) {
+  switch (nextStep.type) {
     case "complete":
-      return { action: "complete", message: step.message! };
+      return { action: "complete", message: nextStep.message! };
 
     case "wait-for-user":
-      return { action: "wait_for_user", message: step.message! };
+      return { action: "wait_for_user", message: nextStep.message! };
 
     case "phase-boundary": {
-      const phase = step.phase!;
+      const phase = nextStep.phase!;
 
       const validation = validatePhasePrerequisites(state, phase);
       if (!validation.valid) {
@@ -47,78 +48,78 @@ export function nextCommand(worktreeRoot?: string): Action {
       state.phases[phase].status = "in-progress";
       state.phases[phase].startedAt = new Date().toISOString();
 
-      const subStages = Object.entries(state.phases[phase].subStages);
-      const firstActive = subStages.find(([_, ss]) => ss.status === "pending" || ss.status === "waiting");
+      const entries = Object.entries(state.phases[phase].steps);
+      const firstActive = entries.find(([_, s]) => s.status === "pending" || s.status === "waiting");
 
       if (!firstActive) {
-        return { action: "error", message: `No pending sub-stages in ${phase}` };
+        return { action: "error", message: `No pending steps in ${phase}` };
       }
 
-      const [subStage] = firstActive;
-      state.currentSubStage = subStage;
-      state.phases[phase].subStages[subStage].status = "in-progress";
-      state.phases[phase].subStages[subStage].startedAt = new Date().toISOString();
+      const [step] = firstActive;
+      state.currentStep = step;
+      state.phases[phase].steps[step].status = "in-progress";
+      state.phases[phase].steps[step].startedAt = new Date().toISOString();
       writeState(root, state);
 
-      return buildSpawnAction(root, state, phase, subStage);
+      return buildSpawnAction(root, state, phase, step);
     }
 
-    case "sub-stage": {
-      const phase = step.phase!;
-      const subStage = step.subStage!;
+    case "step": {
+      const phase = nextStep.phase!;
+      const step = nextStep.step!;
 
       state.currentPhase = phase;
-      state.currentSubStage = subStage;
+      state.currentStep = step;
       if (state.phases[phase].status === "pending") {
         state.phases[phase].status = "in-progress";
         state.phases[phase].startedAt = new Date().toISOString();
       }
-      state.phases[phase].subStages[subStage].status = "in-progress";
-      state.phases[phase].subStages[subStage].startedAt = new Date().toISOString();
+      state.phases[phase].steps[step].status = "in-progress";
+      state.phases[phase].steps[step].startedAt = new Date().toISOString();
       writeState(root, state);
 
-      return buildSpawnAction(root, state, phase, subStage);
+      return buildSpawnAction(root, state, phase, step);
     }
 
     default:
-      return { action: "error", message: `Unknown step type: ${step.type}` };
+      return { action: "error", message: `Unknown step type: ${nextStep.type}` };
   }
 }
 
-function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, subStage: string): Action {
+function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, step: string): Action {
   // Read state.md once for all prompt builds
   const stateMd = readStateMd(root);
-  const parallelGroup = getParallelGroup(phase, subStage, state);
+  const parallelGroup = getParallelGroup(phase, step, state);
 
   if (parallelGroup) {
     const agents = parallelGroup.parallel
-      .filter((ss) => {
-        const ssState = state.phases[phase].subStages[ss];
-        return ssState && ssState.status !== "skipped" && ssState.status !== "completed";
+      .filter((s) => {
+        const sState = state.phases[phase].steps[s];
+        return sState && sState.status !== "skipped" && sState.status !== "completed";
       })
-      .map((ss) => ({
+      .map((s) => ({
         phase,
-        subStage: ss,
-        skillFile: skillFilePath(phase, ss),
-        agentPrompt: buildAgentPrompt(root, state, phase, ss, stateMd),
-        outputFile: `.work-kit/${phase}-${ss}.md`,
+        step: s,
+        skillFile: skillFilePath(phase, s),
+        agentPrompt: buildAgentPrompt(root, state, phase, s, stateMd),
+        outputFile: `.work-kit/${phase}-${s}.md`,
       }));
 
     // If all parallel members were filtered out, fall through to single agent
     if (agents.length === 0) {
       // Skip to thenSequential if it exists, otherwise nothing to do
       if (parallelGroup.thenSequential) {
-        const seqSS = parallelGroup.thenSequential;
+        const seqStep = parallelGroup.thenSequential;
         return {
           action: "spawn_agent",
           phase,
-          subStage: seqSS,
-          skillFile: skillFilePath(phase, seqSS),
-          agentPrompt: buildAgentPrompt(root, state, phase, seqSS, stateMd),
-          onComplete: `npx work-kit-cli complete ${phase}/${seqSS}`,
+          step: seqStep,
+          skillFile: skillFilePath(phase, seqStep),
+          agentPrompt: buildAgentPrompt(root, state, phase, seqStep, stateMd),
+          onComplete: `${CLI_NPX_BINARY} complete ${phase}/${seqStep}`,
         };
       }
-      return { action: "error", message: `No active sub-stages in parallel group for ${phase}` };
+      return { action: "error", message: `No active steps in parallel group for ${phase}` };
     }
 
     // If only 1 agent remains, run as single agent (no need for parallel)
@@ -127,22 +128,22 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
       return {
         action: "spawn_agent",
         phase: agent.phase,
-        subStage: agent.subStage,
+        step: agent.step,
         skillFile: agent.skillFile,
         agentPrompt: agent.agentPrompt,
-        onComplete: `npx work-kit-cli complete ${agent.phase}/${agent.subStage}`,
+        onComplete: `${CLI_NPX_BINARY} complete ${agent.phase}/${agent.step}`,
       };
     }
 
     for (const agent of agents) {
-      state.phases[phase].subStages[agent.subStage].status = "in-progress";
-      state.phases[phase].subStages[agent.subStage].startedAt = new Date().toISOString();
+      state.phases[phase].steps[agent.step].status = "in-progress";
+      state.phases[phase].steps[agent.step].startedAt = new Date().toISOString();
     }
 
     const thenSequential = parallelGroup.thenSequential
       ? {
           phase,
-          subStage: parallelGroup.thenSequential,
+          step: parallelGroup.thenSequential,
           skillFile: skillFilePath(phase, parallelGroup.thenSequential),
           agentPrompt: buildAgentPrompt(root, state, phase, parallelGroup.thenSequential, stateMd),
         }
@@ -154,19 +155,19 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
       action: "spawn_parallel_agents",
       agents,
       thenSequential,
-      onComplete: `npx work-kit-cli complete ${phase}/${parallelGroup.thenSequential || parallelGroup.parallel[parallelGroup.parallel.length - 1]}`,
+      onComplete: `${CLI_NPX_BINARY} complete ${phase}/${parallelGroup.thenSequential || parallelGroup.parallel[parallelGroup.parallel.length - 1]}`,
     };
   }
 
-  const skill = skillFilePath(phase, subStage);
-  const prompt = buildAgentPrompt(root, state, phase, subStage, stateMd);
+  const skill = skillFilePath(phase, step);
+  const prompt = buildAgentPrompt(root, state, phase, step, stateMd);
 
   return {
     action: "spawn_agent",
     phase,
-    subStage,
+    step,
     skillFile: skill,
     agentPrompt: prompt,
-    onComplete: `npx work-kit-cli complete ${phase}/${subStage}`,
+    onComplete: `${CLI_NPX_BINARY} complete ${phase}/${step}`,
   };
 }

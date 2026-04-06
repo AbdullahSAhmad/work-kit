@@ -1,5 +1,5 @@
 import { WorkKitState, PhaseName } from "./schema.js";
-import { PHASE_PREREQUISITES } from "../config/phases.js";
+import { PHASE_PREREQUISITES } from "../config/workflow.js";
 
 export interface ValidationResult {
   valid: boolean;
@@ -35,7 +35,6 @@ export function validatePhasePrerequisites(state: WorkKitState, phase: PhaseName
       };
     }
 
-    // deploy completed, skipped, or pending (never started) — all ok if review is done
     return { valid: true, message: "Prerequisites met for wrap-up" };
   }
 
@@ -49,11 +48,11 @@ export function validatePhasePrerequisites(state: WorkKitState, phase: PhaseName
         missingPrerequisite: "review",
       };
     }
-    const handoff = reviewState.subStages["handoff"];
+    const handoff = reviewState.steps["handoff"];
     if (!handoff) {
       return {
         valid: false,
-        message: `deploy requires review/handoff to exist and be approved. Handoff sub-stage not found.`,
+        message: `deploy requires review/handoff to exist and be approved. Handoff step not found.`,
         missingPrerequisite: "review",
       };
     }

@@ -157,7 +157,7 @@ function phaseIndicator(status: string, tick: number = 0): string {
   }
 }
 
-function subStageIndicator(status: string, tick: number): string {
+function stepIndicator(status: string, tick: number): string {
   switch (status) {
     case "completed": return green("●");
     case "in-progress": return cyan(pulse(tick));
@@ -276,14 +276,14 @@ function renderPhasePipeline(
   return [topLine];
 }
 
-// ── Sub-Stage Detail Box ────────────────────────────────────────────
+// ── Step Detail Box ─────────────────────────────────────────────────
 
-function renderSubStageBox(
+function renderStepBox(
   item: WorkItemView,
   innerWidth: number,
   tick: number
 ): string[] {
-  const subs = item.phaseSubStages;
+  const subs = item.phaseSteps;
   if (!subs || subs.length === 0 || !item.currentPhase) return [];
 
   const lines: string[] = [];
@@ -295,10 +295,10 @@ function renderSubStageBox(
   const topRule = dim("┌─ ") + label + dim(" " + "─".repeat(Math.max(0, boxInner - labelLen - 2)) + "┐");
   lines.push("  " + topRule);
 
-  // Render sub-stages in rows that fit the width
+  // Render steps in rows that fit the width
   const entries: string[] = [];
   for (const ss of subs) {
-    const icon = subStageIndicator(ss.status, tick);
+    const icon = stepIndicator(ss.status, tick);
     let nameStr: string;
     switch (ss.status) {
       case "completed": nameStr = green(ss.name); break;
@@ -374,13 +374,13 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
   if (item.classification) badges += "  " + dim(item.classification);
   lines.push("  " + branchText + badges);
 
-  // Line 3: timing — phase elapsed + sub-stage elapsed
+  // Line 3: timing — phase elapsed + step elapsed
   const timingParts: string[] = [];
   if (item.currentPhase && item.currentPhaseStartedAt) {
     timingParts.push(cyan("phase") + dim(`: ${formatDuration(item.currentPhaseStartedAt)}`));
   }
-  if (item.currentSubStage && item.currentSubStageStartedAt) {
-    timingParts.push(cyan("step") + dim(`: ${formatDuration(item.currentSubStageStartedAt)}`));
+  if (item.currentStep && item.currentStepStartedAt) {
+    timingParts.push(cyan("step") + dim(`: ${formatDuration(item.currentStepStartedAt)}`));
   }
   if (timingParts.length > 0) {
     lines.push("  " + timingParts.join(dim("  │  ")));
@@ -402,10 +402,10 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     lines.push("  " + pl);
   }
 
-  // Line 6: sub-stage detail box (all sub-stages of current phase)
-  const subStageBox = renderSubStageBox(item, innerWidth, tick);
-  if (subStageBox.length > 0) {
-    for (const line of subStageBox) {
+  // Step detail box (all steps of current phase)
+  const stepBox = renderStepBox(item, innerWidth, tick);
+  if (stepBox.length > 0) {
+    for (const line of stepBox) {
       lines.push(line);
     }
   }
@@ -486,7 +486,7 @@ export function renderDashboard(
     if (item.status === "in-progress") activeCount++;
     else if (item.status === "paused") pausedCount++;
     else if (item.status === "failed") failedCount++;
-    if (item.currentSubStageStatus === "waiting") waitingCount++;
+    if (item.currentStepStatus === "waiting") waitingCount++;
   }
   const completedCount = data.completedItems.length;
   const hasActive = activeCount > 0;

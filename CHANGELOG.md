@@ -10,9 +10,9 @@
 ## 0.2.7 (2026-04-06)
 
 ### Changed
-- Redesign observer dashboard: braille spinner, pulse animations, progress bar gradient, sub-stage detail box with per-step timing
+- Redesign observer dashboard: braille spinner, pulse animations, progress bar gradient, step detail box with per-step timing
 - Add animated mascot (gear with sparks when active, sleeping when idle)
-- Show all sub-stages of current phase in a bordered box with status icons and durations
+- Show all steps of current phase in a bordered box with status icons and durations
 - Add colored mode/gated/status badges, phase pipeline with connectors
 - Rename state.json to tracker.json, restructure archive to folder-based layout
 - Fix observer rendering ghost frames (clear to end of screen after each draw)
@@ -25,7 +25,7 @@
 ## 0.2.5 (2026-04-06)
 
 ### Changed
-- Add "waiting" sub-stage status with flashing indicators in observer
+- Add "waiting" step status with flashing indicators in observer
 - Auto-add `.work-kit/` to `.gitignore` on init to prevent committing temp state
 - Fix observer showing same feature in both active and completed sections
 - Move tracker/archive path from `.claude/work-kit/` to `.work-kit-tracker/`
@@ -40,9 +40,9 @@
 ## 0.2.3 (2026-04-04)
 
 ### Added
-- Anti-rationalization tables in 18 sub-stage files to counter LLM shortcut-taking
+- Anti-rationalization tables in 18 step files to counter LLM shortcut-taking
 - Three-tier boundaries (Always / Ask First / Never) in all 6 phase runner skills
-- Verdict protocol with structured output templates across phase runners and sub-stages
+- Verdict protocol with structured output templates across phase runners and steps
 - Bootstrap command (`npx work-kit-cli bootstrap`) for session detection and recovery
 - Content redactor with `@wk-ignore-start/end` markers to hide code from agents
 - Session recovery flow in full-kit and auto-kit orchestrators
@@ -51,8 +51,8 @@
 
 ### Fixed
 - Deploy merge now included by default in both full-kit and auto-kit (was incorrectly marked optional/skipped)
-- Observer: advance currentSubStage on complete so dashboard refreshes correctly
-- Observer: show current sub-stage on its own line below phase indicators for clarity
+- Observer: advance currentStep on complete so dashboard refreshes correctly
+- Observer: show current step on its own line below phase indicators for clarity
 
 ## 0.2.1 (2026-04-04)
 
@@ -128,7 +128,7 @@
 - TypeScript CLI orchestrator with 15 commands (init, next, complete, status, context, validate, loopback, workflow, doctor, setup, upgrade, uninstall, observe, completions, release)
 - `setup` command for one-step installation into any Claude Code project
 - `doctor` command for environment health checks with --json flag
-- Full-kit mode: 6 phases, 27 sub-stages, strict ordering
+- Full-kit mode: 6 phases, 27 steps, strict ordering
 - Auto-kit mode: dynamic workflow based on work classification (bug-fix, small-change, refactor, feature, large-feature)
 - Parallel agent coordination for test (verify + e2e) and review (4 parallel reviewers) phases
 - Loop-back routing with max-count enforcement (max 2 per route)

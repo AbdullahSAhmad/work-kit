@@ -1,12 +1,13 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { execFileSync } from "node:child_process";
-import { readState, writeState, findWorktreeRoot, readStateMd, statePath } from "../state/store.js";
-import { isPhaseComplete, nextSubStageInPhase } from "../engine/transitions.js";
-import { checkLoopback } from "../engine/loopbacks.js";
-import { PHASE_ORDER } from "../config/phases.js";
+import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot } from "../state/store.js";
+import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
+import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
+import { PHASE_ORDER } from "../config/workflow.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
+import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, CLI_NPX_BINARY } from "../config/constants.js";
 import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
+import { STATE_MD_FILE, STATE_FILE } from "../state/store.js";
 
 export function completeCommand(target: string, outcome?: string, worktreeRoot?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();
@@ -15,54 +16,46 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
   }
 
   const state = readState(root);
-  const { phase, subStage } = parseLocation(target);
+  const { phase, step } = parseLocation(target);
 
-  // Validate phase exists
   if (!state.phases[phase]) {
     return { action: "error", message: `Unknown phase: ${phase}` };
   }
 
-  // Validate sub-stage exists
-  const ssState = state.phases[phase].subStages[subStage];
-  if (!ssState) {
-    return { action: "error", message: `Unknown sub-stage: ${phase}/${subStage}` };
+  const stepState = state.phases[phase].steps[step];
+  if (!stepState) {
+    return { action: "error", message: `Unknown step: ${phase}/${step}` };
   }
 
-  // Validate sub-stage is in a completable state
-  if (ssState.status === "completed") {
-    return { action: "error", message: `${phase}/${subStage} is already completed.` };
+  if (stepState.status === "completed") {
+    return { action: "error", message: `${phase}/${step} is already completed.` };
   }
-  if (ssState.status === "skipped") {
-    return { action: "error", message: `${phase}/${subStage} is skipped and cannot be completed. Add it to the workflow first.` };
+  if (stepState.status === "skipped") {
+    return { action: "error", message: `${phase}/${step} is skipped and cannot be completed. Add it to the workflow first.` };
   }
 
-  // Mark sub-stage complete
-  ssState.status = "completed";
-  ssState.completedAt = new Date().toISOString();
+  stepState.status = "completed";
+  stepState.completedAt = new Date().toISOString();
   if (outcome) {
-    ssState.outcome = outcome;
+    stepState.outcome = outcome;
   }
 
   // Check for loop-back triggers
-  const loopback = checkLoopback(phase, subStage, outcome);
+  const loopback = checkLoopback(phase, step, outcome);
   if (loopback) {
-    // Enforce max 2 loopbacks per route
-    const sameRouteCount = state.loopbacks.filter(
-      (lb) => lb.from.phase === phase && lb.from.subStage === subStage
-        && lb.to.phase === loopback.to.phase && lb.to.subStage === loopback.to.subStage
-    ).length;
+    const from = { phase, step };
+    const sameRouteCount = countLoopbacksForRoute(state.loopbacks, from, loopback.to);
 
-    if (sameRouteCount >= 2) {
-      // Max reached — proceed without looping back, note the caveat
+    if (sameRouteCount >= MAX_LOOPBACKS_PER_ROUTE) {
       writeState(root, state);
       return {
         action: "wait_for_user",
-        message: `${phase}/${subStage} triggered loopback (outcome: ${outcome}) but max loopback count (2) reached for this route. Proceeding with noted caveats.`,
+        message: `${phase}/${step} triggered loopback (outcome: ${outcome}) but max loopback count (${MAX_LOOPBACKS_PER_ROUTE}) reached for this route. Proceeding with noted caveats.`,
       };
     }
 
     state.loopbacks.push({
-      from: { phase, subStage },
+      from,
       to: loopback.to,
       reason: loopback.reason,
       timestamp: new Date().toISOString(),
@@ -70,13 +63,13 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
     resetToLocation(state, loopback.to);
     state.currentPhase = loopback.to.phase;
-    state.currentSubStage = loopback.to.subStage;
+    state.currentStep = loopback.to.step;
 
     writeState(root, state);
 
     return {
       action: "loopback",
-      from: { phase, subStage },
+      from,
       to: loopback.to,
       reason: loopback.reason,
     };
@@ -87,118 +80,114 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
     state.phases[phase].status = "completed";
     state.phases[phase].completedAt = new Date().toISOString();
 
-    // Find next phase
     const phaseIdx = PHASE_ORDER.indexOf(phase);
     const nextPhases = PHASE_ORDER.slice(phaseIdx + 1);
-    let nextPhase: PhaseName | null = null;
+    let nextPhaseName: PhaseName | null = null;
 
     for (const np of nextPhases) {
       if (state.phases[np].status !== "skipped") {
-        nextPhase = np;
+        nextPhaseName = np;
         break;
       }
     }
 
-    if (!nextPhase) {
+    if (!nextPhaseName) {
       state.status = "completed";
       state.currentPhase = null;
-      state.currentSubStage = null;
+      state.currentStep = null;
       writeState(root, state);
-      archiveCompleted(root, state);
+      finalizeArchive(root, state);
       return { action: "complete", message: "All phases complete. Work-kit finished." };
     }
 
-    // Mark the first pending sub-stage of the next phase as "waiting"
-    // so the observer can distinguish "running" from "waiting for human"
-    const nextSubs = Object.entries(state.phases[nextPhase].subStages);
-    const firstPending = nextSubs.find(([_, ss]) => ss.status === "pending");
+    if (nextPhaseName === "wrap-up") {
+      prepareArchive(root, state);
+    }
+
+    const nextSteps = Object.entries(state.phases[nextPhaseName].steps);
+    const firstPending = nextSteps.find(([_, s]) => s.status === "pending");
     if (firstPending) {
       firstPending[1].status = "waiting";
     }
 
-    state.currentPhase = nextPhase;
-    state.currentSubStage = firstPending ? firstPending[0] : null;
+    state.currentPhase = nextPhaseName;
+    state.currentStep = firstPending ? firstPending[0] : null;
     writeState(root, state);
 
     return {
       action: "wait_for_user",
-      message: `${phase} phase complete. Ready to start ${nextPhase}. Proceed?`,
+      message: `${phase} phase complete. Ready to start ${nextPhaseName}. Proceed?`,
     };
   }
 
-  // Advance currentSubStage to the next pending sub-stage so the observer refreshes
-  const nextSS = nextSubStageInPhase(state, phase);
-  if (nextSS) {
-    state.currentSubStage = nextSS;
-  } else {
-    state.currentSubStage = null;
-  }
+  const next = nextStepInPhase(state, phase);
+  state.currentStep = next ?? null;
 
   writeState(root, state);
 
   return {
     action: "wait_for_user",
-    message: `${phase}/${subStage} complete${outcome ? ` (outcome: ${outcome})` : ""}. Run \`npx work-kit-cli next\` to continue.`,
+    message: `${phase}/${step} complete${outcome ? ` (outcome: ${outcome})` : ""}. Run \`${CLI_NPX_BINARY} next\` to continue.`,
   };
 }
 
 // ── Archive on completion ──────────────────────────────────────────
 
-function resolveMainRepoRoot(worktreeRoot: string): string {
-  try {
-    // git worktree list --porcelain — first "worktree" line is always the main repo
-    const output = execFileSync("git", ["worktree", "list", "--porcelain"], {
-      cwd: worktreeRoot,
-      encoding: "utf-8",
-      timeout: 5000,
-    });
-    const firstLine = output.split("\n").find(l => l.startsWith("worktree "));
-    if (firstLine) return firstLine.slice("worktree ".length).trim();
-  } catch {
-    // fallback
-  }
-  return worktreeRoot;
+function archiveFolderName(slug: string): string {
+  return `${slug}-${new Date().toISOString().split("T")[0]}`;
 }
 
-function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
+function prepareArchive(worktreeRoot: string, state: WorkKitState): void {
   const mainRoot = resolveMainRepoRoot(worktreeRoot);
-  const date = new Date().toISOString().split("T")[0];
-  const slug = state.slug;
-  const wkDir = path.join(mainRoot, ".work-kit-tracker");
-  const folderName = `${slug}-${date}`;
-  const archiveDir = path.join(wkDir, "archive", folderName);
+  const folderName = archiveFolderName(state.slug);
+  const archiveDir = path.join(mainRoot, TRACKER_DIR, ARCHIVE_DIR, folderName);
 
-  // Ensure archive folder exists
   fs.mkdirSync(archiveDir, { recursive: true });
 
-  // Archive state.md (full phase outputs)
   const stateMd = readStateMd(worktreeRoot);
   if (stateMd) {
-    fs.writeFileSync(path.join(archiveDir, "state.md"), stateMd, "utf-8");
+    fs.writeFileSync(path.join(archiveDir, STATE_MD_FILE), stateMd, "utf-8");
   }
 
-  // Archive tracker.json (full JSON with phases, timing, status)
   const trackerPath = statePath(worktreeRoot);
   if (fs.existsSync(trackerPath)) {
-    fs.copyFileSync(trackerPath, path.join(archiveDir, "tracker.json"));
+    fs.copyFileSync(trackerPath, path.join(archiveDir, STATE_FILE));
+  }
+}
+
+function finalizeArchive(worktreeRoot: string, state: WorkKitState): void {
+  const mainRoot = resolveMainRepoRoot(worktreeRoot);
+  const slug = state.slug;
+  const wkDir = path.join(mainRoot, TRACKER_DIR);
+  const folderName = archiveFolderName(slug);
+  const archiveDir = path.join(wkDir, ARCHIVE_DIR, folderName);
+
+  fs.mkdirSync(archiveDir, { recursive: true });
+
+  const mdPath = path.join(archiveDir, STATE_MD_FILE);
+  if (!fs.existsSync(mdPath)) {
+    const stateMd = readStateMd(worktreeRoot);
+    if (stateMd) fs.writeFileSync(mdPath, stateMd, "utf-8");
+  }
+  const trackerDest = path.join(archiveDir, STATE_FILE);
+  if (!fs.existsSync(trackerDest)) {
+    const src = statePath(worktreeRoot);
+    if (fs.existsSync(src)) fs.copyFileSync(src, trackerDest);
   }
 
-  // Write placeholder summary.md (wrap-up skill will overwrite with distilled summary)
-  const summaryPath = path.join(archiveDir, "summary.md");
-  if (!fs.existsSync(summaryPath)) {
-    const completedPhases = PHASE_ORDER
-      .filter(p => state.phases[p].status === "completed")
-      .join("→");
-    fs.writeFileSync(summaryPath, `---\nslug: ${slug}\nbranch: ${state.branch}\nstarted: ${state.started.split("T")[0]}\ncompleted: ${date}\nstatus: completed\n---\n\n## Summary\n\nPhases: ${completedPhases}\n\n_Pending wrap-up summary._\n`, "utf-8");
-  }
-
-  // Compute completed phases
   const completedPhases = PHASE_ORDER
     .filter(p => state.phases[p].status === "completed")
     .join("→");
 
-  // Append to index.md with links to summary and archive folder
-  const indexPath = path.join(wkDir, "index.md");
+  const date = new Date().toISOString().split("T")[0];
+
+  // Write placeholder summary if wrap-up agent didn't write one
+  const summaryPath = path.join(archiveDir, SUMMARY_FILE);
+  if (!fs.existsSync(summaryPath)) {
+    fs.writeFileSync(summaryPath, `---\nslug: ${slug}\nbranch: ${state.branch}\nstarted: ${state.started.split("T")[0]}\ncompleted: ${date}\nstatus: completed\n---\n\n## Summary\n\nPhases: ${completedPhases}\n\n_Pending wrap-up summary._\n`, "utf-8");
+  }
+
+  const indexPath = path.join(wkDir, INDEX_FILE);
   let indexContent = "";
   if (fs.existsSync(indexPath)) {
     indexContent = fs.readFileSync(indexPath, "utf-8");
@@ -206,8 +195,8 @@ function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
   if (!indexContent.includes("| Date ")) {
     indexContent = "| Date | Slug | PR | Status | Phases | Summary | Archive |\n| --- | --- | --- | --- | --- | --- | --- |\n";
   }
-  const summaryLink = `[summary](archive/${folderName}/summary.md)`;
-  const archiveLink = `[archive](archive/${folderName}/)`;
+  const summaryLink = `[summary](${ARCHIVE_DIR}/${folderName}/${SUMMARY_FILE})`;
+  const archiveLink = `[archive](${ARCHIVE_DIR}/${folderName}/)`;
   indexContent += `| ${date} | ${slug} | n/a | completed | ${completedPhases} | ${summaryLink} | ${archiveLink} |\n`;
   fs.writeFileSync(indexPath, indexContent, "utf-8");
 }

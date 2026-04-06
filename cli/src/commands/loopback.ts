@@ -1,8 +1,8 @@
 import { readState, writeState, findWorktreeRoot } from "../state/store.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
+import { countLoopbacksForRoute } from "../workflow/loopbacks.js";
+import { MAX_LOOPBACKS_PER_ROUTE } from "../config/constants.js";
 import type { Action } from "../state/schema.js";
-
-const MAX_LOOPBACKS_PER_ROUTE = 2;
 
 export function loopbackCommand(opts: {
   from: string;
@@ -19,23 +19,20 @@ export function loopbackCommand(opts: {
   const from = parseLocation(opts.from);
   const to = parseLocation(opts.to);
 
-  if (!state.phases[from.phase]?.subStages[from.subStage]) {
+  if (!state.phases[from.phase]?.steps[from.step]) {
     return { action: "error", message: `Invalid source: ${opts.from}` };
   }
-  if (!state.phases[to.phase]?.subStages[to.subStage]) {
+  if (!state.phases[to.phase]?.steps[to.step]) {
     return { action: "error", message: `Invalid target: ${opts.to}` };
   }
 
-  // Can't loop back to a skipped sub-stage
-  if (state.phases[to.phase].subStages[to.subStage].status === "skipped") {
+  // Can't loop back to a skipped step
+  if (state.phases[to.phase].steps[to.step].status === "skipped") {
     return { action: "error", message: `Cannot loop back to ${opts.to} — it is skipped.` };
   }
 
   // Enforce max loopback count per route
-  const sameRouteCount = state.loopbacks.filter(
-    (lb) => lb.from.phase === from.phase && lb.from.subStage === from.subStage
-      && lb.to.phase === to.phase && lb.to.subStage === to.subStage
-  ).length;
+  const sameRouteCount = countLoopbacksForRoute(state.loopbacks, from, to);
   if (sameRouteCount >= MAX_LOOPBACKS_PER_ROUTE) {
     return {
       action: "error",
@@ -52,7 +49,7 @@ export function loopbackCommand(opts: {
 
   resetToLocation(state, to);
   state.currentPhase = to.phase;
-  state.currentSubStage = to.subStage;
+  state.currentStep = to.step;
   writeState(root, state);
 
   return {

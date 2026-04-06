@@ -78,7 +78,7 @@ program
 
 program
   .command("complete <target>")
-  .description("Mark a phase/sub-stage as complete (e.g., plan/clarify)")
+  .description("Mark a phase/step as complete (e.g., plan/clarify)")
   .option("--outcome <value>", "Outcome of the step (e.g., done, revise, broken, changes_requested)")
   .option("--worktree-root <path>", "Override worktree root")
   .action((target, opts) => {
@@ -144,8 +144,8 @@ program
 program
   .command("loopback")
   .description("Register a loop-back transition")
-  .requiredOption("--from <source>", "Source phase/sub-stage (e.g., review/handoff)")
-  .requiredOption("--to <target>", "Target phase/sub-stage (e.g., build/core)")
+  .requiredOption("--from <source>", "Source phase/step (e.g., review/handoff)")
+  .requiredOption("--to <target>", "Target phase/step (e.g., build/core)")
   .requiredOption("--reason <text>", "Reason for loop-back")
   .option("--worktree-root <path>", "Override worktree root")
   .action((opts) => {

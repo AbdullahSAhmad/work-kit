@@ -33,7 +33,7 @@ _work_kit() {
   commands=(
     'init:Create worktree and initialize state'
     'next:Get the next action to perform'
-    'complete:Mark a phase/sub-stage as complete'
+    'complete:Mark a phase/step as complete'
     'status:Show current state summary'
     'context:Extract Final sections needed for a phase agent'
     'validate:Check prerequisites for a phase'
@@ -92,7 +92,7 @@ complete -c work-kit -f
 # Top-level commands
 complete -c work-kit -n '__fish_use_subcommand' -a 'init' -d 'Create worktree and initialize state'
 complete -c work-kit -n '__fish_use_subcommand' -a 'next' -d 'Get the next action to perform'
-complete -c work-kit -n '__fish_use_subcommand' -a 'complete' -d 'Mark a phase/sub-stage as complete'
+complete -c work-kit -n '__fish_use_subcommand' -a 'complete' -d 'Mark a phase/step as complete'
 complete -c work-kit -n '__fish_use_subcommand' -a 'status' -d 'Show current state summary'
 complete -c work-kit -n '__fish_use_subcommand' -a 'context' -d 'Extract Final sections needed for a phase agent'
 complete -c work-kit -n '__fish_use_subcommand' -a 'validate' -d 'Check prerequisites for a phase'

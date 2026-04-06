@@ -1,27 +1,27 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
 import { parseLocation, resetToLocation } from "./helpers.js";
-import type { WorkKitState, PhaseName, PhaseState, SubStageState } from "./schema.js";
-import { PHASE_NAMES, SUBSTAGES_BY_PHASE } from "./schema.js";
+import type { WorkKitState, PhaseName, PhaseState, StepState } from "./schema.js";
+import { PHASE_NAMES, STEPS_BY_PHASE } from "./schema.js";
 
 function makeState(): WorkKitState {
   const phases = {} as Record<PhaseName, PhaseState>;
   for (const phase of PHASE_NAMES) {
-    const subStages: Record<string, SubStageState> = {};
-    for (const ss of SUBSTAGES_BY_PHASE[phase]) {
-      subStages[ss] = { status: "pending" };
+    const steps: Record<string, StepState> = {};
+    for (const s of STEPS_BY_PHASE[phase]) {
+      steps[s] = { status: "pending" };
     }
-    phases[phase] = { status: "pending", subStages };
+    phases[phase] = { status: "pending", steps };
   }
   return {
-    version: 1,
+    version: 2,
     slug: "test",
     branch: "feature/test",
     started: "2026-01-01",
     mode: "full-kit",
     status: "in-progress",
     currentPhase: "plan",
-    currentSubStage: "clarify",
+    currentStep: "clarify",
     phases,
     loopbacks: [],
     metadata: { worktreeRoot: "/tmp/test", mainRepoRoot: "/tmp/test" },
@@ -31,7 +31,7 @@ function makeState(): WorkKitState {
 describe("parseLocation", () => {
   it("parses plan/clarify correctly", () => {
     const loc = parseLocation("plan/clarify");
-    assert.deepStrictEqual(loc, { phase: "plan", subStage: "clarify" });
+    assert.deepStrictEqual(loc, { phase: "plan", step: "clarify" });
   });
 
   it("throws on invalid format (no slash)", () => {
@@ -42,8 +42,8 @@ describe("parseLocation", () => {
     assert.throws(() => parseLocation("foobar/baz"), /Unknown phase/);
   });
 
-  it("throws on unknown sub-stage", () => {
-    assert.throws(() => parseLocation("plan/nonexistent"), /Unknown sub-stage/);
+  it("throws on unknown step", () => {
+    assert.throws(() => parseLocation("plan/nonexistent"), /Unknown step/);
   });
 });
 
@@ -52,40 +52,40 @@ describe("resetToLocation", () => {
     const state = makeState();
 
     // Mark plan and build as completed
-    for (const ss of Object.values(state.phases.plan.subStages)) {
-      ss.status = "completed";
-      ss.completedAt = "2026-01-01";
+    for (const s of Object.values(state.phases.plan.steps)) {
+      s.status = "completed";
+      s.completedAt = "2026-01-01";
     }
     state.phases.plan.status = "completed";
     state.phases.plan.completedAt = "2026-01-01";
 
-    for (const ss of Object.values(state.phases.build.subStages)) {
-      ss.status = "completed";
-      ss.completedAt = "2026-01-02";
+    for (const s of Object.values(state.phases.build.steps)) {
+      s.status = "completed";
+      s.completedAt = "2026-01-02";
     }
     state.phases.build.status = "completed";
     state.phases.build.completedAt = "2026-01-02";
 
     // Reset to plan/blueprint
-    resetToLocation(state, { phase: "plan", subStage: "blueprint" });
+    resetToLocation(state, { phase: "plan", step: "blueprint" });
 
-    // Sub-stages before blueprint should stay completed
-    assert.equal(state.phases.plan.subStages.clarify.status, "completed");
-    assert.equal(state.phases.plan.subStages.investigate.status, "completed");
-    assert.equal(state.phases.plan.subStages.sketch.status, "completed");
-    assert.equal(state.phases.plan.subStages.scope.status, "completed");
-    assert.equal(state.phases.plan.subStages["ux-flow"].status, "completed");
-    assert.equal(state.phases.plan.subStages.architecture.status, "completed");
+    // Steps before blueprint should stay completed
+    assert.equal(state.phases.plan.steps.clarify.status, "completed");
+    assert.equal(state.phases.plan.steps.investigate.status, "completed");
+    assert.equal(state.phases.plan.steps.sketch.status, "completed");
+    assert.equal(state.phases.plan.steps.scope.status, "completed");
+    assert.equal(state.phases.plan.steps["ux-flow"].status, "completed");
+    assert.equal(state.phases.plan.steps.architecture.status, "completed");
 
     // Blueprint and audit should be reset
-    assert.equal(state.phases.plan.subStages.blueprint.status, "pending");
-    assert.equal(state.phases.plan.subStages.audit.status, "pending");
+    assert.equal(state.phases.plan.steps.blueprint.status, "pending");
+    assert.equal(state.phases.plan.steps.audit.status, "pending");
 
     // Plan phase should be in-progress
     assert.equal(state.phases.plan.status, "in-progress");
 
     // Build (later phase) should be reset
     assert.equal(state.phases.build.status, "pending");
-    assert.equal(state.phases.build.subStages.core.status, "pending");
+    assert.equal(state.phases.build.steps.core.status, "pending");
   });
 });
