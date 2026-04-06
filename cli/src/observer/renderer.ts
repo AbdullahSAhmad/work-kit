@@ -171,10 +171,10 @@ function subStageIndicator(status: string, tick: number): string {
 
 function phaseName(name: string, status: string, tick: number): string {
   switch (status) {
-    case "completed": return green(name);
-    case "in-progress": return tick % 2 === 0 ? boldCyan(name) : cyan(name);
-    case "waiting": return yellow(name);
-    case "failed": return red(name);
+    case "completed": return boldGreen(name);
+    case "in-progress": return tick % 2 === 0 ? boldCyan(name) : bold(cyan(name));
+    case "waiting": return bold(yellow(name));
+    case "failed": return bold(red(name));
     default: return dim(name);
   }
 }
@@ -201,17 +201,79 @@ function renderGatedBadge(): string {
 
 // ── Phase Pipeline ──────────────────────────────────────────────────
 
+function phaseDuration(p: { status: string; startedAt?: string; completedAt?: string }): string {
+  if (p.status === "completed" && p.startedAt && p.completedAt) {
+    const ms = new Date(p.completedAt).getTime() - new Date(p.startedAt).getTime();
+    const sec = Math.floor(ms / 1000);
+    if (sec < 60) return `${sec}s`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m`;
+    const hr = Math.floor(min / 60);
+    const remMin = min % 60;
+    return remMin > 0 ? `${hr}h${remMin}m` : `${hr}h`;
+  }
+  if (p.status === "in-progress" && p.startedAt) {
+    return formatDuration(p.startedAt);
+  }
+  if (p.status === "waiting" && p.startedAt) {
+    return formatDuration(p.startedAt);
+  }
+  return "";
+}
+
 function renderPhasePipeline(
   phases: WorkItemView["phases"],
   tick: number
-): string {
-  const segments: string[] = [];
-  for (const p of phases) {
+): string[] {
+  const connector = dim(" ── ");
+  const connectorLen = 4; // " ── "
+
+  // Build top line (icons + names) and bottom line (timing, aligned)
+  const topParts: string[] = [];
+  const bottomParts: string[] = [];
+
+  for (let i = 0; i < phases.length; i++) {
+    const p = phases[i];
     const icon = phaseIndicator(p.status, tick);
     const name = phaseName(p.name, p.status, tick);
-    segments.push(`${icon} ${name}`);
+    const segment = `${icon} ${name}`;
+    topParts.push(segment);
+
+    // Calculate plain width of this segment for alignment
+    const segPlainLen = stripAnsi(segment).length;
+    const dur = phaseDuration(p);
+
+    if (dur) {
+      // Color the duration based on status
+      let durStyled: string;
+      if (p.status === "completed") durStyled = dim(dur);
+      else if (p.status === "in-progress") durStyled = cyan(dur);
+      else if (p.status === "waiting") durStyled = yellow(dur);
+      else durStyled = dim(dur);
+
+      // Center the duration under the segment
+      const durPlainLen = stripAnsi(durStyled).length;
+      const pad = Math.max(0, Math.floor((segPlainLen - durPlainLen) / 2));
+      bottomParts.push(" ".repeat(pad) + durStyled + " ".repeat(Math.max(0, segPlainLen - durPlainLen - pad)));
+    } else {
+      bottomParts.push(" ".repeat(segPlainLen));
+    }
+
+    // Add connector spacing to bottom line too
+    if (i < phases.length - 1) {
+      bottomParts.push(" ".repeat(connectorLen));
+    }
   }
-  return segments.join(dim(" ── "));
+
+  const topLine = topParts.join(connector);
+  const bottomLine = bottomParts.join("");
+
+  // Only show bottom line if there's at least one duration
+  const hasAnyDuration = phases.some(p => phaseDuration(p) !== "");
+  if (hasAnyDuration) {
+    return [topLine, bottomLine];
+  }
+  return [topLine];
 }
 
 // ── Sub-Stage Detail Box ────────────────────────────────────────────
@@ -304,7 +366,7 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
   lines.push(slugText + " ".repeat(gap1) + elapsedText);
 
   // Line 2: branch + mode badge + gated badge + classification
-  const branchText = dim(item.branch);
+  const branchText = dim("⎇ " + item.branch);
   let badges = "  " + renderModeBadge(item.mode);
   if (item.gated) badges += " " + renderGatedBadge();
   if (item.status === "paused") badges += " " + bgYellow(" PAUSED ");
@@ -334,8 +396,11 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     tick
   ));
 
-  // Line 5: phase pipeline with connectors and spinner
-  lines.push("  " + renderPhasePipeline(item.phases, tick));
+  // Line 5-6: phase pipeline with connectors, spinner, and timing row
+  const pipelineLines = renderPhasePipeline(item.phases, tick);
+  for (const pl of pipelineLines) {
+    lines.push("  " + pl);
+  }
 
   // Line 6: sub-stage detail box (all sub-stages of current phase)
   const subStageBox = renderSubStageBox(item, innerWidth, tick);
@@ -361,11 +426,11 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
   // Worktree path
   if (item.worktreePath) {
     let displayPath = item.worktreePath;
-    const maxPathLen = innerWidth - 4;
+    const maxPathLen = innerWidth - 8;
     if (displayPath.length > maxPathLen) {
       displayPath = "…" + displayPath.slice(displayPath.length - maxPathLen + 1);
     }
-    lines.push("  " + dim(displayPath));
+    lines.push("  " + dim("⌂ " + displayPath));
   }
 
   return lines;
