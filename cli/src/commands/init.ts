@@ -1,9 +1,10 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { WorkKitState, PhaseState, PhaseName, PHASE_NAMES, STEPS_BY_PHASE, WorkflowStep, Classification, MODE_FULL, MODE_AUTO } from "../state/schema.js";
-import { writeState, writeStateMd, stateExists, STATE_DIR } from "../state/store.js";
+import { writeState, writeStateMd, stateExists, STATE_DIR, resolveMainRepoRoot } from "../state/store.js";
 import { buildFullWorkflow, buildDefaultWorkflow, skillFilePath } from "../config/workflow.js";
-import { BRANCH_PREFIX, CLI_NPX_BINARY } from "../config/constants.js";
+import { BRANCH_PREFIX, CLI_BINARY } from "../config/constants.js";
+import { loadProjectConfig } from "../config/project-config.js";
 import type { Action } from "../state/schema.js";
 
 function toSlug(description: string): string {
@@ -106,14 +107,20 @@ function ensureGitignored(worktreeRoot: string): void {
 }
 
 export function initCommand(options: {
-  mode: "full" | "auto";
+  mode?: "full" | "auto";
   description: string;
   classification?: Classification;
   gated?: boolean;
   worktreeRoot?: string;
 }): Action {
-  const { mode, description, classification, gated } = options;
   const worktreeRoot = options.worktreeRoot || process.cwd();
+  const mainRepoRoot = resolveMainRepoRoot(worktreeRoot);
+  const projectConfig = loadProjectConfig(mainRepoRoot);
+
+  const mode = options.mode ?? projectConfig.defaults?.mode ?? "full";
+  const classification = options.classification ?? projectConfig.defaults?.classification;
+  const gated = options.gated ?? projectConfig.defaults?.gated ?? false;
+  const { description } = options;
 
   // Guard: don't overwrite existing state
   if (stateExists(worktreeRoot)) {
@@ -147,7 +154,7 @@ export function initCommand(options: {
   // Build workflow
   let workflow: WorkflowStep[] | undefined;
   if (mode === "auto" && classification) {
-    workflow = buildDefaultWorkflow(classification);
+    workflow = buildDefaultWorkflow(classification, projectConfig.workflow);
   } else if (mode === "full") {
     workflow = buildFullWorkflow();
   }
@@ -181,7 +188,7 @@ export function initCommand(options: {
     loopbacks: [],
     metadata: {
       worktreeRoot,
-      mainRepoRoot: worktreeRoot, // will be set properly by caller
+      mainRepoRoot,
     },
   };
 
@@ -198,6 +205,6 @@ export function initCommand(options: {
     step: firstStep,
     skillFile: skillFilePath(firstPhase, firstStep),
     agentPrompt: `You are starting the ${firstPhase} phase. Begin with the ${firstStep} step. Read the skill file and follow its instructions. Write outputs to .work-kit/state.md.`,
-    onComplete: `${CLI_NPX_BINARY} complete ${firstPhase}/${firstStep}`,
+    onComplete: `${CLI_BINARY} complete ${firstPhase}/${firstStep}`,
   };
 }

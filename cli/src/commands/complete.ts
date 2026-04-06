@@ -1,18 +1,31 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot } from "../state/store.js";
+import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot, STATE_MD_FILE, STATE_FILE } from "../state/store.js";
 import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
 import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
 import { PHASE_ORDER } from "../config/workflow.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
-import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, CLI_NPX_BINARY } from "../config/constants.js";
-import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
-import { STATE_MD_FILE, STATE_FILE } from "../state/store.js";
+import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, CLI_BINARY } from "../config/constants.js";
+import { isStepOutcome, STEP_OUTCOMES, type Action, type PhaseName, type StepOutcome, type WorkKitState } from "../state/schema.js";
+import { stateMdPath } from "../state/store.js";
 
 export function completeCommand(target: string, outcome?: string, worktreeRoot?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();
   if (!root) {
     return { action: "error", message: "No work-kit state found. Run `work-kit init` first." };
+  }
+
+  // Validate outcome against the closed enum
+  let typedOutcome: StepOutcome | undefined;
+  if (outcome) {
+    if (!isStepOutcome(outcome)) {
+      return {
+        action: "error",
+        message: `Invalid outcome "${outcome}".`,
+        suggestion: `Valid outcomes: ${STEP_OUTCOMES.join(", ")}`,
+      };
+    }
+    typedOutcome = outcome;
   }
 
   const state = readState(root);
@@ -36,12 +49,11 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
   stepState.status = "completed";
   stepState.completedAt = new Date().toISOString();
-  if (outcome) {
-    stepState.outcome = outcome;
+  if (typedOutcome) {
+    stepState.outcome = typedOutcome;
   }
 
-  // Check for loop-back triggers
-  const loopback = checkLoopback(phase, step, outcome);
+  const loopback = checkLoopback(phase, step, typedOutcome);
   if (loopback) {
     const from = { phase, step };
     const sameRouteCount = countLoopbacksForRoute(state.loopbacks, from, loopback.to);
@@ -50,7 +62,7 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
       writeState(root, state);
       return {
         action: "wait_for_user",
-        message: `${phase}/${step} triggered loopback (outcome: ${outcome}) but max loopback count (${MAX_LOOPBACKS_PER_ROUTE}) reached for this route. Proceeding with noted caveats.`,
+        message: `${phase}/${step} triggered loopback (outcome: ${typedOutcome}) but max loopback count (${MAX_LOOPBACKS_PER_ROUTE}) reached for this route. Proceeding with noted caveats.`,
       };
     }
 
@@ -75,7 +87,6 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
     };
   }
 
-  // Check if the phase is now complete
   if (isPhaseComplete(state, phase)) {
     state.phases[phase].status = "completed";
     state.phases[phase].completedAt = new Date().toISOString();
@@ -96,12 +107,8 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
       state.currentPhase = null;
       state.currentStep = null;
       writeState(root, state);
-      finalizeArchive(root, state);
+      archiveOnComplete(root, state);
       return { action: "complete", message: "All phases complete. Work-kit finished." };
-    }
-
-    if (nextPhaseName === "wrap-up") {
-      prepareArchive(root, state);
     }
 
     const nextSteps = Object.entries(state.phases[nextPhaseName].steps);
@@ -127,20 +134,31 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
   return {
     action: "wait_for_user",
-    message: `${phase}/${step} complete${outcome ? ` (outcome: ${outcome})` : ""}. Run \`${CLI_NPX_BINARY} next\` to continue.`,
+    message: `${phase}/${step} complete${typedOutcome ? ` (outcome: ${typedOutcome})` : ""}. Run \`${CLI_BINARY} next\` to continue.`,
   };
 }
 
 // ── Archive on completion ──────────────────────────────────────────
 
-function archiveFolderName(slug: string): string {
-  return `${slug}-${new Date().toISOString().split("T")[0]}`;
+function archiveFolderName(slug: string, completedAt: string): string {
+  return `${slug}-${completedAt.split("T")[0]}`;
 }
 
-function prepareArchive(worktreeRoot: string, state: WorkKitState): void {
+/**
+ * Single-step archive: copies state.md, tracker.json, and summary.md (if the
+ * wrap-up step wrote one) into `<main>/.work-kit-tracker/archive/<slug>-<date>/`,
+ * then appends a row to the index. Uses a single timestamp captured at the
+ * moment of completion to avoid date drift across multiple archive calls.
+ */
+function archiveOnComplete(worktreeRoot: string, state: WorkKitState): void {
   const mainRoot = resolveMainRepoRoot(worktreeRoot);
-  const folderName = archiveFolderName(state.slug);
-  const archiveDir = path.join(mainRoot, TRACKER_DIR, ARCHIVE_DIR, folderName);
+  const slug = state.slug;
+  const completedAt = new Date().toISOString();
+  const date = completedAt.split("T")[0];
+
+  const wkDir = path.join(mainRoot, TRACKER_DIR);
+  const folderName = archiveFolderName(slug, completedAt);
+  const archiveDir = path.join(wkDir, ARCHIVE_DIR, folderName);
 
   fs.mkdirSync(archiveDir, { recursive: true });
 
@@ -149,42 +167,26 @@ function prepareArchive(worktreeRoot: string, state: WorkKitState): void {
     fs.writeFileSync(path.join(archiveDir, STATE_MD_FILE), stateMd, "utf-8");
   }
 
-  const trackerPath = statePath(worktreeRoot);
-  if (fs.existsSync(trackerPath)) {
-    fs.copyFileSync(trackerPath, path.join(archiveDir, STATE_FILE));
-  }
-}
-
-function finalizeArchive(worktreeRoot: string, state: WorkKitState): void {
-  const mainRoot = resolveMainRepoRoot(worktreeRoot);
-  const slug = state.slug;
-  const wkDir = path.join(mainRoot, TRACKER_DIR);
-  const folderName = archiveFolderName(slug);
-  const archiveDir = path.join(wkDir, ARCHIVE_DIR, folderName);
-
-  fs.mkdirSync(archiveDir, { recursive: true });
-
-  const mdPath = path.join(archiveDir, STATE_MD_FILE);
-  if (!fs.existsSync(mdPath)) {
-    const stateMd = readStateMd(worktreeRoot);
-    if (stateMd) fs.writeFileSync(mdPath, stateMd, "utf-8");
-  }
-  const trackerDest = path.join(archiveDir, STATE_FILE);
-  if (!fs.existsSync(trackerDest)) {
-    const src = statePath(worktreeRoot);
-    if (fs.existsSync(src)) fs.copyFileSync(src, trackerDest);
+  const trackerSrc = statePath(worktreeRoot);
+  if (fs.existsSync(trackerSrc)) {
+    fs.copyFileSync(trackerSrc, path.join(archiveDir, STATE_FILE));
   }
 
+  const summarySrc = path.join(path.dirname(stateMdPath(worktreeRoot)), SUMMARY_FILE);
+  const summaryDest = path.join(archiveDir, SUMMARY_FILE);
   const completedPhases = PHASE_ORDER
     .filter(p => state.phases[p].status === "completed")
     .join("→");
 
-  const date = new Date().toISOString().split("T")[0];
-
-  // Write placeholder summary if wrap-up agent didn't write one
-  const summaryPath = path.join(archiveDir, SUMMARY_FILE);
-  if (!fs.existsSync(summaryPath)) {
-    fs.writeFileSync(summaryPath, `---\nslug: ${slug}\nbranch: ${state.branch}\nstarted: ${state.started.split("T")[0]}\ncompleted: ${date}\nstatus: completed\n---\n\n## Summary\n\nPhases: ${completedPhases}\n\n_Pending wrap-up summary._\n`, "utf-8");
+  if (fs.existsSync(summarySrc)) {
+    fs.copyFileSync(summarySrc, summaryDest);
+  } else {
+    // Placeholder summary if the wrap-up agent didn't write one
+    fs.writeFileSync(
+      summaryDest,
+      `---\nslug: ${slug}\nbranch: ${state.branch}\nstarted: ${state.started.split("T")[0]}\ncompleted: ${date}\nstatus: completed\n---\n\n## Summary\n\nPhases: ${completedPhases}\n\n_Pending wrap-up summary._\n`,
+      "utf-8"
+    );
   }
 
   const indexPath = path.join(wkDir, INDEX_FILE);

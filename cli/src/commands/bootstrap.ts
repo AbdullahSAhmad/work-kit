@@ -1,6 +1,7 @@
 import fs from "node:fs";
-import { findWorktreeRoot, readState, statePath } from "../state/store.js";
-import { CLI_NPX_BINARY } from "../config/constants.js";
+import { findWorktreeRoot, readState, writeState, statePath } from "../state/store.js";
+import { unpause } from "../state/helpers.js";
+import { CLI_BINARY, STALE_THRESHOLD_MS } from "../config/constants.js";
 
 export interface BootstrapResult {
   active: boolean;
@@ -10,11 +11,18 @@ export interface BootstrapResult {
   phase?: string | null;
   step?: string | null;
   status?: string;
+  pausedAt?: string;
+  resumed?: boolean;
+  resumeReason?: string;
   nextAction?: string;
   recovery?: string | null;
 }
 
-export function bootstrapCommand(startDir?: string): BootstrapResult {
+export interface BootstrapOptions {
+  autoResume?: boolean;
+}
+
+export function bootstrapCommand(startDir?: string, options: BootstrapOptions = {}): BootstrapResult {
   const root = findWorktreeRoot(startDir);
 
   if (!root) {
@@ -27,29 +35,44 @@ export function bootstrapCommand(startDir?: string): BootstrapResult {
 
   const state = readState(root);
 
-  // Check for staleness: if state file hasn't been modified in over 1 hour
   let recovery: string | null = null;
+  let isStale = false;
   try {
-    const stateFile = statePath(root);
-    const stat = fs.statSync(stateFile);
-    const hourAgo = Date.now() - 60 * 60 * 1000;
-    if (stat.mtimeMs < hourAgo) {
+    const stat = fs.statSync(statePath(root));
+    if (Date.now() - stat.mtimeMs > STALE_THRESHOLD_MS) {
+      isStale = true;
       const hoursAgo = Math.round((Date.now() - stat.mtimeMs) / (60 * 60 * 1000));
-      recovery = `State appears stale (last update ~${hoursAgo}h ago). Run \`${CLI_NPX_BINARY} status\` to diagnose. If the agent crashed mid-step, run \`${CLI_NPX_BINARY} next\` to resume.`;
+      recovery = `State appears stale (last update ~${hoursAgo}h ago). Run \`${CLI_BINARY} status\` to diagnose. If the agent crashed mid-step, run \`${CLI_BINARY} next\` to resume.`;
     }
   } catch {
-    // Ignore stat errors
+    // ignore stat errors
+  }
+
+  let resumed = false;
+  let resumeReason: string | undefined;
+  if (options.autoResume) {
+    if (unpause(state)) {
+      writeState(root, state);
+      resumed = true;
+      resumeReason = "Was paused — auto-resumed.";
+    } else if (state.status === "in-progress" && isStale) {
+      resumed = true;
+      resumeReason = "Stale in-progress — proceeding from current step.";
+      recovery = null;
+    }
   }
 
   let nextAction: string;
   if (state.status === "completed") {
     nextAction = "Work-kit session is complete. Run wrap-up or start a new session.";
   } else if (state.status === "failed") {
-    nextAction = "Work-kit session failed. Run `${CLI_NPX_BINARY} status` to see details.";
+    nextAction = `Work-kit session failed. Run \`${CLI_BINARY} status\` to see details.`;
+  } else if (state.status === "paused" && !resumed) {
+    nextAction = `Work-kit is paused${state.pausedAt ? ` (since ${state.pausedAt})` : ""}. Run \`${CLI_BINARY} resume\` to continue.`;
   } else if (recovery) {
     nextAction = recovery;
   } else {
-    nextAction = `Continue ${state.currentPhase ?? "next phase"}${state.currentStep ? "/" + state.currentStep : ""}. Run \`${CLI_NPX_BINARY} next\` to get the agent prompt.`;
+    nextAction = `Continue ${state.currentPhase ?? "next phase"}${state.currentStep ? "/" + state.currentStep : ""}. Run \`${CLI_BINARY} next\` to get the agent prompt.`;
   }
 
   return {
@@ -60,6 +83,8 @@ export function bootstrapCommand(startDir?: string): BootstrapResult {
     phase: state.currentPhase,
     step: state.currentStep,
     status: state.status,
+    ...(state.pausedAt && { pausedAt: state.pausedAt }),
+    ...(resumed && { resumed: true, resumeReason }),
     nextAction,
     recovery,
   };

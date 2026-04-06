@@ -65,7 +65,7 @@ describe("validatePhasePrerequisites", () => {
     completePhase(state, "test");
     completePhase(state, "review");
     // handoff completed but without "approved" outcome
-    state.phases.review.steps.handoff.outcome = "pending_review";
+    state.phases.review.steps.handoff.outcome = "blocked";
     const result = validatePhasePrerequisites(state, "deploy");
     assert.equal(result.valid, false);
   });

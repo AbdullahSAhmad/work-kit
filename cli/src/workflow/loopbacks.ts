@@ -1,4 +1,4 @@
-import { PhaseName, Location, LoopbackRecord } from "../state/schema.js";
+import { PhaseName, Location, LoopbackRecord, StepOutcome } from "../state/schema.js";
 import { LOOPBACK_ROUTES } from "../config/loopback-routes.js";
 
 interface LoopbackResult {
@@ -22,7 +22,7 @@ export function countLoopbacksForRoute(loopbacks: LoopbackRecord[], from: Locati
 export function checkLoopback(
   phase: PhaseName,
   step: string,
-  outcome?: string
+  outcome?: StepOutcome
 ): LoopbackResult | null {
   if (!outcome) return null;
 

@@ -7,13 +7,13 @@ allowed-tools: Bash, Read
 
 # Session Bootstrap
 
-Run `npx work-kit-cli bootstrap` to detect work-kit state.
+Run `work-kit bootstrap` to detect work-kit state.
 
 ## If active work exists
 
 - Report current state to the user: slug, phase, step, status
 - If recovery is suggested: follow the recovery instruction
-- Otherwise: run `npx work-kit-cli next` to continue the workflow
+- Otherwise: run `work-kit next` to continue the workflow
 
 ## If no active work
 
@@ -24,6 +24,6 @@ Run `npx work-kit-cli bootstrap` to detect work-kit state.
 ## If session is stale
 
 - Report the staleness warning to the user
-- Run `npx work-kit-cli status` to get full diagnostics
-- If the state is recoverable, run `npx work-kit-cli next` to resume
+- Run `work-kit status` to get full diagnostics
+- If the state is recoverable, run `work-kit next` to resume
 - If the state is corrupted, suggest starting fresh

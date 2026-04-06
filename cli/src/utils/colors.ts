@@ -17,6 +17,7 @@ export const bgCyan = (s: string) => `${code(46)}${code(30)}${s}${reset}`;
 export const bgRed = (s: string) => `${code(41)}${code(97)}${s}${reset}`;
 export const bgDim = (s: string) => `${code(100)}${code(97)}${s}${reset}`;
 export const bgMagenta = (s: string) => `${code(45)}${code(97)}${s}${reset}`;
+export const bgBlue = (s: string) => `${code(44)}${code(97)}${s}${reset}`;
 export const boldCyan = (s: string) => `${code(1)}${code(36)}${s}${reset}`;
 export const boldGreen = (s: string) => `${code(1)}${code(32)}${s}${reset}`;
 export const boldYellow = (s: string) => `${code(1)}${code(33)}${s}${reset}`;

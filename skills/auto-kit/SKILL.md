@@ -14,7 +14,7 @@ Best for: bug fixes, small changes, refactors, or well-understood tasks.
 
 Before starting, verify the CLI is installed:
 ```bash
-npx work-kit-cli doctor
+work-kit doctor
 ```
 
 If `work-kit` is not found, ask the user to install it:
@@ -95,30 +95,30 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
    cd worktrees/<slug>
-   npx work-kit-cli init --mode auto --description "<description>" --classification <classification>
+   work-kit init --mode auto --description "<description>" --classification <classification>
    ```
    If the user passed `--gated` (e.g., `/auto-kit --gated fix login bug`), add `--gated` to the init command. Strip `--gated` from the description text.
-2. Show the workflow to the user: `npx work-kit-cli workflow`
-3. User can adjust: `npx work-kit-cli workflow --add review/security` or `npx work-kit-cli workflow --remove test/e2e`
+2. Show the workflow to the user: `work-kit workflow`
+3. User can adjust: `work-kit workflow --add review/security` or `work-kit workflow --remove test/e2e`
 4. **Wait for approval** — user can add/remove steps before proceeding
 5. Once approved, start the execution loop
 
 ## Continuing Work (`/auto-kit` with no args)
 
-1. Run `npx work-kit-cli bootstrap` to detect session state
+1. Run `work-kit bootstrap` to detect session state
 2. Parse the JSON response:
    - If `active: false` — no session found, ask the user for a description and start new work
    - If `recovery` is set — report the recovery suggestion to the user before continuing
    - If `active: true` — report current state (slug, phase, step) to the user
 3. `cd` into the worktree directory
-4. Run `npx work-kit-cli next` to get the next action
+4. Run `work-kit next` to get the next action
 5. Follow the execution loop below
 
 ## Step Validation
 
 All validation is handled by the CLI. The `next` command enforces order, phase boundaries, and prerequisites automatically.
 
-To add/remove steps mid-work: `npx work-kit-cli workflow --add <phase/step>` or `--remove <phase/step>`. Completed steps cannot be removed.
+To add/remove steps mid-work: `work-kit workflow --add <phase/step>` or `--remove <phase/step>`. Completed steps cannot be removed.
 
 ## Agent Architecture
 
@@ -183,17 +183,17 @@ If a phase has fewer steps in the workflow, the Final section still covers the s
 
 The CLI manages all state transitions, prerequisites, and loopbacks. Follow this loop:
 
-1. Run `npx work-kit-cli next` to get the next action
+1. Run `work-kit next` to get the next action
 2. Parse the JSON response
 3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
-   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `npx work-kit-cli complete <onComplete target>`
-   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit-cli next` again.
-   - **`loopback`**: Report the loopback to the user, then run `npx work-kit-cli next` to continue from the target.
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
+   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `work-kit complete <onComplete target>`
+   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again.
+   - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.
    - **`error`**: Report the error and suggestion to the user. Stop.
-4. After each agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
-5. Then `npx work-kit-cli next` again to continue
+4. After each agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
+5. Then `work-kit next` again to continue
 
 ## Loop-Back Rules
 

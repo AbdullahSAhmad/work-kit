@@ -1,4 +1,4 @@
-import { PhaseName, Location } from "../state/schema.js";
+import { Location, StepOutcome } from "../state/schema.js";
 
 /**
  * Defines when a completed step should trigger a loop-back
@@ -6,7 +6,7 @@ import { PhaseName, Location } from "../state/schema.js";
  */
 export interface LoopbackRoute {
   from: Location;
-  triggerOutcome: string;
+  triggerOutcome: StepOutcome;
   to: Location;
   reason: string;
 }

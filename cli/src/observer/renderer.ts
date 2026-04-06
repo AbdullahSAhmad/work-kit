@@ -1,8 +1,10 @@
 import {
   bold, dim, green, yellow, red, cyan, magenta,
-  bgYellow, bgCyan, bgRed, bgMagenta,
+  bgYellow, bgCyan, bgRed, bgMagenta, bgGreen, bgBlue,
   boldCyan, boldGreen,
 } from "../utils/colors.js";
+import { formatDurationMs, formatDurationSince } from "../utils/time.js";
+import { MODE_FULL } from "../state/schema.js";
 import type { DashboardData, WorkItemView, CompletedItemView } from "./data.js";
 
 // ── Spinners & Animation Frames ─────────────────────────────────────
@@ -63,19 +65,7 @@ function formatTimeAgo(dateStr: string): string {
   return `${weeks}w ago`;
 }
 
-function formatDuration(startStr: string): string {
-  const now = Date.now();
-  const start = new Date(startStr).getTime();
-  if (isNaN(start)) return "";
-  const diffMs = now - start;
-  const sec = Math.floor(diffMs / 1000);
-  if (sec < 60) return `${sec}s`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m`;
-  const hr = Math.floor(min / 60);
-  const remMin = min % 60;
-  return remMin > 0 ? `${hr}h${remMin}m` : `${hr}h`;
-}
+const formatDuration = formatDurationSince;
 
 // ── Box Drawing ─────────────────────────────────────────────────────
 
@@ -192,11 +182,23 @@ function statusDot(status: string): string {
 // ── Badges ──────────────────────────────────────────────────────────
 
 function renderModeBadge(mode: string): string {
-  return mode === "full-kit" ? bgCyan(" Full Kit ") : bgYellow(" Auto Kit ");
+  return mode === MODE_FULL ? bgCyan(" Full Kit ") : bgYellow(" Auto Kit ");
 }
 
 function renderGatedBadge(): string {
   return bgMagenta(" GATED ");
+}
+
+function renderClassificationBadge(classification: string): string {
+  const label = ` ${classification.toUpperCase()} `;
+  switch (classification) {
+    case "bug-fix": return bgRed(label);
+    case "small-change": return bgGreen(label);
+    case "refactor": return bgCyan(label);
+    case "feature": return bgBlue(label);
+    case "large-feature": return bgMagenta(label);
+    default: return bgYellow(label);
+  }
 }
 
 // ── Phase Pipeline ──────────────────────────────────────────────────
@@ -204,18 +206,9 @@ function renderGatedBadge(): string {
 function phaseDuration(p: { status: string; startedAt?: string; completedAt?: string }): string {
   if (p.status === "completed" && p.startedAt && p.completedAt) {
     const ms = new Date(p.completedAt).getTime() - new Date(p.startedAt).getTime();
-    const sec = Math.floor(ms / 1000);
-    if (sec < 60) return `${sec}s`;
-    const min = Math.floor(sec / 60);
-    if (min < 60) return `${min}m`;
-    const hr = Math.floor(min / 60);
-    const remMin = min % 60;
-    return remMin > 0 ? `${hr}h${remMin}m` : `${hr}h`;
+    return formatDurationMs(ms);
   }
-  if (p.status === "in-progress" && p.startedAt) {
-    return formatDuration(p.startedAt);
-  }
-  if (p.status === "waiting" && p.startedAt) {
+  if ((p.status === "in-progress" || p.status === "waiting") && p.startedAt) {
     return formatDuration(p.startedAt);
   }
   return "";
@@ -307,13 +300,10 @@ function renderStepBox(
       case "failed": nameStr = red(ss.name); break;
       default: nameStr = dim(ss.name);
     }
-    // Add duration for completed or in-progress
     let duration = "";
     if (ss.status === "completed" && ss.startedAt && ss.completedAt) {
       const ms = new Date(ss.completedAt).getTime() - new Date(ss.startedAt).getTime();
-      const sec = Math.floor(ms / 1000);
-      if (sec < 60) duration = dim(` ${sec}s`);
-      else duration = dim(` ${Math.floor(sec / 60)}m`);
+      duration = dim(` ${formatDurationMs(ms)}`);
     } else if (ss.status === "in-progress" && ss.startedAt) {
       duration = dim(` ${formatDuration(ss.startedAt)}`);
     }
@@ -371,7 +361,7 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
   if (item.gated) badges += " " + renderGatedBadge();
   if (item.status === "paused") badges += " " + bgYellow(" PAUSED ");
   if (item.status === "failed") badges += " " + bgRed(" FAILED ");
-  if (item.classification) badges += "  " + dim(item.classification);
+  if (item.classification) badges += " " + renderClassificationBadge(item.classification);
   lines.push("  " + branchText + badges);
 
   // Line 3: timing — phase elapsed + step elapsed

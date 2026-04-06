@@ -4,7 +4,7 @@ import { extractSection, extractTopSection } from "./extractor.js";
 import { readStateMd } from "../state/store.js";
 import { skillFilePath } from "../config/workflow.js";
 import { redactIgnoredBlocks } from "./redactor.js";
-import { CLI_NPX_BINARY } from "../config/constants.js";
+import { CLI_BINARY } from "../config/constants.js";
 
 /**
  * Build a complete agent prompt for a given phase/step.
@@ -65,7 +65,7 @@ export function buildAgentPrompt(
   if (step === "wrap-up") {
     parts.push(`Follow the wrap-up skill file instructions for archiving and cleanup.`);
   } else {
-    parts.push(`When done, report your outcome so the orchestrator can run: \`${CLI_NPX_BINARY} complete ${phase}/${step} --outcome <outcome>\``);
+    parts.push(`When done, report your outcome so the orchestrator can run: \`${CLI_BINARY} complete ${phase}/${step} --outcome <outcome>\``);
   }
 
   return redactIgnoredBlocks(parts.join("\n"));

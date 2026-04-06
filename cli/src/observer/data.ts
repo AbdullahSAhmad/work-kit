@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
 import type { WorkKitState, PhaseName } from "../state/schema.js";
-import { PHASE_NAMES, STEPS_BY_PHASE } from "../state/schema.js";
+import { PHASE_NAMES, STEPS_BY_PHASE, MODE_AUTO } from "../state/schema.js";
 import { readState, stateExists } from "../state/store.js";
 import { TRACKER_DIR, INDEX_FILE } from "../config/constants.js";
 
@@ -92,7 +92,7 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
   let total = 0;
   const phaseViews: { name: string; status: string; startedAt?: string; completedAt?: string }[] = [];
 
-  const phaseList: PhaseName[] = state.mode === "auto-kit" && state.workflow
+  const phaseList: PhaseName[] = state.mode === MODE_AUTO && state.workflow
     ? getAutoKitPhases(state)
     : [...PHASE_NAMES];
 

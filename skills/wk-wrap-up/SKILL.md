@@ -10,18 +10,19 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 **Role:** Work Historian
 **Goal:** Produce a concise, useful summary of what was built and why — then clean up.
 
-## Instructions
+This phase has **one step**: `wrap-up/summary`. See `.claude/skills/wk-wrap-up/steps/summary.md` for the canonical instructions. The summary you write goes into `.work-kit/summary.md`; the CLI archives it into `.work-kit-tracker/archive/<slug>-<date>/` when you call `work-kit complete wrap-up/summary --outcome done`.
 
-> **Note:** The CLI automatically archives `state.md`, `tracker.json`, and a placeholder `summary.md` into `.work-kit-tracker/archive/<slug>-<date>/` when the last step completes. It also appends a row to `.work-kit-tracker/index.md`. Your job is to **replace the placeholder summary.md** with a real distilled summary.
+## Instructions
 
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
 2. **Synthesize the summary** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
-3. **Overwrite the summary file** at `.work-kit-tracker/archive/<slug>-<date>/summary.md` on the **main branch** (not the worktree)
-4. **Ask the user** if they want the worktree and branch removed
+3. **Write `.work-kit/summary.md`** in the format described in the step file
+4. **Run** `work-kit complete wrap-up/summary --outcome done`
+5. **Ask the user** if they want the worktree and branch removed
 
 ## Summary File Format
 
-Overwrite `.work-kit-tracker/archive/<slug>-<date>/summary.md`:
+Overwrite `.work-kit/summary.md`:
 
 ```markdown
 ---

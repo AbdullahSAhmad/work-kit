@@ -7,7 +7,7 @@ import { SKILL_DIR_PREFIX } from "../config/constants.js";
 import { STATE_DIR, STATE_FILE } from "../state/store.js";
 
 const WORK_KIT_SKILLS = [
-  "full-kit", "auto-kit", "cancel-kit",
+  "full-kit", "auto-kit", "cancel-kit", "pause-kit", "resume-kit",
   ...PHASE_NAMES.map(p => `${SKILL_DIR_PREFIX}${p}`),
   `${SKILL_DIR_PREFIX}bootstrap`,
 ];

@@ -8,7 +8,7 @@ export const BUILD_STEPS = ["setup", "migration", "red", "core", "ui", "refactor
 export const TEST_STEPS = ["verify", "e2e", "validate"] as const;
 export const REVIEW_STEPS = ["self-review", "security", "performance", "compliance", "handoff"] as const;
 export const DEPLOY_STEPS = ["merge", "monitor", "remediate"] as const;
-export const WRAPUP_STEPS = ["wrap-up"] as const;
+export const WRAPUP_STEPS = ["summary"] as const;
 
 export type PlanStep = (typeof PLAN_STEPS)[number];
 export type BuildStep = (typeof BUILD_STEPS)[number];
@@ -35,7 +35,37 @@ export const MODE_AUTO = "auto-kit" as const;
 
 // ── Classification ──────────────────────────────────────────────────
 
-export type Classification = "bug-fix" | "small-change" | "refactor" | "feature" | "large-feature";
+export const CLASSIFICATIONS = ["bug-fix", "small-change", "refactor", "feature", "large-feature"] as const;
+export type Classification = (typeof CLASSIFICATIONS)[number];
+
+export function isClassification(value: string): value is Classification {
+  return (CLASSIFICATIONS as readonly string[]).includes(value);
+}
+
+// ── Step Outcomes ───────────────────────────────────────────────────
+
+/**
+ * Closed set of outcomes a step can report when completing.
+ * Outcomes drive loop-back routing (see config/loopback-routes.ts).
+ */
+export const STEP_OUTCOMES = [
+  "done",                // generic success
+  "ok",                  // alias for done
+  "proceed",             // explicit "no loopback, advance"
+  "approved",            // review/handoff cleared for deploy
+  "revise",              // audit / review found gaps; loop back to fix
+  "broken",              // refactor or change broke something downstream
+  "changes_requested",   // review handoff requested changes
+  "fix_needed",          // deploy merge blocked, fix required
+  "fix_and_redeploy",    // remediation requires another deploy cycle
+  "blocked",             // step cannot proceed without external input
+  "skipped",             // step intentionally skipped at runtime
+] as const;
+export type StepOutcome = (typeof STEP_OUTCOMES)[number];
+
+export function isStepOutcome(value: string): value is StepOutcome {
+  return (STEP_OUTCOMES as readonly string[]).includes(value);
+}
 
 // ── Phase & Step State ──────────────────────────────────────────────
 
@@ -44,7 +74,7 @@ export type StepStatus = "pending" | "in-progress" | "completed" | "skipped" | "
 
 export interface StepState {
   status: StepStatus;
-  outcome?: string;
+  outcome?: StepOutcome;
   startedAt?: string;
   completedAt?: string;
 }
@@ -78,6 +108,10 @@ export interface WorkflowStep {
   included: boolean;
 }
 
+// ── Work Status ─────────────────────────────────────────────────────
+
+export type WorkStatus = "in-progress" | "paused" | "completed" | "failed";
+
 // ── Main State ──────────────────────────────────────────────────────
 
 export interface WorkKitState {
@@ -85,10 +119,12 @@ export interface WorkKitState {
   slug: string;
   branch: string;
   started: string;
-  mode: "full-kit" | "auto-kit";
+  mode: typeof MODE_FULL | typeof MODE_AUTO;
   gated?: boolean;
   classification?: Classification;
-  status: "in-progress" | "paused" | "completed" | "failed";
+  status: WorkStatus;
+  /** ISO timestamp the work was paused; cleared on resume. */
+  pausedAt?: string;
   currentPhase: PhaseName | null;
   currentStep: string | null;
   phases: Record<PhaseName, PhaseState>;
@@ -116,4 +152,6 @@ export type Action =
   | { action: "wait_for_user"; message: string }
   | { action: "loopback"; from: Location; to: Location; reason: string }
   | { action: "complete"; message: string }
+  | { action: "paused"; message: string }
+  | { action: "resumed"; message: string; phase: PhaseName | null; step: string | null }
   | { action: "error"; message: string; suggestion?: string };

@@ -17,6 +17,9 @@ import { observeCommand } from "./commands/observe.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 import { bootstrapCommand } from "./commands/bootstrap.js";
 import { cancelCommand } from "./commands/cancel.js";
+import { pauseCommand } from "./commands/pause.js";
+import { resumeCommand } from "./commands/resume.js";
+import { reportCommand } from "./commands/report.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, PhaseName } from "./state/schema.js";
 
@@ -37,7 +40,7 @@ program
 program
   .command("init")
   .description("Create worktree and initialize state")
-  .requiredOption("--mode <mode>", "Workflow mode: full or auto")
+  .option("--mode <mode>", "Workflow mode: full or auto (default: from project config or 'full')")
   .requiredOption("--description <text>", "Description of the work")
   .option("--classification <type>", "Work classification (auto mode): bug-fix, small-change, refactor, feature, large-feature")
   .option("--gated", "Wait for user approval between phases (default: auto-proceed)")
@@ -45,10 +48,10 @@ program
   .action((opts) => {
     try {
       const result = initCommand({
-        mode: opts.mode as "full" | "auto",
+        mode: opts.mode as "full" | "auto" | undefined,
         description: opts.description,
         classification: opts.classification as Classification | undefined,
-        gated: opts.gated || false,
+        gated: opts.gated,
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));
@@ -260,10 +263,63 @@ program
   .command("bootstrap")
   .description("Detect work-kit state and output session orientation")
   .option("--json", "Output as JSON", true)
+  .option("--auto-resume", "If paused or stale, auto-flip to in-progress")
   .action((opts) => {
     try {
-      const result = bootstrapCommand();
+      const result = bootstrapCommand(undefined, { autoResume: opts.autoResume });
       console.log(JSON.stringify(result, null, 2));
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── pause ───────────────────────────────────────────────────────────
+
+program
+  .command("pause")
+  .description("Pause the active work-kit session")
+  .option("--reason <text>", "Optional reason for pausing")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      const result = pauseCommand(opts.reason, opts.worktreeRoot);
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(result.action === "error" ? 1 : 0);
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── resume ──────────────────────────────────────────────────────────
+
+program
+  .command("resume")
+  .description("Resume a paused work-kit session")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      const result = resumeCommand(opts.worktreeRoot);
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(result.action === "error" ? 1 : 0);
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── report ──────────────────────────────────────────────────────────
+
+program
+  .command("report")
+  .description("Show stats across completed work-kits")
+  .option("--json", "Output as JSON")
+  .option("--repo <path>", "Main repository root")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      reportCommand({ json: opts.json, repo: opts.repo, worktreeRoot: opts.worktreeRoot });
     } catch (e: any) {
       console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);

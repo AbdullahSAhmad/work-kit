@@ -4,7 +4,8 @@ import { validatePhasePrerequisites } from "../state/validators.js";
 import { buildAgentPrompt } from "../context/prompt-builder.js";
 import { getParallelGroup } from "../workflow/parallel.js";
 import { skillFilePath } from "../config/workflow.js";
-import { CLI_NPX_BINARY } from "../config/constants.js";
+import { CLI_BINARY } from "../config/constants.js";
+
 import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
 
 export function nextCommand(worktreeRoot?: string): Action {
@@ -21,6 +22,14 @@ export function nextCommand(worktreeRoot?: string): Action {
 
   if (state.status === "failed") {
     return { action: "error", message: "Work-kit is in failed state.", suggestion: "Review the state and restart." };
+  }
+
+  if (state.status === "paused") {
+    return {
+      action: "error",
+      message: `Work-kit is paused (since ${state.pausedAt ?? "earlier"}).`,
+      suggestion: `Run \`${CLI_BINARY} resume\` to continue.`,
+    };
   }
 
   const nextStep = determineNextStep(state);
@@ -116,7 +125,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
           step: seqStep,
           skillFile: skillFilePath(phase, seqStep),
           agentPrompt: buildAgentPrompt(root, state, phase, seqStep, stateMd),
-          onComplete: `${CLI_NPX_BINARY} complete ${phase}/${seqStep}`,
+          onComplete: `${CLI_BINARY} complete ${phase}/${seqStep}`,
         };
       }
       return { action: "error", message: `No active steps in parallel group for ${phase}` };
@@ -131,7 +140,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
         step: agent.step,
         skillFile: agent.skillFile,
         agentPrompt: agent.agentPrompt,
-        onComplete: `${CLI_NPX_BINARY} complete ${agent.phase}/${agent.step}`,
+        onComplete: `${CLI_BINARY} complete ${agent.phase}/${agent.step}`,
       };
     }
 
@@ -155,7 +164,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
       action: "spawn_parallel_agents",
       agents,
       thenSequential,
-      onComplete: `${CLI_NPX_BINARY} complete ${phase}/${parallelGroup.thenSequential || parallelGroup.parallel[parallelGroup.parallel.length - 1]}`,
+      onComplete: `${CLI_BINARY} complete ${phase}/${parallelGroup.thenSequential || parallelGroup.parallel[parallelGroup.parallel.length - 1]}`,
     };
   }
 
@@ -168,6 +177,6 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     step,
     skillFile: skill,
     agentPrompt: prompt,
-    onComplete: `${CLI_NPX_BINARY} complete ${phase}/${step}`,
+    onComplete: `${CLI_BINARY} complete ${phase}/${step}`,
   };
 }

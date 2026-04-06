@@ -14,7 +14,7 @@ Best for: large features, new systems, or when you want maximum rigor.
 
 Before starting, verify the CLI is installed:
 ```bash
-npx work-kit-cli doctor
+work-kit doctor
 ```
 
 If `work-kit` is not found, ask the user to install it:
@@ -37,7 +37,7 @@ Do not proceed until `doctor` reports all checks passed.
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
    cd worktrees/<slug>
-   npx work-kit-cli init --mode full --description "<description>"
+   work-kit init --mode full --description "<description>"
    ```
    If the user passed `--gated` (e.g., `/full-kit --gated add user avatar`), add `--gated` to the init command. Strip `--gated` from the description text.
 2. Parse the JSON response and follow the action
@@ -45,34 +45,34 @@ Do not proceed until `doctor` reports all checks passed.
 
 ## Continuing Work (`/full-kit` with no args)
 
-1. Run `npx work-kit-cli bootstrap` to detect session state
+1. Run `work-kit bootstrap` to detect session state
 2. Parse the JSON response:
    - If `active: false` — no session found, ask the user for a description and start new work
    - If `recovery` is set — report the recovery suggestion to the user before continuing
    - If `active: true` — report current state (slug, phase, step) to the user
 3. `cd` into the worktree directory
-4. Run `npx work-kit-cli next` to get the next action
+4. Run `work-kit next` to get the next action
 5. Follow the execution loop below
 
 ## Execution Loop
 
 The CLI manages all state transitions, prerequisites, and loopbacks. Follow this loop:
 
-1. Run `npx work-kit-cli next` to get the next action
+1. Run `work-kit next` to get the next action
 2. Parse the JSON response
 3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
-   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `npx work-kit-cli complete <onComplete target>`
-   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `npx work-kit-cli next` again. (Only appears in `--gated` mode.)
-   - **`loopback`**: Report the loopback to the user, then run `npx work-kit-cli next` to continue from the target.
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
+   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `work-kit complete <onComplete target>`
+   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again. (Only appears in `--gated` mode.)
+   - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.
    - **`error`**: Report the error and suggestion to the user. Stop.
-4. After each agent completes: `npx work-kit-cli complete <phase>/<step> --outcome <outcome>`
-5. Then `npx work-kit-cli next` again to continue
+4. After each agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
+5. Then `work-kit next` again to continue
 
 ## Phase Prerequisites
 
-Prerequisites are enforced by the CLI (`npx work-kit-cli validate <phase>`). You don't need to check manually — the `next` command handles it.
+Prerequisites are enforced by the CLI (`work-kit validate <phase>`). You don't need to check manually — the `next` command handles it.
 
 | Phase    | Requires                          |
 |----------|-----------------------------------|

@@ -1,5 +1,17 @@
 import { PHASE_NAMES, STEPS_BY_PHASE } from "./schema.js";
 import type { Location, PhaseName, WorkKitState } from "./schema.js";
+
+/**
+ * Mutate a state object to flip a paused session into in-progress.
+ * Caller is responsible for persisting via writeState. Returns true
+ * when state changed, false when no transition was applicable.
+ */
+export function unpause(state: WorkKitState): boolean {
+  if (state.status !== "paused") return false;
+  state.status = "in-progress";
+  delete state.pausedAt;
+  return true;
+}
 import { PHASE_ORDER } from "../config/workflow.js";
 
 /**

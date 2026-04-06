@@ -1,5 +1,5 @@
 import { readState, writeState, findWorktreeRoot } from "../state/store.js";
-import { STEPS_BY_PHASE, PHASE_NAMES } from "../state/schema.js";
+import { STEPS_BY_PHASE, PHASE_NAMES, MODE_AUTO } from "../state/schema.js";
 import { parseLocation } from "../state/helpers.js";
 import type { Action } from "../state/schema.js";
 
@@ -22,7 +22,7 @@ export function workflowCommand(opts: {
 
   const state = readState(root);
 
-  if (state.mode !== "auto-kit") {
+  if (state.mode !== MODE_AUTO) {
     return { action: "error", message: "Workflow management is only available in auto-kit mode." };
   }
 

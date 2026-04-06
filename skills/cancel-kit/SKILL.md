@@ -13,7 +13,7 @@ Cancels the active work-kit session and cleans up all artifacts.
 
 1. Finds the active work-kit session (via `bootstrap`)
 2. Confirms with the user before proceeding
-3. Runs `npx work-kit-cli cancel` to:
+3. Runs `work-kit cancel` to:
    - Remove `.work-kit/` state directory
    - Remove the git worktree
    - Delete the feature branch
@@ -21,7 +21,7 @@ Cancels the active work-kit session and cleans up all artifacts.
 
 ## Instructions
 
-1. Run `npx work-kit-cli bootstrap` to detect the active session
+1. Run `work-kit bootstrap` to detect the active session
 2. If no active session: tell the user there's nothing to cancel
 3. If active: show the user what will be cancelled:
    - Slug and branch name
@@ -29,6 +29,6 @@ Cancels the active work-kit session and cleans up all artifacts.
    - Any uncommitted work in the worktree will be lost
 4. **Ask the user to confirm** — do not proceed without explicit confirmation
 5. `cd` into the worktree directory
-6. Run `npx work-kit-cli cancel`
+6. Run `work-kit cancel`
 7. `cd` back to the main repo root
 8. Report the result to the user
