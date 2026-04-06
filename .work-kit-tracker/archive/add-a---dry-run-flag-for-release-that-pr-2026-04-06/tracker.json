@@ -1,0 +1,223 @@
+{
+  "version": 2,
+  "slug": "add-a---dry-run-flag-for-release-that-pr",
+  "branch": "feature/add-a---dry-run-flag-for-release-that-pr",
+  "started": "2026-04-06T21:24:34.328Z",
+  "mode": "full-kit",
+  "status": "completed",
+  "currentPhase": null,
+  "currentStep": null,
+  "phases": {
+    "plan": {
+      "status": "completed",
+      "steps": {
+        "clarify": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:24:59.926Z",
+          "completedAt": "2026-04-06T21:26:13.926Z",
+          "outcome": "done"
+        },
+        "investigate": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:26:14.432Z",
+          "completedAt": "2026-04-06T21:26:38.652Z",
+          "outcome": "done"
+        },
+        "sketch": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:26:39.082Z",
+          "completedAt": "2026-04-06T21:26:58.568Z",
+          "outcome": "done"
+        },
+        "scope": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:26:59.013Z",
+          "completedAt": "2026-04-06T21:27:14.819Z",
+          "outcome": "done"
+        },
+        "ux-flow": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:27:15.284Z",
+          "completedAt": "2026-04-06T21:27:34.031Z",
+          "outcome": "done"
+        },
+        "architecture": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:27:34.514Z",
+          "completedAt": "2026-04-06T21:27:55.611Z",
+          "outcome": "done"
+        },
+        "blueprint": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:27:56.058Z",
+          "completedAt": "2026-04-06T21:28:34.411Z",
+          "outcome": "done"
+        },
+        "audit": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:28:34.882Z",
+          "completedAt": "2026-04-06T21:29:00.970Z",
+          "outcome": "proceed"
+        }
+      },
+      "startedAt": "2026-04-06T21:24:59.926Z",
+      "completedAt": "2026-04-06T21:29:00.971Z"
+    },
+    "build": {
+      "status": "completed",
+      "steps": {
+        "setup": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:30:02.996Z",
+          "completedAt": "2026-04-06T21:30:27.130Z",
+          "outcome": "done"
+        },
+        "migration": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:30:29.943Z",
+          "completedAt": "2026-04-06T21:30:37.657Z",
+          "outcome": "skipped"
+        },
+        "red": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:30:38.101Z",
+          "completedAt": "2026-04-06T21:30:54.083Z",
+          "outcome": "skipped"
+        },
+        "core": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:30:54.654Z",
+          "completedAt": "2026-04-06T21:35:54.017Z",
+          "outcome": "done"
+        },
+        "ui": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:35:54.531Z",
+          "completedAt": "2026-04-06T21:36:09.804Z",
+          "outcome": "skipped"
+        },
+        "refactor": {
+          "status": "completed",
+          "completedAt": "2026-04-06T21:36:10.208Z",
+          "outcome": "skipped"
+        },
+        "integration": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:36:10.693Z",
+          "completedAt": "2026-04-06T21:36:27.305Z",
+          "outcome": "done"
+        },
+        "commit": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:36:27.756Z",
+          "completedAt": "2026-04-06T21:37:04.863Z",
+          "outcome": "done"
+        }
+      },
+      "startedAt": "2026-04-06T21:29:01.467Z",
+      "completedAt": "2026-04-06T21:37:04.864Z"
+    },
+    "test": {
+      "status": "completed",
+      "steps": {
+        "verify": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:41:45.890Z",
+          "completedAt": "2026-04-06T21:41:50.428Z",
+          "outcome": "ok"
+        },
+        "e2e": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:41:45.890Z",
+          "completedAt": "2026-04-06T21:41:50.832Z",
+          "outcome": "ok"
+        },
+        "validate": {
+          "status": "completed",
+          "completedAt": "2026-04-06T21:41:51.247Z",
+          "outcome": "proceed"
+        }
+      },
+      "startedAt": "2026-04-06T21:37:16.000Z",
+      "completedAt": "2026-04-06T21:41:51.247Z"
+    },
+    "review": {
+      "status": "completed",
+      "steps": {
+        "self-review": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:41:51.678Z",
+          "completedAt": "2026-04-06T22:13:58.006Z",
+          "outcome": "approved"
+        },
+        "security": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:41:51.678Z",
+          "completedAt": "2026-04-06T22:13:58.283Z",
+          "outcome": "approved"
+        },
+        "performance": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:41:51.678Z",
+          "completedAt": "2026-04-06T22:13:58.559Z",
+          "outcome": "approved"
+        },
+        "compliance": {
+          "status": "completed",
+          "startedAt": "2026-04-06T21:41:51.678Z",
+          "completedAt": "2026-04-06T22:13:58.834Z",
+          "outcome": "approved"
+        },
+        "handoff": {
+          "status": "completed",
+          "completedAt": "2026-04-06T22:13:59.118Z",
+          "outcome": "approved"
+        }
+      },
+      "startedAt": "2026-04-06T21:41:51.675Z",
+      "completedAt": "2026-04-06T22:13:59.118Z"
+    },
+    "deploy": {
+      "status": "completed",
+      "steps": {
+        "merge": {
+          "status": "completed",
+          "startedAt": "2026-04-06T22:14:39.930Z",
+          "completedAt": "2026-04-06T22:16:14.184Z",
+          "outcome": "done"
+        },
+        "monitor": {
+          "status": "completed",
+          "startedAt": "2026-04-06T22:16:14.456Z",
+          "completedAt": "2026-04-06T22:16:30.490Z",
+          "outcome": "done"
+        },
+        "remediate": {
+          "status": "completed",
+          "completedAt": "2026-04-06T22:16:44.456Z",
+          "outcome": "done"
+        }
+      },
+      "startedAt": "2026-04-06T22:13:59.396Z",
+      "completedAt": "2026-04-06T22:16:44.456Z"
+    },
+    "wrap-up": {
+      "status": "completed",
+      "steps": {
+        "summary": {
+          "status": "completed",
+          "startedAt": "2026-04-06T22:17:05.641Z",
+          "completedAt": "2026-04-06T22:18:54.319Z",
+          "outcome": "done"
+        }
+      },
+      "startedAt": "2026-04-06T22:17:05.641Z",
+      "completedAt": "2026-04-06T22:18:54.320Z"
+    }
+  },
+  "loopbacks": [],
+  "metadata": {
+    "worktreeRoot": "/home/abdullah/Desktop/projects/bluecode/work-kit/worktrees/release-dry-run",
+    "mainRepoRoot": "/home/abdullah/Desktop/projects/bluecode/work-kit"
+  }
+}
