@@ -11,6 +11,8 @@ You are releasing a new version of work-kit to npm. Be fast and non-interactive 
 
 Parse `$ARGUMENTS` once at the start:
 - If `$ARGUMENTS` contains `--dry-run` (anywhere, any position), set `DRY_RUN = true` and remove that token from the argument list.
+- **Typo tolerance (fail-safe toward preview):** Also set `DRY_RUN = true` and strip the offending token if `$ARGUMENTS` contains any token that looks like a dry-run flag but is misspelled — case-insensitive, with or without the leading dashes, with `_` or no separator instead of `-`, or using an em-dash/en-dash prefix. Examples that MUST be treated as dry-run: `--dryrun`, `--DRY-RUN`, `--Dry-Run`, `-dry-run`, `—dry-run` (em-dash), `--dry_run`, `--dry-run=true`, `--dry-run=false`, `dry-run`, `dryrun`. Rationale: the entire point of this flag is to prevent unintended writes — if the user's intent looks remotely like "dry run", err toward preview, never toward a real release.
+- If `$ARGUMENTS` contains the substring `dry` in a token that does NOT match any of the above patterns (e.g. `--drybones`, `--dryness`), STOP and ask the user: "Did you mean `--dry-run`? (yes = preview only / no = proceed with real release)". Do not guess.
 - The remaining token (if any) is the bump type: `patch`, `minor`, or `major`.
 - If `DRY_RUN` is true, you are in **PREVIEW MODE**: never write files, never commit, never tag, never push. Compute everything in memory and print a preview block at the end.
 - Order does not matter: `/release patch --dry-run` and `/release --dry-run patch` are equivalent.
