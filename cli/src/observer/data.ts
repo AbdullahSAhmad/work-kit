@@ -18,7 +18,11 @@ export interface WorkItemView {
   currentPhaseStartedAt?: string;
   currentSubStageStatus?: string;
   currentSubStageIndex?: number;
+  currentSubStageStartedAt?: string;
   currentPhaseTotal?: number;
+  gated: boolean;
+  worktreePath: string;
+  phaseSubStages: { name: string; status: string; startedAt?: string; completedAt?: string; outcome?: string }[];
   startedAt: string;
   progress: { completed: number; total: number; percent: number };
   phases: { name: string; status: string; startedAt?: string; completedAt?: string }[];
@@ -95,7 +99,9 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
   let currentPhaseStartedAt: string | undefined;
   let currentSubStageStatus: string | undefined;
   let currentSubStageIndex: number | undefined;
+  let currentSubStageStartedAt: string | undefined;
   let currentPhaseTotal: number | undefined;
+  let phaseSubStages: WorkItemView["phaseSubStages"] = [];
 
   for (const phaseName of phaseList) {
     const phase = state.phases[phaseName];
@@ -143,7 +149,18 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
           currentSubStageIndex = idx >= 0 ? idx + 1 : undefined;
           const ss = phase.subStages[state.currentSubStage];
           currentSubStageStatus = ss?.status;
+          currentSubStageStartedAt = ss?.startedAt;
         }
+        phaseSubStages = activeKeys.map(key => {
+          const ss = phase.subStages[key];
+          return {
+            name: key,
+            status: ss.status,
+            startedAt: ss.startedAt,
+            completedAt: ss.completedAt,
+            outcome: ss.outcome,
+          };
+        });
       }
     }
   }
@@ -174,7 +191,11 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
     currentPhaseStartedAt,
     currentSubStageStatus,
     currentSubStageIndex,
+    currentSubStageStartedAt,
     currentPhaseTotal,
+    gated: state.gated ?? false,
+    worktreePath: state.metadata.worktreeRoot,
+    phaseSubStages,
     startedAt: state.started,
     progress: { completed, total, percent },
     phases: phaseViews,

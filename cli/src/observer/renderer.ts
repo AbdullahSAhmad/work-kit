@@ -1,5 +1,36 @@
-import { bold, dim, green, yellow, red, cyan, bgYellow } from "../utils/colors.js";
+import {
+  bold, dim, green, yellow, red, cyan, magenta,
+  bgYellow, bgCyan, bgRed, bgMagenta,
+  boldCyan, boldGreen,
+} from "../utils/colors.js";
 import type { DashboardData, WorkItemView, CompletedItemView } from "./data.js";
+
+// ── Spinners & Animation Frames ─────────────────────────────────────
+
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const PULSE = ["◐", "◓", "◑", "◒"];
+
+function spinner(tick: number): string {
+  return cyan(SPINNER[tick % SPINNER.length]);
+}
+
+function pulse(tick: number): string {
+  return PULSE[tick % PULSE.length];
+}
+
+// ── Mascot ──────────────────────────────────────────────────────────
+
+function mascot(tick: number, hasActive: boolean): string {
+  if (!hasActive) {
+    // Idle — sleeping wrench
+    const faces = ["⚙ zzZ", "⚙  zZ", "⚙   z"];
+    return dim(faces[tick % faces.length]);
+  }
+  // Working — animated gear
+  const gears = ["⚙", "⚙", "⚙", "⚙"];
+  const sparks = ["·", "✦", "·", "✧"];
+  return cyan(gears[tick % gears.length]) + yellow(sparks[tick % sparks.length]);
+}
 
 // ── Time Formatting ─────────────────────────────────────────────────
 
@@ -8,10 +39,7 @@ function formatTimeAgo(dateStr: string): string {
   const then = new Date(dateStr).getTime();
   if (isNaN(then)) return "unknown";
 
-  // If only a date (no time component), show the date string as-is
-  // to avoid misleading hour-level precision
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-
   const diffMs = now - then;
   const minutes = Math.floor(diffMs / 60000);
   const hours = Math.floor(diffMs / 3600000);
@@ -35,14 +63,31 @@ function formatTimeAgo(dateStr: string): string {
   return `${weeks}w ago`;
 }
 
+function formatDuration(startStr: string): string {
+  const now = Date.now();
+  const start = new Date(startStr).getTime();
+  if (isNaN(start)) return "";
+  const diffMs = now - start;
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  const remMin = min % 60;
+  return remMin > 0 ? `${hr}h${remMin}m` : `${hr}h`;
+}
+
 // ── Box Drawing ─────────────────────────────────────────────────────
 
 function horizontalLine(width: number): string {
   return "═".repeat(Math.max(0, width - 2));
 }
 
+function thinLine(width: number): string {
+  return "─".repeat(Math.max(0, width));
+}
+
 function padRight(text: string, width: number): string {
-  // Strip ANSI codes for length calculation
   const plainLen = stripAnsi(text).length;
   const padding = Math.max(0, width - plainLen);
   return text + " ".repeat(padding);
@@ -50,14 +95,6 @@ function padRight(text: string, width: number): string {
 
 function stripAnsi(s: string): string {
   return s.replace(/\x1b\[[0-9;]*m/g, "");
-}
-
-function centerText(text: string, width: number): string {
-  const plainLen = stripAnsi(text).length;
-  const totalPad = Math.max(0, width - plainLen);
-  const leftPad = Math.floor(totalPad / 2);
-  const rightPad = totalPad - leftPad;
-  return " ".repeat(leftPad) + text + " ".repeat(rightPad);
 }
 
 function boxLine(content: string, innerWidth: number): string {
@@ -70,22 +107,40 @@ function emptyBoxLine(innerWidth: number): string {
 
 // ── Progress Bar ────────────────────────────────────────────────────
 
+function progressColor(percent: number): (s: string) => string {
+  if (percent >= 75) return green;
+  if (percent >= 50) return cyan;
+  if (percent >= 25) return yellow;
+  return red;
+}
+
 function renderProgressBar(
   completed: number,
   total: number,
   percent: number,
-  label: string,
-  maxBarWidth: number
+  maxBarWidth: number,
+  tick: number
 ): string {
   const barWidth = Math.max(20, Math.min(40, maxBarWidth));
   const filled = total > 0 ? Math.round((completed / total) * barWidth) : 0;
   const empty = barWidth - filled;
 
-  const filledStr = green("█".repeat(filled));
-  const emptyStr = dim("░".repeat(empty));
-  const stats = `${label}  ${completed}/${total}  ${percent}%`;
+  const colorFn = progressColor(percent);
 
-  return `${filledStr}${emptyStr}   ${stats}`;
+  // Animated head on the progress bar
+  let filledStr: string;
+  if (filled > 0 && filled < barWidth) {
+    const body = colorFn("█".repeat(filled - 1));
+    const head = tick % 2 === 0 ? colorFn("▓") : colorFn("█");
+    filledStr = body + head;
+  } else {
+    filledStr = colorFn("█".repeat(filled));
+  }
+
+  const emptyStr = dim("░".repeat(empty));
+  const stats = dim(`${completed}/${total}`) + "  " + colorFn(`${percent}%`);
+
+  return `${filledStr}${emptyStr}  ${stats}`;
 }
 
 // ── Phase Status Indicators ─────────────────────────────────────────
@@ -93,12 +148,34 @@ function renderProgressBar(
 function phaseIndicator(status: string, tick: number = 0): string {
   switch (status) {
     case "completed": return green("✓");
-    case "in-progress": return tick % 2 === 0 ? cyan("▶") : dim("▶");
+    case "in-progress": return spinner(tick);
     case "waiting": return tick % 2 === 0 ? yellow("◉") : dim("◉");
     case "pending": return dim("·");
     case "skipped": return dim("⊘");
     case "failed": return red("✗");
     default: return dim("·");
+  }
+}
+
+function subStageIndicator(status: string, tick: number): string {
+  switch (status) {
+    case "completed": return green("●");
+    case "in-progress": return cyan(pulse(tick));
+    case "waiting": return yellow("○");
+    case "pending": return dim("○");
+    case "skipped": return dim("⊘");
+    case "failed": return red("●");
+    default: return dim("○");
+  }
+}
+
+function phaseName(name: string, status: string, tick: number): string {
+  switch (status) {
+    case "completed": return green(name);
+    case "in-progress": return tick % 2 === 0 ? boldCyan(name) : cyan(name);
+    case "waiting": return yellow(name);
+    case "failed": return red(name);
+    default: return dim(name);
   }
 }
 
@@ -112,80 +189,183 @@ function statusDot(status: string): string {
   }
 }
 
-// ── Render Work Item ────────────────────────────────────────────────
+// ── Badges ──────────────────────────────────────────────────────────
 
-function formatMode(mode: string, classification?: string): string {
-  const label = mode === "full-kit" ? "Full Kit" : "Auto Kit";
-  return classification ? `${label} · ${classification}` : label;
+function renderModeBadge(mode: string): string {
+  return mode === "full-kit" ? bgCyan(" Full Kit ") : bgYellow(" Auto Kit ");
 }
 
-function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number = 0): string[] {
+function renderGatedBadge(): string {
+  return bgMagenta(" GATED ");
+}
+
+// ── Phase Pipeline ──────────────────────────────────────────────────
+
+function renderPhasePipeline(
+  phases: WorkItemView["phases"],
+  tick: number
+): string {
+  const segments: string[] = [];
+  for (const p of phases) {
+    const icon = phaseIndicator(p.status, tick);
+    const name = phaseName(p.name, p.status, tick);
+    segments.push(`${icon} ${name}`);
+  }
+  return segments.join(dim(" ── "));
+}
+
+// ── Sub-Stage Detail Box ────────────────────────────────────────────
+
+function renderSubStageBox(
+  item: WorkItemView,
+  innerWidth: number,
+  tick: number
+): string[] {
+  const subs = item.phaseSubStages;
+  if (!subs || subs.length === 0 || !item.currentPhase) return [];
+
+  const lines: string[] = [];
+  const label = dim(item.currentPhase);
+  const boxInner = innerWidth - 8; // indent + border padding
+
+  // Top border with phase label
+  const labelLen = stripAnsi(label).length;
+  const topRule = dim("┌─ ") + label + dim(" " + "─".repeat(Math.max(0, boxInner - labelLen - 2)) + "┐");
+  lines.push("  " + topRule);
+
+  // Render sub-stages in rows that fit the width
+  const entries: string[] = [];
+  for (const ss of subs) {
+    const icon = subStageIndicator(ss.status, tick);
+    let nameStr: string;
+    switch (ss.status) {
+      case "completed": nameStr = green(ss.name); break;
+      case "in-progress": nameStr = boldCyan(ss.name); break;
+      case "waiting": nameStr = yellow(ss.name); break;
+      case "failed": nameStr = red(ss.name); break;
+      default: nameStr = dim(ss.name);
+    }
+    // Add duration for completed or in-progress
+    let duration = "";
+    if (ss.status === "completed" && ss.startedAt && ss.completedAt) {
+      const ms = new Date(ss.completedAt).getTime() - new Date(ss.startedAt).getTime();
+      const sec = Math.floor(ms / 1000);
+      if (sec < 60) duration = dim(` ${sec}s`);
+      else duration = dim(` ${Math.floor(sec / 60)}m`);
+    } else if (ss.status === "in-progress" && ss.startedAt) {
+      duration = dim(` ${formatDuration(ss.startedAt)}`);
+    }
+    entries.push(`${icon} ${nameStr}${duration}`);
+  }
+
+  // Flow entries into rows
+  let currentRow = "";
+  let currentRowLen = 0;
+  for (const entry of entries) {
+    const entryLen = stripAnsi(entry).length;
+    const separator = currentRowLen > 0 ? "  " : "";
+    const sepLen = currentRowLen > 0 ? 2 : 0;
+
+    if (currentRowLen + sepLen + entryLen > boxInner && currentRowLen > 0) {
+      // Wrap to new row
+      const padded = padRight(currentRow, boxInner);
+      lines.push("  " + dim("│ ") + padded + dim(" │"));
+      currentRow = entry;
+      currentRowLen = entryLen;
+    } else {
+      currentRow += separator + entry;
+      currentRowLen += sepLen + entryLen;
+    }
+  }
+  // Last row
+  if (currentRowLen > 0) {
+    const padded = padRight(currentRow, boxInner);
+    lines.push("  " + dim("│ ") + padded + dim(" │"));
+  }
+
+  // Bottom border
+  lines.push("  " + dim("└" + "─".repeat(boxInner + 2) + "┘"));
+
+  return lines;
+}
+
+// ── Render Work Item ────────────────────────────────────────────────
+
+function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): string[] {
   const lines: string[] = [];
 
-  // Line 1: slug + branch (right-aligned)
+  // Line 1: status dot + bold slug + elapsed time (right)
   const slugText = `${statusDot(item.status)} ${bold(item.slug)}`;
-  const branchText = dim(item.branch);
-  const slugPlainLen = stripAnsi(slugText).length;
-  const branchPlainLen = stripAnsi(branchText).length;
-  const gap1 = Math.max(2, innerWidth - slugPlainLen - branchPlainLen);
-  lines.push(slugText + " ".repeat(gap1) + branchText);
-
-  // Line 2: mode + timing (right-aligned)
-  const modeText = formatMode(item.mode, item.classification);
-  const pausedBadge = item.status === "paused" ? "  " + bgYellow(" PAUSED ") : "";
   const elapsed = formatTimeAgo(item.startedAt);
-  let timingRight = `Elapsed: ${elapsed}`;
-  if (item.currentPhaseStartedAt) {
-    timingRight += `  Phase: ${formatTimeAgo(item.currentPhaseStartedAt)}`;
-  }
-  const timingText = dim(timingRight);
-  const modeStr = `  ${modeText}${pausedBadge}`;
-  const modePlainLen = stripAnsi(modeStr).length;
-  const timingPlainLen = stripAnsi(timingText).length;
-  const gap2 = Math.max(2, innerWidth - modePlainLen - timingPlainLen);
-  lines.push(modeStr + " ".repeat(gap2) + timingText);
+  const elapsedText = dim(`⏱ ${elapsed}`);
+  const slugLen = stripAnsi(slugText).length;
+  const elapsedLen = stripAnsi(elapsedText).length;
+  const gap1 = Math.max(2, innerWidth - slugLen - elapsedLen);
+  lines.push(slugText + " ".repeat(gap1) + elapsedText);
 
-  // Line 3: progress bar with phase label only (no sub-stage inline)
-  const phaseLabel = item.currentPhase || "—";
-  const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 30));
+  // Line 2: branch + mode badge + gated badge + classification
+  const branchText = dim(item.branch);
+  let badges = "  " + renderModeBadge(item.mode);
+  if (item.gated) badges += " " + renderGatedBadge();
+  if (item.status === "paused") badges += " " + bgYellow(" PAUSED ");
+  if (item.status === "failed") badges += " " + bgRed(" FAILED ");
+  if (item.classification) badges += "  " + dim(item.classification);
+  lines.push("  " + branchText + badges);
+
+  // Line 3: timing — phase elapsed + sub-stage elapsed
+  const timingParts: string[] = [];
+  if (item.currentPhase && item.currentPhaseStartedAt) {
+    timingParts.push(cyan("phase") + dim(`: ${formatDuration(item.currentPhaseStartedAt)}`));
+  }
+  if (item.currentSubStage && item.currentSubStageStartedAt) {
+    timingParts.push(cyan("step") + dim(`: ${formatDuration(item.currentSubStageStartedAt)}`));
+  }
+  if (timingParts.length > 0) {
+    lines.push("  " + timingParts.join(dim("  │  ")));
+  }
+
+  // Line 4: progress bar with animated head
+  const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 20));
   lines.push("  " + renderProgressBar(
     item.progress.completed,
     item.progress.total,
     item.progress.percent,
-    phaseLabel,
-    barMaxWidth
+    barMaxWidth,
+    tick
   ));
 
-  // Line 4: phase indicators with sub-stage shown under current phase
-  const phaseStrs = item.phases.map(p => `${p.name} ${phaseIndicator(p.status, tick)}`);
-  lines.push("  " + phaseStrs.join("  "));
+  // Line 5: phase pipeline with connectors and spinner
+  lines.push("  " + renderPhasePipeline(item.phases, tick));
 
-  // Line 5 (optional): current sub-stage detail under the phase line
-  if (item.currentSubStage && item.currentPhase) {
-    const isWaiting = item.currentSubStageStatus === "waiting";
-    let subLabel = `↳ ${item.currentSubStage}`;
-    if (item.currentSubStageIndex != null && item.currentPhaseTotal != null) {
-      subLabel += ` (${item.currentSubStageIndex}/${item.currentPhaseTotal})`;
-    }
-    if (isWaiting) {
-      const badge = tick % 2 === 0 ? bgYellow(" WAITING ") : dim(" WAITING ");
-      lines.push("    " + yellow(subLabel) + "  " + badge);
-    } else {
-      lines.push("    " + (tick % 2 === 0 ? cyan(subLabel) : dim(subLabel)));
+  // Line 6: sub-stage detail box (all sub-stages of current phase)
+  const subStageBox = renderSubStageBox(item, innerWidth, tick);
+  if (subStageBox.length > 0) {
+    for (const line of subStageBox) {
+      lines.push(line);
     }
   }
 
-  // Line 5 (optional): loopbacks
+  // Loopbacks
   if (item.loopbacks.count > 0) {
     const lb = item.loopbacks;
-    let loopStr = `  ${cyan("⟳")} ${lb.count} loopback${lb.count > 1 ? "s" : ""}`;
+    let loopStr = `  ${yellow("⟳")} ${lb.count} loopback${lb.count > 1 ? "s" : ""}`;
     if (lb.lastFrom && lb.lastTo) {
-      loopStr += `: ${lb.lastFrom} → ${lb.lastTo}`;
+      loopStr += dim(`: ${lb.lastFrom} → ${lb.lastTo}`);
     }
     if (lb.lastReason) {
-      loopStr += ` (${lb.lastReason})`;
+      loopStr += dim(` (${lb.lastReason})`);
     }
     lines.push(loopStr);
+  }
+
+  // Worktree path
+  if (item.worktreePath) {
+    let displayPath = item.worktreePath;
+    const maxPathLen = innerWidth - 4;
+    if (displayPath.length > maxPathLen) {
+      displayPath = "…" + displayPath.slice(displayPath.length - maxPathLen + 1);
+    }
+    lines.push("  " + dim(displayPath));
   }
 
   return lines;
@@ -200,7 +380,7 @@ interface CompletedColumnWidths {
 }
 
 function computeCompletedWidths(items: CompletedItemView[]): CompletedColumnWidths {
-  let slug = 4, pr = 2, date = 4; // minimums
+  let slug = 4, pr = 2, date = 4;
   for (const item of items) {
     slug = Math.max(slug, item.slug.length);
     pr = Math.max(pr, (item.pr || "—").length);
@@ -228,26 +408,34 @@ export function renderDashboard(
   tick: number = 0
 ): string {
   const maxWidth = Math.min(width, 120);
-  const innerWidth = maxWidth - 4; // account for "║ " and " ║"
+  const innerWidth = maxWidth - 4;
 
   const allLines: string[] = [];
 
   // Top border
   allLines.push(`╔${horizontalLine(maxWidth)}╗`);
 
-  let activeCount = 0, pausedCount = 0, failedCount = 0;
+  // Header counts
+  let activeCount = 0, pausedCount = 0, failedCount = 0, waitingCount = 0;
   for (const item of data.activeItems) {
     if (item.status === "in-progress") activeCount++;
     else if (item.status === "paused") pausedCount++;
     else if (item.status === "failed") failedCount++;
+    if (item.currentSubStageStatus === "waiting") waitingCount++;
   }
+  const completedCount = data.completedItems.length;
+  const hasActive = activeCount > 0;
 
+  // Header: mascot + title + counts
   let headerRight = "";
   if (activeCount > 0) headerRight += `${green("●")} ${activeCount} active`;
+  if (waitingCount > 0) headerRight += `  ${yellow("◉")} ${waitingCount} waiting`;
   if (pausedCount > 0) headerRight += `  ${yellow("○")} ${pausedCount} paused`;
   if (failedCount > 0) headerRight += `  ${red("✗")} ${failedCount} failed`;
+  if (completedCount > 0) headerRight += `  ${green("✓")} ${completedCount} done`;
 
-  const headerLeft = bold("  WORK-KIT OBSERVER");
+  const mascotStr = mascot(tick, hasActive);
+  const headerLeft = `  ${mascotStr} ${bold("WORK-KIT OBSERVER")}`;
   const headerLeftLen = stripAnsi(headerLeft).length;
   const headerRightLen = stripAnsi(headerRight).length;
   const headerGap = Math.max(2, innerWidth - headerLeftLen - headerRightLen);
@@ -257,7 +445,7 @@ export function renderDashboard(
   allLines.push(`╠${horizontalLine(maxWidth)}╣`);
 
   if (data.activeItems.length === 0 && data.completedItems.length === 0) {
-    // Empty state
+    // Empty state with idle mascot
     allLines.push(emptyBoxLine(innerWidth));
     allLines.push(boxLine(dim("  No active work items found."), innerWidth));
     allLines.push(boxLine(dim("  Start a new work item with: work-kit init"), innerWidth));
@@ -275,6 +463,8 @@ export function renderDashboard(
         }
         if (i < data.activeItems.length - 1) {
           allLines.push(emptyBoxLine(innerWidth));
+          allLines.push(boxLine(dim("  " + thinLine(innerWidth - 4)), innerWidth));
+          allLines.push(emptyBoxLine(innerWidth));
         }
       }
 
@@ -284,7 +474,10 @@ export function renderDashboard(
     // Completed section
     if (data.completedItems.length > 0) {
       allLines.push(`╠${horizontalLine(maxWidth)}╣`);
-      allLines.push(boxLine(bold("  COMPLETED"), innerWidth));
+      allLines.push(boxLine(
+        bold("  COMPLETED") + dim(` (${data.completedItems.length})`),
+        innerWidth
+      ));
 
       const maxCompleted = 5;
       const displayed = data.completedItems.slice(0, maxCompleted);
@@ -295,7 +488,7 @@ export function renderDashboard(
       }
       if (data.completedItems.length > maxCompleted) {
         allLines.push(boxLine(
-          dim(`  ... and ${data.completedItems.length - maxCompleted} more`),
+          dim(`  … and ${data.completedItems.length - maxCompleted} more`),
           innerWidth
         ));
       }
@@ -310,6 +503,7 @@ export function renderDashboard(
   const timeStr = data.lastUpdated.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
   const footerRight = dim(`Updated: ${timeStr}`);
@@ -321,22 +515,18 @@ export function renderDashboard(
   // Bottom border
   allLines.push(`╚${horizontalLine(maxWidth)}╝`);
 
-  // Apply scrolling: figure out how many content lines we have vs available height
+  // Scrolling
   const totalLines = allLines.length;
   const availableHeight = height;
 
   if (totalLines <= availableHeight) {
-    // Everything fits, no scrolling needed
-    // \x1b[J clears from cursor to end of screen so old frames don't linger
     return allLines.join("\n") + "\n\x1b[J";
   }
 
-  // Apply scroll offset
   const maxScroll = Math.max(0, totalLines - availableHeight);
   const clampedOffset = Math.min(scrollOffset, maxScroll);
   const visibleLines = allLines.slice(clampedOffset, clampedOffset + availableHeight);
 
-  // Add scroll indicator if not showing everything
   if (clampedOffset > 0 || clampedOffset + availableHeight < totalLines) {
     const scrollPct = Math.round((clampedOffset / maxScroll) * 100);
     const indicator = dim(` [${scrollPct}% scrolled]`);
@@ -351,17 +541,17 @@ export function renderDashboard(
 // ── Terminal Control ────────────────────────────────────────────────
 
 export function enterAlternateScreen(): void {
-  process.stdout.write("\x1b[?1049h"); // enter alternate screen
-  process.stdout.write("\x1b[?25l");   // hide cursor
+  process.stdout.write("\x1b[?1049h");
+  process.stdout.write("\x1b[?25l");
 }
 
 export function exitAlternateScreen(): void {
-  process.stdout.write("\x1b[?25h");   // show cursor
-  process.stdout.write("\x1b[?1049l"); // exit alternate screen
+  process.stdout.write("\x1b[?25h");
+  process.stdout.write("\x1b[?1049l");
 }
 
 export function clearAndHome(): string {
-  return "\x1b[H\x1b[2J"; // move to top-left + clear screen
+  return "\x1b[H\x1b[2J";
 }
 
 export function moveCursorHome(): string {
