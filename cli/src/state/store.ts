@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { WorkKitState } from "./schema.js";
 
 const STATE_DIR = ".work-kit";
-const STATE_FILE = "state.json";
+const STATE_FILE = "tracker.json";
 
 // ── Worktree Discovery ───────────────────────────────────────────────
 
@@ -41,13 +41,13 @@ export function stateExists(worktreeRoot: string): boolean {
 export function readState(worktreeRoot: string): WorkKitState {
   const filePath = statePath(worktreeRoot);
   if (!fs.existsSync(filePath)) {
-    throw new Error(`No state.json found at ${filePath}`);
+    throw new Error(`No tracker.json found at ${filePath}`);
   }
   const raw = fs.readFileSync(filePath, "utf-8");
   try {
     return JSON.parse(raw) as WorkKitState;
   } catch {
-    throw new Error(`Corrupted state.json at ${filePath}. File contains invalid JSON.`);
+    throw new Error(`Corrupted tracker.json at ${filePath}. File contains invalid JSON.`);
   }
 }
 

@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
-import { readState, writeState, findWorktreeRoot, readStateMd } from "../state/store.js";
+import { readState, writeState, findWorktreeRoot, readStateMd, statePath } from "../state/store.js";
 import { isPhaseComplete, nextSubStageInPhase } from "../engine/transitions.js";
 import { checkLoopback } from "../engine/loopbacks.js";
 import { PHASE_ORDER } from "../config/phases.js";
@@ -165,16 +165,31 @@ function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
   const date = new Date().toISOString().split("T")[0];
   const slug = state.slug;
   const wkDir = path.join(mainRoot, ".work-kit-tracker");
-  const archiveDir = path.join(wkDir, "archive");
+  const folderName = `${slug}-${date}`;
+  const archiveDir = path.join(wkDir, "archive", folderName);
 
-  // Ensure directories exist
+  // Ensure archive folder exists
   fs.mkdirSync(archiveDir, { recursive: true });
 
-  // Archive state.md
+  // Archive state.md (full phase outputs)
   const stateMd = readStateMd(worktreeRoot);
   if (stateMd) {
-    const archivePath = path.join(archiveDir, `${date}-${slug}.md`);
-    fs.writeFileSync(archivePath, stateMd, "utf-8");
+    fs.writeFileSync(path.join(archiveDir, "state.md"), stateMd, "utf-8");
+  }
+
+  // Archive tracker.json (full JSON with phases, timing, status)
+  const trackerPath = statePath(worktreeRoot);
+  if (fs.existsSync(trackerPath)) {
+    fs.copyFileSync(trackerPath, path.join(archiveDir, "tracker.json"));
+  }
+
+  // Write placeholder summary.md (wrap-up skill will overwrite with distilled summary)
+  const summaryPath = path.join(archiveDir, "summary.md");
+  if (!fs.existsSync(summaryPath)) {
+    const completedPhases = PHASE_ORDER
+      .filter(p => state.phases[p].status === "completed")
+      .join("→");
+    fs.writeFileSync(summaryPath, `---\nslug: ${slug}\nbranch: ${state.branch}\nstarted: ${state.started.split("T")[0]}\ncompleted: ${date}\nstatus: completed\n---\n\n## Summary\n\nPhases: ${completedPhases}\n\n_Pending wrap-up summary._\n`, "utf-8");
   }
 
   // Compute completed phases
@@ -182,15 +197,17 @@ function archiveCompleted(worktreeRoot: string, state: WorkKitState): void {
     .filter(p => state.phases[p].status === "completed")
     .join("→");
 
-  // Append to index.md
+  // Append to index.md with links to summary and archive folder
   const indexPath = path.join(wkDir, "index.md");
   let indexContent = "";
   if (fs.existsSync(indexPath)) {
     indexContent = fs.readFileSync(indexPath, "utf-8");
   }
   if (!indexContent.includes("| Date ")) {
-    indexContent = "| Date | Slug | PR | Status | Phases |\n| --- | --- | --- | --- | --- |\n";
+    indexContent = "| Date | Slug | PR | Status | Phases | Summary | Archive |\n| --- | --- | --- | --- | --- | --- | --- |\n";
   }
-  indexContent += `| ${date} | ${slug} | n/a | completed | ${completedPhases} |\n`;
+  const summaryLink = `[summary](archive/${folderName}/summary.md)`;
+  const archiveLink = `[archive](archive/${folderName}/)`;
+  indexContent += `| ${date} | ${slug} | n/a | completed | ${completedPhases} | ${summaryLink} | ${archiveLink} |\n`;
   fs.writeFileSync(indexPath, indexContent, "utf-8");
 }

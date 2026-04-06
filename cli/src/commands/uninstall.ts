@@ -52,9 +52,9 @@ export async function uninstallCommand(targetPath?: string): Promise<void> {
   }
 
   // Check for active state
-  const stateFile = path.join(projectDir, ".work-kit", "state.json");
-  if (fs.existsSync(stateFile)) {
-    console.error(yellow("\nWarning: Active work-kit state found (.work-kit/state.json)."));
+  const trackerFile = path.join(projectDir, ".work-kit", "tracker.json");
+  if (fs.existsSync(trackerFile)) {
+    console.error(yellow("\nWarning: Active work-kit state found (.work-kit/tracker.json)."));
     console.error(yellow("Uninstalling will not remove in-progress state files."));
   }
 

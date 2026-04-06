@@ -327,7 +327,8 @@ export function renderDashboard(
 
   if (totalLines <= availableHeight) {
     // Everything fits, no scrolling needed
-    return allLines.join("\n") + "\n";
+    // \x1b[J clears from cursor to end of screen so old frames don't linger
+    return allLines.join("\n") + "\n\x1b[J";
   }
 
   // Apply scroll offset
@@ -344,7 +345,7 @@ export function renderDashboard(
     }
   }
 
-  return visibleLines.join("\n") + "\n";
+  return visibleLines.join("\n") + "\n\x1b[J";
 }
 
 // ── Terminal Control ────────────────────────────────────────────────

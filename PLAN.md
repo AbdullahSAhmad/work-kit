@@ -43,7 +43,7 @@ Claude: npx work-kit-cli next
 
 ### Dual State: JSON + Markdown
 
-- **`.work-kit/state.json`** — source of truth for the state machine (phases, transitions, outcomes)
+- **`.work-kit/tracker.json`** — source of truth for the state machine (phases, transitions, outcomes)
 - **`.work-kit/state.md`** — source of truth for content (Final sections, working notes, criteria)
 
 JSON enforces rules. Markdown carries the knowledge. Both live in the worktree.
@@ -73,7 +73,7 @@ work-kit/
       workflow.ts               # auto-kit dynamic checklist
     state/
       schema.ts                 # All TypeScript interfaces
-      store.ts                  # Read/write state.json, find worktree
+      store.ts                  # Read/write tracker.json, find worktree
       validators.ts             # Prerequisite checks
     engine/
       phases.ts                 # Phase definitions + sub-stage ordering
@@ -244,8 +244,8 @@ const PARALLEL_GROUPS = {
 - `package.json`, `tsconfig.json` (tsx runner, no build step)
 - `src/state/schema.ts` — all types
 - `src/config/phases.ts` — static phase definitions
-- `src/state/store.ts` — find worktree, read/write state.json
-- `src/commands/init.ts` — create worktree + state.json + state.md
+- `src/state/store.ts` — find worktree, read/write tracker.json
+- `src/commands/init.ts` — create worktree + tracker.json + state.md
 - `src/commands/status.ts` — read and print state
 
 ### Phase 2: Core State Machine
@@ -301,7 +301,7 @@ Sub-stage .md files stay the same, with one addition: each ends with "Report you
 
 ## Verification
 
-1. `npx work-kit-cli init --mode full --description "test feature"` → creates worktree + state.json
+1. `npx work-kit-cli init --mode full --description "test feature"` → creates worktree + tracker.json
 2. `npx work-kit-cli next` → returns spawn_agent for plan/clarify
 3. `npx work-kit-cli complete plan/clarify` → advances to plan/investigate
 4. `npx work-kit-cli validate build` → returns error (plan not complete)

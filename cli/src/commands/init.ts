@@ -119,7 +119,7 @@ export function initCommand(options: {
     return {
       action: "error",
       message: "State already exists in this directory. Use `work-kit status` to check current state.",
-      suggestion: "To start fresh, delete .work-kit/state.json first.",
+      suggestion: "To start fresh, delete .work-kit/tracker.json first.",
     };
   }
 

@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe("initCommand", () => {
-  it("creates state.json and state.md", () => {
+  it("creates tracker.json and state.md", () => {
     const tmp = makeTmpDir();
     tmpDirs.push(tmp);
 
@@ -32,11 +32,11 @@ describe("initCommand", () => {
       worktreeRoot: tmp,
     });
 
-    assert.ok(fs.existsSync(path.join(tmp, ".work-kit", "state.json")));
+    assert.ok(fs.existsSync(path.join(tmp, ".work-kit", "tracker.json")));
     assert.ok(fs.existsSync(path.join(tmp, ".work-kit", "state.md")));
 
     const state = JSON.parse(
-      fs.readFileSync(path.join(tmp, ".work-kit", "state.json"), "utf-8")
+      fs.readFileSync(path.join(tmp, ".work-kit", "tracker.json"), "utf-8")
     );
     assert.equal(state.slug, "add-user-login");
     assert.equal(state.status, "in-progress");
@@ -108,7 +108,7 @@ describe("initCommand", () => {
     assert.equal(result.action, "spawn_agent");
 
     const state = JSON.parse(
-      fs.readFileSync(path.join(tmp, ".work-kit", "state.json"), "utf-8")
+      fs.readFileSync(path.join(tmp, ".work-kit", "tracker.json"), "utf-8")
     );
     assert.equal(state.mode, "auto-kit");
     assert.equal(state.classification, "bug-fix");

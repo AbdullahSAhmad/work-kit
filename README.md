@@ -81,7 +81,7 @@ Phases communicate through **Final sections** in `.work-kit/state.md`. Each phas
 
 Dual state files in `.work-kit/`:
 
-- **state.json** — state machine (current phase, sub-stage, transitions, loop-back counts)
+- **tracker.json** — state machine (current phase, sub-stage, transitions, loop-back counts)
 - **state.md** — content (working notes, Final sections, accumulated context)
 
 All writes are atomic to prevent state corruption.
@@ -105,10 +105,12 @@ Any stage can route back to a previous stage. Each route is enforced with a max 
 
 ```
 .work-kit-tracker/
-  2026-04-03-avatar-upload.md        # distilled summary
+  index.md                              # log of all completed work (links to summaries + archives)
   archive/
-    2026-04-03-avatar-upload.md      # full state.md copy
-  index.md                           # log of all completed work
+    avatar-upload-2026-04-03/
+      state.md                          # full phase outputs
+      tracker.json                      # full JSON tracker (phases, timing, status)
+      summary.md                        # distilled wrap-up summary
 ```
 
 ## Repo structure

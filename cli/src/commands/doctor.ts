@@ -65,10 +65,10 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
       if (state.version === 1 && state.slug && state.status) {
         checks.push({ name: "state", status: "pass", message: `Active work-kit: "${state.slug}" (${state.status})` });
       } else {
-        checks.push({ name: "state", status: "warn", message: "state.json exists but has unexpected structure" });
+        checks.push({ name: "state", status: "warn", message: "tracker.json exists but has unexpected structure" });
       }
     } catch (e: any) {
-      checks.push({ name: "state", status: "warn", message: `state.json error: ${e.message}` });
+      checks.push({ name: "state", status: "warn", message: `tracker.json error: ${e.message}` });
     }
   } else {
     checks.push({ name: "state", status: "pass", message: "No active work-kit (OK — run `work-kit init` to start)" });

@@ -41,7 +41,7 @@ npx tsx cli/src/index.ts init "add search feature"
 | Directory | Purpose |
 |-----------|---------|
 | `commands/` | One file per CLI command (init, next, complete, etc.) |
-| `state/` | State machine logic and file management (state.json + state.md) |
+| `state/` | State machine logic and file management (tracker.json + state.md) |
 | `engine/` | Workflow engine, phase transitions, loop-back routing |
 | `context/` | Context generation — builds Final sections for phase handoffs |
 | `config/` | Configuration defaults, phase/sub-stage definitions |

@@ -35,7 +35,7 @@ export function startWatching(
       // rename (write tmp + rename), which replaces the inode and
       // breaks fs.watch on the file on Linux.
       const watcher = fs.watch(stateDir, { persistent: false }, (_event, filename) => {
-        if (filename === "state.json") {
+        if (filename === "tracker.json") {
           debouncedUpdate();
         }
       });

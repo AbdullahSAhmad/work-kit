@@ -12,16 +12,16 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 
 ## Instructions
 
-> **Note:** Archiving state.md and appending to `.work-kit-tracker/index.md` are handled automatically by the CLI when you run `work-kit complete` on the last sub-stage. You do NOT need to do these manually.
+> **Note:** The CLI automatically archives `state.md`, `tracker.json`, and a placeholder `summary.md` into `.work-kit-tracker/archive/<slug>-<date>/` when the last sub-stage completes. It also appends a row to `.work-kit-tracker/index.md`. Your job is to **replace the placeholder summary.md** with a real distilled summary.
 
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
-2. **Synthesize the work-kit log entry** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
-3. **Write the summary file** to `.work-kit-tracker/<date>-<slug>.md` on the **main branch** (not the worktree)
+2. **Synthesize the summary** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
+3. **Overwrite the summary file** at `.work-kit-tracker/archive/<slug>-<date>/summary.md` on the **main branch** (not the worktree)
 4. **Ask the user** if they want the worktree and branch removed
 
-## Work-Kit Log Entry Format
+## Summary File Format
 
-Write to `.work-kit-tracker/<YYYY-MM-DD>-<slug>.md`:
+Overwrite `.work-kit-tracker/archive/<slug>-<date>/summary.md`:
 
 ```markdown
 ---
@@ -46,6 +46,17 @@ status: <completed | partial | rolled-back>
 ## Deviations from Plan
 <anything that changed between Blueprint and final implementation — skip if none>
 - <what changed and why>
+```
+
+## Archive Folder Structure
+
+The CLI creates this automatically — you only need to overwrite `summary.md`:
+
+```
+.work-kit-tracker/archive/<slug>-<date>/
+├── state.md          # full phase outputs (raw, from .work-kit/state.md)
+├── tracker.json      # full JSON tracker (phases, timing, status)
+└── summary.md        # distilled wrap-up summary (YOU write this)
 ```
 
 ## What to Include vs. Exclude

@@ -61,8 +61,8 @@ describe("bootstrapCommand", () => {
       worktreeRoot: tmp,
     });
 
-    // Backdate the state.json file to 3 hours ago
-    const stateFile = path.join(tmp, ".work-kit", "state.json");
+    // Backdate the tracker.json file to 3 hours ago
+    const stateFile = path.join(tmp, ".work-kit", "tracker.json");
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
     fs.utimesSync(stateFile, threeHoursAgo, threeHoursAgo);
 
@@ -83,7 +83,7 @@ describe("bootstrapCommand", () => {
     });
 
     // Manually set status to completed
-    const stateFile = path.join(tmp, ".work-kit", "state.json");
+    const stateFile = path.join(tmp, ".work-kit", "tracker.json");
     const state = JSON.parse(fs.readFileSync(stateFile, "utf-8"));
     state.status = "completed";
     fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
@@ -104,7 +104,7 @@ describe("bootstrapCommand", () => {
       worktreeRoot: tmp,
     });
 
-    const stateFile = path.join(tmp, ".work-kit", "state.json");
+    const stateFile = path.join(tmp, ".work-kit", "tracker.json");
     const state = JSON.parse(fs.readFileSync(stateFile, "utf-8"));
     state.status = "failed";
     fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
