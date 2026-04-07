@@ -2,7 +2,7 @@
 name: full-kit
 description: "Full pipeline for feature development. Runs all phases and steps in order. Usage: /full-kit <description> to start, /full-kit to continue."
 user-invocable: true
-argument-hint: "[--gated] [description]"
+argument-hint: "[--gated] [--opus|--sonnet|--haiku|--inherit] [description]"
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -33,15 +33,32 @@ Do not proceed until `doctor` reports all checks passed.
 
 ## Starting New Work (`/full-kit <description>`)
 
-1. Create a git worktree and initialize state:
+1. Parse flags out of the user's input before building the init command:
+   - `--gated` → append `--gated` to init
+   - `--opus` → append `--model-policy opus`
+   - `--sonnet` → append `--model-policy sonnet`
+   - `--haiku` → append `--model-policy haiku`
+   - `--inherit` → append `--model-policy inherit` (no model override; lets Claude Code's default pick)
+   - No model flag → omit `--model-policy` (defaults to `auto` = work-kit step-level routing)
+
+   Strip any recognized flags from the description text before passing it through. Only one model flag may be set at a time — if the user passes more than one, report the conflict and stop.
+
+2. Create a git worktree and initialize state:
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
    cd worktrees/<slug>
-   work-kit init --mode full --description "<description>"
+   work-kit init --mode full --description "<description>" [--gated] [--model-policy <value>]
    ```
-   If the user passed `--gated` (e.g., `/full-kit --gated add user avatar`), add `--gated` to the init command. Strip `--gated` from the description text.
-2. Parse the JSON response and follow the action
-3. Continue with the execution loop below
+
+   Examples:
+   ```
+   /full-kit add user avatar              → work-kit init --mode full --description "add user avatar"
+   /full-kit --opus add user avatar       → work-kit init --mode full --description "add user avatar" --model-policy opus
+   /full-kit --gated --inherit fix login  → work-kit init --mode full --description "fix login" --gated --model-policy inherit
+   ```
+
+3. Parse the JSON response and follow the action
+4. Continue with the execution loop below
 
 ## Continuing Work (`/full-kit` with no args)
 
@@ -61,8 +78,8 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 1. Run `work-kit next` to get the next action
 2. Parse the JSON response
 3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
-   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `work-kit complete <onComplete target>`
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. **If the action includes a `model` field, pass it as the Agent tool's `model` parameter; if the field is absent, do not set `model` (let Claude Code's default pick).** After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
+   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. **For each agent, pass its `model` field as the Agent tool's `model` parameter when present; omit when absent.** Wait for all to complete. Then spawn `thenSequential` if provided (same rule for its `model` field). After all complete: `work-kit complete <onComplete target>`
    - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again. (Only appears in `--gated` mode.)
    - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.

@@ -94,6 +94,56 @@ describe("initCommand", () => {
     }
   });
 
+  it("persists model policy when provided", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    initCommand({
+      mode: "full",
+      description: "Ship the avatar feature",
+      modelPolicy: "opus",
+      worktreeRoot: tmp,
+    });
+
+    const state = JSON.parse(
+      fs.readFileSync(path.join(tmp, ".work-kit", "tracker.json"), "utf-8")
+    );
+    assert.equal(state.modelPolicy, "opus");
+  });
+
+  it("omits modelPolicy from state when defaulting to auto", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    initCommand({
+      mode: "full",
+      description: "Some default task",
+      worktreeRoot: tmp,
+    });
+
+    const state = JSON.parse(
+      fs.readFileSync(path.join(tmp, ".work-kit", "tracker.json"), "utf-8")
+    );
+    assert.equal(state.modelPolicy, undefined);
+  });
+
+  it("rejects invalid model policy", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    const result = initCommand({
+      mode: "full",
+      description: "Task with bad policy",
+      modelPolicy: "turbo" as any,
+      worktreeRoot: tmp,
+    });
+
+    assert.equal(result.action, "error");
+    if (result.action === "error") {
+      assert.ok(result.message.includes("model-policy"));
+    }
+  });
+
   it("auto mode with classification succeeds", () => {
     const tmp = makeTmpDir();
     tmpDirs.push(tmp);

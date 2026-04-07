@@ -21,7 +21,8 @@ import { pauseCommand } from "./commands/pause.js";
 import { resumeCommand } from "./commands/resume.js";
 import { reportCommand } from "./commands/report.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
-import type { Classification, PhaseName } from "./state/schema.js";
+import type { Classification, ModelPolicy, PhaseName } from "./state/schema.js";
+import { isModelPolicy } from "./state/schema.js";
 
 import { createRequire } from "node:module";
 
@@ -44,14 +45,23 @@ program
   .requiredOption("--description <text>", "Description of the work")
   .option("--classification <type>", "Work classification (auto mode): bug-fix, small-change, refactor, feature, large-feature")
   .option("--gated", "Wait for user approval between phases (default: auto-proceed)")
+  .option("--model-policy <policy>", "Session model policy: auto, opus, sonnet, haiku, inherit (default: auto)")
   .option("--worktree-root <path>", "Override worktree root directory")
   .action((opts) => {
     try {
+      if (opts.modelPolicy !== undefined && !isModelPolicy(opts.modelPolicy)) {
+        console.error(JSON.stringify({
+          action: "error",
+          message: `Invalid --model-policy "${opts.modelPolicy}". Use one of: auto, opus, sonnet, haiku, inherit.`,
+        }));
+        process.exit(1);
+      }
       const result = initCommand({
         mode: opts.mode as "full" | "auto" | undefined,
         description: opts.description,
         classification: opts.classification as Classification | undefined,
         gated: opts.gated,
+        modelPolicy: opts.modelPolicy as ModelPolicy | undefined,
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));

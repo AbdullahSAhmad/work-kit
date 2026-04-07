@@ -4,6 +4,7 @@ import { validatePhasePrerequisites } from "../state/validators.js";
 import { buildAgentPrompt } from "../context/prompt-builder.js";
 import { getParallelGroup } from "../workflow/parallel.js";
 import { skillFilePath } from "../config/workflow.js";
+import { resolveModel } from "../config/model-routing.js";
 import { CLI_BINARY } from "../config/constants.js";
 
 import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
@@ -109,27 +110,27 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
         const sState = state.phases[phase].steps[s];
         return sState && sState.status !== "skipped" && sState.status !== "completed";
       })
-      .map((s) => ({
+      .map((s) => withModel({
         phase,
         step: s,
         skillFile: skillFilePath(phase, s),
         agentPrompt: buildAgentPrompt(root, state, phase, s, stateMd),
         outputFile: `.work-kit/${phase}-${s}.md`,
-      }));
+      }, state));
 
     // If all parallel members were filtered out, fall through to single agent
     if (agents.length === 0) {
       // Skip to thenSequential if it exists, otherwise nothing to do
       if (parallelGroup.thenSequential) {
         const seqStep = parallelGroup.thenSequential;
-        return {
+        return withModelAction({
           action: "spawn_agent",
           phase,
           step: seqStep,
           skillFile: skillFilePath(phase, seqStep),
           agentPrompt: buildAgentPrompt(root, state, phase, seqStep, stateMd),
           onComplete: `${CLI_BINARY} complete ${phase}/${seqStep}`,
-        };
+        }, state);
       }
       return { action: "error", message: `No active steps in parallel group for ${phase}` };
     }
@@ -137,14 +138,14 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     // If only 1 agent remains, run as single agent (no need for parallel)
     if (agents.length === 1 && !parallelGroup.thenSequential) {
       const agent = agents[0];
-      return {
+      return withModelAction({
         action: "spawn_agent",
         phase: agent.phase,
         step: agent.step,
         skillFile: agent.skillFile,
         agentPrompt: agent.agentPrompt,
         onComplete: `${CLI_BINARY} complete ${agent.phase}/${agent.step}`,
-      };
+      }, state);
     }
 
     for (const agent of agents) {
@@ -153,12 +154,12 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     }
 
     const thenSequential = parallelGroup.thenSequential
-      ? {
+      ? withModel({
           phase,
           step: parallelGroup.thenSequential,
           skillFile: skillFilePath(phase, parallelGroup.thenSequential),
           agentPrompt: buildAgentPrompt(root, state, phase, parallelGroup.thenSequential, stateMd),
-        }
+        }, state)
       : undefined;
 
     writeState(root, state);
@@ -174,12 +175,31 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
   const skill = skillFilePath(phase, step);
   const prompt = buildAgentPrompt(root, state, phase, step, stateMd);
 
-  return {
+  return withModelAction({
     action: "spawn_agent",
     phase,
     step,
     skillFile: skill,
     agentPrompt: prompt,
     onComplete: `${CLI_BINARY} complete ${phase}/${step}`,
-  };
+  }, state);
+}
+
+/**
+ * Attach the resolved model tier to an AgentSpec. Omits the field entirely
+ * when resolveModel returns undefined (policy "inherit" or hard-default miss),
+ * keeping the action JSON compatible with skills that haven't yet been updated
+ * to forward a model parameter.
+ */
+function withModel<T extends { phase: PhaseName; step: string }>(spec: T, state: WorkKitState): T & { model?: ReturnType<typeof resolveModel> } {
+  const model = resolveModel(state, spec.phase, spec.step);
+  return model ? { ...spec, model } : spec;
+}
+
+function withModelAction(
+  action: Extract<Action, { action: "spawn_agent" }>,
+  state: WorkKitState
+): Extract<Action, { action: "spawn_agent" }> {
+  const model = resolveModel(state, action.phase, action.step);
+  return model ? { ...action, model } : action;
 }

@@ -42,6 +42,35 @@ export function isClassification(value: string): value is Classification {
   return (CLASSIFICATIONS as readonly string[]).includes(value);
 }
 
+// ── Model Routing ───────────────────────────────────────────────────
+
+/**
+ * Concrete model tier a phase/step can be routed to.
+ * "inherit" is not a tier — see ModelPolicy for that.
+ */
+export const MODEL_TIERS = ["haiku", "sonnet", "opus"] as const;
+export type ModelTier = (typeof MODEL_TIERS)[number];
+
+export function isModelTier(value: string): value is ModelTier {
+  return (MODEL_TIERS as readonly string[]).includes(value);
+}
+
+/**
+ * Session-wide model policy set once at init time.
+ *
+ * - "auto"     — use work-kit's step-level routing (BY_STEP + BY_PHASE + classification)
+ * - "opus" | "sonnet" | "haiku" — force that tier for every agent, no exceptions
+ * - "inherit"  — emit no model field; let Claude Code's default pick (pre-change behavior)
+ *
+ * Per-step workspace/user JSON overrides still win over the policy.
+ */
+export const MODEL_POLICIES = ["auto", "opus", "sonnet", "haiku", "inherit"] as const;
+export type ModelPolicy = (typeof MODEL_POLICIES)[number];
+
+export function isModelPolicy(value: string): value is ModelPolicy {
+  return (MODEL_POLICIES as readonly string[]).includes(value);
+}
+
 // ── Step Outcomes ───────────────────────────────────────────────────
 
 /**
@@ -123,6 +152,8 @@ export interface WorkKitState {
   gated?: boolean;
   classification?: Classification;
   status: WorkStatus;
+  /** Session-wide model policy, set once at init. Defaults to "auto". */
+  modelPolicy?: ModelPolicy;
   /** ISO timestamp the work was paused; cleared on resume. */
   pausedAt?: string;
   currentPhase: PhaseName | null;
@@ -144,10 +175,12 @@ export interface AgentSpec {
   skillFile: string;
   agentPrompt: string;
   outputFile?: string;
+  /** Resolved model tier for this agent. Omitted when policy is "inherit". */
+  model?: ModelTier;
 }
 
 export type Action =
-  | { action: "spawn_agent"; phase: PhaseName; step: string; skillFile: string; agentPrompt: string; onComplete: string }
+  | { action: "spawn_agent"; phase: PhaseName; step: string; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier }
   | { action: "spawn_parallel_agents"; agents: AgentSpec[]; thenSequential?: AgentSpec; onComplete: string }
   | { action: "wait_for_user"; message: string }
   | { action: "loopback"; from: Location; to: Location; reason: string }

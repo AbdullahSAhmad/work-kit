@@ -1,11 +1,13 @@
 import { readState, writeState, findWorktreeRoot } from "../state/store.js";
-import { STEPS_BY_PHASE, PHASE_NAMES, MODE_AUTO } from "../state/schema.js";
+import { STEPS_BY_PHASE, PHASE_NAMES, MODE_AUTO, PhaseName } from "../state/schema.js";
 import { parseLocation } from "../state/helpers.js";
+import { resolveModel } from "../config/model-routing.js";
 import type { Action } from "../state/schema.js";
 
 interface WorkflowStatus {
   action: "workflow_status";
-  workflow: { step: string; status: string }[];
+  modelPolicy: string;
+  workflow: { step: string; status: string; model?: string }[];
 }
 
 export type WorkflowResult = Action | WorkflowStatus;
@@ -113,13 +115,21 @@ export function workflowCommand(opts: {
     return { action: "wait_for_user", message: `Removed ${opts.remove} from workflow.` };
   }
 
-  // No add/remove — show current workflow
+  // No add/remove — show current workflow with resolved model per step
   const workflow = state.workflow
     .filter((s) => s.included)
-    .map((s) => ({
-      step: `${s.phase}/${s.step}`,
-      status: state.phases[s.phase]?.steps[s.step]?.status || "unknown",
-    }));
+    .map((s) => {
+      const model = resolveModel(state, s.phase as PhaseName, s.step);
+      return {
+        step: `${s.phase}/${s.step}`,
+        status: state.phases[s.phase]?.steps[s.step]?.status || "unknown",
+        ...(model && { model }),
+      };
+    });
 
-  return { action: "workflow_status", workflow };
+  return {
+    action: "workflow_status",
+    modelPolicy: state.modelPolicy ?? "auto",
+    workflow,
+  };
 }

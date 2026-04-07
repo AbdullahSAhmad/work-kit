@@ -2,7 +2,7 @@
 name: auto-kit
 description: "Smart pipeline that analyzes the request and builds a dynamic workflow. Usage: /auto-kit <description> to start, /auto-kit to continue."
 user-invocable: true
-argument-hint: "[--gated] [description]"
+argument-hint: "[--gated] [--opus|--sonnet|--haiku|--inherit] [description]"
 allowed-tools: Agent, Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -91,17 +91,34 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
 
 ### Step 3: Initialize
 
-1. Create a git worktree and initialize state with the CLI:
+1. Parse flags out of the user's input before building the init command:
+   - `--gated` → append `--gated`
+   - `--opus` → append `--model-policy opus`
+   - `--sonnet` → append `--model-policy sonnet`
+   - `--haiku` → append `--model-policy haiku`
+   - `--inherit` → append `--model-policy inherit` (no model override; lets Claude Code's default pick)
+   - No model flag → omit `--model-policy` (defaults to `auto` = work-kit step-level routing)
+
+   Strip recognized flags from the description text. Only one model flag at a time — if the user passes more than one, report the conflict and stop.
+
+2. Create a git worktree and initialize state with the CLI:
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
    cd worktrees/<slug>
-   work-kit init --mode auto --description "<description>" --classification <classification>
+   work-kit init --mode auto --description "<description>" --classification <classification> [--gated] [--model-policy <value>]
    ```
-   If the user passed `--gated` (e.g., `/auto-kit --gated fix login bug`), add `--gated` to the init command. Strip `--gated` from the description text.
-2. Show the workflow to the user: `work-kit workflow`
-3. User can adjust: `work-kit workflow --add review/security` or `work-kit workflow --remove test/e2e`
-4. **Wait for approval** — user can add/remove steps before proceeding
-5. Once approved, start the execution loop
+
+   Examples:
+   ```
+   /auto-kit fix login bug             → work-kit init --mode auto --description "fix login bug" --classification bug-fix
+   /auto-kit --inherit fix the typo    → work-kit init --mode auto --description "fix the typo" --classification small-change --model-policy inherit
+   /auto-kit --haiku tweak copy        → work-kit init --mode auto --description "tweak copy" --classification small-change --model-policy haiku
+   ```
+
+3. Show the workflow to the user: `work-kit workflow` (output now includes the resolved model per step and the active policy; review it before approving)
+4. User can adjust: `work-kit workflow --add review/security` or `work-kit workflow --remove test/e2e`
+5. **Wait for approval** — user can add/remove steps before proceeding
+6. Once approved, start the execution loop
 
 ## Continuing Work (`/auto-kit` with no args)
 
@@ -186,8 +203,8 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 1. Run `work-kit next` to get the next action
 2. Parse the JSON response
 3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
-   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. Wait for all to complete. Then spawn `thenSequential` if provided. After all complete: `work-kit complete <onComplete target>`
+   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. **If the action includes a `model` field, pass it as the Agent tool's `model` parameter; if the field is absent, do not set `model` (let Claude Code's default pick).** After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
+   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. **For each agent, pass its `model` field as the Agent tool's `model` parameter when present; omit when absent.** Wait for all to complete. Then spawn `thenSequential` if provided (same rule for its `model` field). After all complete: `work-kit complete <onComplete target>`
    - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again.
    - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.

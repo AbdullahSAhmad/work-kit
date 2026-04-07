@@ -6,6 +6,7 @@ interface StatusOutput {
   branch: string;
   mode: string;
   classification?: string;
+  modelPolicy: string;
   status: string;
   currentPhase: string | null;
   currentStep: string | null;
@@ -40,6 +41,7 @@ export function statusCommand(worktreeRoot?: string): StatusOutput {
     branch: state.branch,
     mode: state.mode,
     ...(state.classification && { classification: state.classification }),
+    modelPolicy: state.modelPolicy ?? "auto",
     status: state.status,
     currentPhase: state.currentPhase,
     currentStep: state.currentStep,

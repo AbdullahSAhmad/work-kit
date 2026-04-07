@@ -1,10 +1,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { WorkKitState, PhaseState, PhaseName, PHASE_NAMES, STEPS_BY_PHASE, WorkflowStep, Classification, MODE_FULL, MODE_AUTO } from "../state/schema.js";
+import { WorkKitState, PhaseState, PhaseName, PHASE_NAMES, STEPS_BY_PHASE, WorkflowStep, Classification, MODE_FULL, MODE_AUTO, ModelPolicy, isModelPolicy } from "../state/schema.js";
 import { writeState, writeStateMd, stateExists, STATE_DIR, resolveMainRepoRoot } from "../state/store.js";
 import { buildFullWorkflow, buildDefaultWorkflow, skillFilePath } from "../config/workflow.js";
 import { BRANCH_PREFIX, CLI_BINARY } from "../config/constants.js";
 import { loadProjectConfig } from "../config/project-config.js";
+import { resolveModel } from "../config/model-routing.js";
 import type { Action } from "../state/schema.js";
 
 function toSlug(description: string): string {
@@ -111,6 +112,7 @@ export function initCommand(options: {
   description: string;
   classification?: Classification;
   gated?: boolean;
+  modelPolicy?: ModelPolicy;
   worktreeRoot?: string;
 }): Action {
   const worktreeRoot = options.worktreeRoot || process.cwd();
@@ -120,7 +122,16 @@ export function initCommand(options: {
   const mode = options.mode ?? projectConfig.defaults?.mode ?? "full";
   const classification = options.classification ?? projectConfig.defaults?.classification;
   const gated = options.gated ?? projectConfig.defaults?.gated ?? false;
+  const modelPolicy: ModelPolicy = options.modelPolicy ?? "auto";
   const { description } = options;
+
+  // Validate model policy (guards against CLI callers that bypass the commander layer)
+  if (!isModelPolicy(modelPolicy)) {
+    return {
+      action: "error",
+      message: `Invalid --model-policy "${modelPolicy}". Use one of: auto, opus, sonnet, haiku, inherit.`,
+    };
+  }
 
   // Guard: don't overwrite existing state
   if (stateExists(worktreeRoot)) {
@@ -180,6 +191,7 @@ export function initCommand(options: {
     mode: modeLabel,
     ...(gated && { gated: true }),
     ...(classification && { classification }),
+    ...(modelPolicy !== "auto" && { modelPolicy }),
     status: "in-progress",
     currentPhase: firstPhase,
     currentStep: firstStep,
@@ -199,6 +211,8 @@ export function initCommand(options: {
   writeState(worktreeRoot, state);
   writeStateMd(worktreeRoot, generateStateMd(slug, branch, modeLabel, description, classification, workflow));
 
+  const model = resolveModel(state, firstPhase, firstStep);
+
   return {
     action: "spawn_agent",
     phase: firstPhase,
@@ -206,5 +220,6 @@ export function initCommand(options: {
     skillFile: skillFilePath(firstPhase, firstStep),
     agentPrompt: `You are starting the ${firstPhase} phase. Begin with the ${firstStep} step. Read the skill file and follow its instructions. Write outputs to .work-kit/state.md.`,
     onComplete: `${CLI_BINARY} complete ${firstPhase}/${firstStep}`,
+    ...(model && { model }),
   };
 }
