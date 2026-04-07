@@ -244,8 +244,9 @@ program
   .command("observe")
   .description("Real-time dashboard of all active work items")
   .option("--repo <path>", "Main repository root")
+  .option("--all", "Observe every work-kit project found under ~/.claude/projects/")
   .action(async (opts) => {
-    await observeCommand({ mainRepo: opts.repo });
+    await observeCommand({ mainRepo: opts.repo, all: opts.all });
   });
 
 // ── uninstall ────────────────────────────────────────────────────────
@@ -296,11 +297,12 @@ program
 
 program
   .command("resume")
-  .description("Resume a paused work-kit session")
-  .option("--worktree-root <path>", "Override worktree root")
+  .description("Resume a paused work-kit session (lists paused sessions when no slug is given)")
+  .option("--worktree-root <path>", "Override worktree root (resume session at exact path)")
+  .option("--slug <slug>", "Resume the paused session with this slug")
   .action((opts) => {
     try {
-      const result = resumeCommand(opts.worktreeRoot);
+      const result = resumeCommand({ worktreeRoot: opts.worktreeRoot, slug: opts.slug });
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.action === "error" ? 1 : 0);
     } catch (e: any) {

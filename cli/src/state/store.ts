@@ -103,19 +103,28 @@ export function readStateMd(worktreeRoot: string): string | null {
 
 // ── Git Helpers ─────────────────────────────────────────────────
 
-export function resolveMainRepoRoot(worktreeRoot: string): string {
+// Returns the main repo root for a given path inside a git repo, or null
+// if the path is not in a git repo. Unlike `git rev-parse --show-toplevel`,
+// this returns the *main* repo even when called from inside a worktree —
+// `git worktree list --porcelain` always lists the main repo first.
+export function gitMainRepoRoot(cwd: string): string | null {
   try {
     const output = execFileSync("git", ["worktree", "list", "--porcelain"], {
-      cwd: worktreeRoot,
+      cwd,
       encoding: "utf-8",
       timeout: 5000,
+      stdio: ["ignore", "pipe", "ignore"],
     });
     const firstLine = output.split("\n").find(l => l.startsWith("worktree "));
     if (firstLine) return firstLine.slice("worktree ".length).trim();
+    return null;
   } catch {
-    // fallback
+    return null;
   }
-  return worktreeRoot;
+}
+
+export function resolveMainRepoRoot(worktreeRoot: string): string {
+  return gitMainRepoRoot(worktreeRoot) ?? worktreeRoot;
 }
 
 // ── Migration ───────────────────────────────────────────────────────

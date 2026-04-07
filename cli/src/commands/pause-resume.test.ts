@@ -56,7 +56,7 @@ describe("pause / resume", () => {
     initCommand({ mode: "full", description: "Resume test", worktreeRoot: tmp });
     pauseCommand(undefined, tmp);
 
-    const result = resumeCommand(tmp);
+    const result = resumeCommand({ worktreeRoot: tmp });
     assert.equal(result.action, "resumed");
 
     const tracker = JSON.parse(fs.readFileSync(path.join(tmp, ".work-kit", "tracker.json"), "utf-8"));
@@ -69,7 +69,7 @@ describe("pause / resume", () => {
     tmpDirs.push(tmp);
     initCommand({ mode: "full", description: "Already running", worktreeRoot: tmp });
 
-    const result = resumeCommand(tmp);
+    const result = resumeCommand({ worktreeRoot: tmp });
     assert.equal(result.action, "resumed");
   });
 

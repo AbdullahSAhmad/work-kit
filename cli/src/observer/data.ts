@@ -1,9 +1,10 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
 import type { WorkKitState, PhaseName } from "../state/schema.js";
 import { PHASE_NAMES, STEPS_BY_PHASE, MODE_AUTO } from "../state/schema.js";
-import { readState, stateExists, STATE_DIR, AWAITING_INPUT_MARKER_FILE, IDLE_MARKER_FILE } from "../state/store.js";
+import { readState, stateExists, STATE_DIR, AWAITING_INPUT_MARKER_FILE, IDLE_MARKER_FILE, gitMainRepoRoot } from "../state/store.js";
 import { TRACKER_DIR, INDEX_FILE } from "../config/constants.js";
 
 const AWAITING_INPUT_MARKER = path.join(STATE_DIR, AWAITING_INPUT_MARKER_FILE);
@@ -11,8 +12,14 @@ const IDLE_MARKER = path.join(STATE_DIR, IDLE_MARKER_FILE);
 
 // ── View Types ─────────────────────────────────────────────────────
 
+export interface WorktreeEntry {
+  root: string;     // main repo root that owns this worktree
+  worktree: string; // worktree path (may equal root)
+}
+
 export interface WorkItemView {
   slug: string;
+  repoName: string;
   branch: string;
   mode: string;
   classification?: string;
@@ -37,6 +44,7 @@ export interface WorkItemView {
 
 export interface CompletedItemView {
   slug: string;
+  repoName: string;
   pr?: string;
   completedAt: string;
   phases: string;
@@ -80,9 +88,97 @@ export function discoverWorktrees(mainRepoRoot: string): string[] {
   return worktrees;
 }
 
+// ── Discover All Work-Kit Projects on the System ───────────────────
+//
+// Scans ~/.claude/projects/ for sessions, reads `cwd` from session
+// jsonl files, resolves each to a git toplevel, and keeps only those
+// roots that have at least one work-kit-tracked worktree.
+
+const CLAUDE_PROJECTS_DIR = path.join(os.homedir(), ".claude", "projects");
+
+function extractCwdFromJsonl(filePath: string): string | null {
+  let fd: number | null = null;
+  try {
+    const buf = Buffer.alloc(16 * 1024);
+    fd = fs.openSync(filePath, "r");
+    const bytesRead = fs.readSync(fd, buf, 0, buf.length, 0);
+    const content = buf.subarray(0, bytesRead).toString("utf-8");
+    const lines = content.split("\n");
+    for (const line of lines) {
+      if (!line.includes('"cwd"')) continue;
+      try {
+        const obj = JSON.parse(line);
+        if (typeof obj.cwd === "string" && obj.cwd.length > 0) return obj.cwd;
+      } catch {
+        // Likely a truncated final line — skip
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    if (fd !== null) {
+      try { fs.closeSync(fd); } catch { /* ignore */ }
+    }
+  }
+}
+
+export function discoverWorkKitProjects(): string[] {
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(CLAUDE_PROJECTS_DIR);
+  } catch {
+    return [];
+  }
+
+  const cwds = new Set<string>();
+  for (const entry of entries) {
+    const projDir = path.join(CLAUDE_PROJECTS_DIR, entry);
+    let files: string[];
+    try {
+      files = fs.readdirSync(projDir).filter(f => f.endsWith(".jsonl"));
+    } catch {
+      continue;
+    }
+    if (files.length === 0) continue;
+
+    // Single-pass scan for the most-recently-modified jsonl — avoids
+    // re-statting in a sort comparator (which is O(N log N) stats).
+    let newestFile: string | null = null;
+    let newestMtime = -Infinity;
+    for (const f of files) {
+      try {
+        const m = fs.statSync(path.join(projDir, f)).mtimeMs;
+        if (m > newestMtime) {
+          newestMtime = m;
+          newestFile = f;
+        }
+      } catch { /* ignore */ }
+    }
+    if (!newestFile) continue;
+
+    const cwd = extractCwdFromJsonl(path.join(projDir, newestFile));
+    if (cwd) cwds.add(cwd);
+  }
+
+  // Resolve each cwd to its main repo root (works whether the session
+  // was run from the main repo or from inside a worktree) and keep
+  // only roots that actually have work-kit setup.
+  const roots = new Set<string>();
+  for (const cwd of cwds) {
+    const mainRoot = gitMainRepoRoot(cwd);
+    if (!mainRoot || roots.has(mainRoot)) continue;
+    if (discoverWorktrees(mainRoot).length > 0) {
+      roots.add(mainRoot);
+    }
+  }
+
+  return Array.from(roots);
+}
+
 // ── Collect Single Work Item ───────────────────────────────────────
 
-export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
+export function collectWorkItem(worktreeRoot: string, mainRepoRoot?: string): WorkItemView | null {
   if (!stateExists(worktreeRoot)) return null;
 
   let state: WorkKitState;
@@ -182,8 +278,10 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
       : undefined,
   };
 
+  const repoRoot = mainRepoRoot ?? worktreeRoot;
   return {
     slug: state.slug,
+    repoName: path.basename(repoRoot),
     branch: state.branch,
     mode: state.mode,
     classification: state.classification,
@@ -245,6 +343,7 @@ export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[]
     if (col1 === "Date" || col1.startsWith("-")) continue;
     items.push({
       slug: match[2].trim(),
+      repoName: path.basename(mainRepoRoot),
       pr: match[3].trim() !== "n/a" ? match[3].trim() : undefined,
       completedAt: col1,
       phases: match[5].trim(),
@@ -256,13 +355,29 @@ export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[]
 
 // ── Collect All Dashboard Data ─────────────────────────────────────
 
-export function collectDashboardData(mainRepoRoot: string, cachedWorktrees?: string[]): DashboardData {
-  const worktrees = cachedWorktrees ?? discoverWorktrees(mainRepoRoot);
+export function collectDashboardData(
+  mainRepoRoots: string[],
+  cachedEntries?: WorktreeEntry[]
+): DashboardData {
+  let entries: WorktreeEntry[];
+  if (cachedEntries) {
+    entries = cachedEntries;
+  } else {
+    entries = [];
+    const seen = new Set<string>();
+    for (const root of mainRepoRoots) {
+      for (const wt of discoverWorktrees(root)) {
+        if (seen.has(wt)) continue;
+        seen.add(wt);
+        entries.push({ root, worktree: wt });
+      }
+    }
+  }
   const activeItems: WorkItemView[] = [];
   const completedFromWorktrees: CompletedItemView[] = [];
 
-  for (const wt of worktrees) {
-    const item = collectWorkItem(wt);
+  for (const entry of entries) {
+    const item = collectWorkItem(entry.worktree, entry.root);
     if (!item) continue;
     if (item.status === "completed") {
       const phaseNames = item.phases
@@ -271,6 +386,7 @@ export function collectDashboardData(mainRepoRoot: string, cachedWorktrees?: str
         .join("→");
       completedFromWorktrees.push({
         slug: item.slug,
+        repoName: item.repoName,
         completedAt: item.startedAt,
         phases: phaseNames,
       });
@@ -288,13 +404,20 @@ export function collectDashboardData(mainRepoRoot: string, cachedWorktrees?: str
     return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime();
   });
 
-  // Merge completed items from worktrees and index file, dedup by slug
+  // Merge completed items from worktrees and index files, dedup by slug
   const activeSlugs = new Set(activeItems.map(i => i.slug));
-  const indexItems = collectCompletedItems(mainRepoRoot);
+  const indexItems: CompletedItemView[] = [];
+  for (const root of mainRepoRoots) {
+    indexItems.push(...collectCompletedItems(root));
+  }
   const seen = new Set(completedFromWorktrees.map(i => i.slug));
   const completedItems = [
     ...completedFromWorktrees.filter(i => !activeSlugs.has(i.slug)),
-    ...indexItems.filter(i => !seen.has(i.slug) && !activeSlugs.has(i.slug)),
+    ...indexItems.filter(i => {
+      if (activeSlugs.has(i.slug) || seen.has(i.slug)) return false;
+      seen.add(i.slug);
+      return true;
+    }),
   ];
 
   return {

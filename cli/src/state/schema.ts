@@ -153,5 +153,19 @@ export type Action =
   | { action: "loopback"; from: Location; to: Location; reason: string }
   | { action: "complete"; message: string }
   | { action: "paused"; message: string }
-  | { action: "resumed"; message: string; phase: PhaseName | null; step: string | null }
+  | { action: "resumed"; message: string; phase: PhaseName | null; step: string | null; worktreeRoot?: string }
+  | { action: "select_session"; message: string; sessions: ResumableSessionSummary[] }
   | { action: "error"; message: string; suggestion?: string };
+
+export interface ResumableSessionSummary {
+  slug: string;
+  branch: string;
+  worktreeRoot: string;
+  status: Extract<WorkStatus, "paused" | "in-progress">;
+  pausedAt?: string;
+  currentPhase: string | null;
+  currentStep: string | null;
+  // Snapshot of how long ago tracker.json was last written, captured at
+  // CLI invocation. Lets the agent surface "closed by mistake" sessions.
+  lastUpdatedAgoMs: number;
+}

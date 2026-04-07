@@ -1,7 +1,8 @@
+import * as path from "node:path";
 import {
   bold, dim, green, yellow, red, cyan, magenta,
-  bgYellow, bgCyan, bgRed, bgMagenta, bgGreen, bgBlue,
-  boldCyan, boldGreen, boldMagenta,
+  bgYellow, bgCyan, bgRed, bgMagenta, bgGreen, bgBlue, bgDim,
+  boldCyan, boldGreen, boldMagenta, boldRed,
 } from "../utils/colors.js";
 import { formatDurationMs, formatDurationSince } from "../utils/time.js";
 import { MODE_FULL } from "../state/schema.js";
@@ -376,21 +377,14 @@ function renderStepBox(
 function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): string[] {
   const lines: string[] = [];
 
-  // Line 1: status dot + bold slug + elapsed time (right)
-  const slugText = `${statusDot(item.status)} ${bold(item.slug)}`;
-  const elapsed = formatTimeAgo(item.startedAt);
-  const elapsedText = dim(`⏱ ${elapsed}`);
-  const slugLen = stripAnsi(slugText).length;
-  const elapsedLen = stripAnsi(elapsedText).length;
-  const gap1 = Math.max(2, innerWidth - slugLen - elapsedLen);
-  lines.push(slugText + " ".repeat(gap1) + elapsedText);
+  const repoPrefix = item.repoName ? dim(`${item.repoName} › `) : "";
+  const titleText = `${statusDot(item.status)} ${repoPrefix}${bold(item.slug)}`;
 
-  // Line 2: mode badge + gated badge + classification + blocking state
   let badges = renderModeBadge(item.mode);
-  if (item.gated) badges += " " + renderGatedBadge();
-  if (item.status === "paused") badges += " " + bgYellow(" PAUSED ");
-  if (item.status === "failed") badges += " " + bgRed(" FAILED ");
   if (item.classification) badges += " " + renderClassificationBadge(item.classification);
+  if (item.status === "paused") badges += " " + bgDim(" ⏸ PAUSED ");
+  if (item.status === "failed") badges += " " + boldRed("✗ FAILED");
+  if (item.gated) badges += " " + renderGatedBadge();
   if (item.awaitingInput) {
     // Loud: agent definitely blocked on a permission prompt or AskUserQuestion
     const arrow = tick % 2 === 0 ? "▶" : "▷";
@@ -399,20 +393,26 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     // Soft: turn ended but step not complete — probably asking a question in prose
     badges += " " + dim("⏸ idle");
   }
-  lines.push("  " + badges);
+
+  const leftLine = `${titleText}  ${badges}`;
+  const elapsed = formatTimeAgo(item.startedAt);
+  const elapsedText = dim(`⏱ ${elapsed}`);
+  const leftLen = stripAnsi(leftLine).length;
+  const elapsedLen = stripAnsi(elapsedText).length;
+  const gap1 = Math.max(2, innerWidth - leftLen - elapsedLen);
+  lines.push(leftLine + " ".repeat(gap1) + elapsedText);
   lines.push("");
 
-  // Line 3: progress bar with animated head
-  const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 20));
-  lines.push("  " + renderProgressBar(
-    item.progress.completed,
-    item.progress.total,
-    item.progress.percent,
-    barMaxWidth,
-    tick
-  ));
+  // TODO(progress-bar): re-enable after redesign — hidden per user request
+  // const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 20));
+  // lines.push("  " + renderProgressBar(
+  //   item.progress.completed,
+  //   item.progress.total,
+  //   item.progress.percent,
+  //   barMaxWidth,
+  //   tick
+  // ));
 
-  // Line 4-5: phase pipeline with connectors, spinner, and timing row
   const pipelineLines = renderPhasePipeline(item.phases, tick, item.awaitingInput, item.currentPhase);
   for (const pl of pipelineLines) {
     lines.push("  " + pl);
@@ -439,14 +439,9 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     lines.push(loopStr);
   }
 
-  // Worktree path, then branch beneath it
+  // Worktree (basename only) and branch
   if (item.worktreePath) {
-    let displayPath = item.worktreePath;
-    const maxPathLen = innerWidth - 8;
-    if (displayPath.length > maxPathLen) {
-      displayPath = "…" + displayPath.slice(displayPath.length - maxPathLen + 1);
-    }
-    lines.push("  " + dim("⌂ " + displayPath));
+    lines.push("  " + dim("worktree: " + path.basename(item.worktreePath)));
   }
   lines.push("  " + dim("⎇ " + item.branch));
 
@@ -456,28 +451,31 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
 // ── Render Completed Item ───────────────────────────────────────────
 
 interface CompletedColumnWidths {
+  repo: number;
   slug: number;
   pr: number;
   date: number;
 }
 
 function computeCompletedWidths(items: CompletedItemView[]): CompletedColumnWidths {
-  let slug = 4, pr = 2, date = 4;
+  let repo = 4, slug = 4, pr = 2, date = 4;
   for (const item of items) {
+    repo = Math.max(repo, (item.repoName || "").length);
     slug = Math.max(slug, item.slug.length);
     pr = Math.max(pr, (item.pr || "—").length);
     date = Math.max(date, (item.completedAt || "").length);
   }
-  return { slug, pr, date };
+  return { repo, slug, pr, date };
 }
 
 function renderCompletedItem(item: CompletedItemView, cols: CompletedColumnWidths): string {
   const check = green("✓");
+  const repo = padRight(dim(item.repoName || ""), cols.repo);
   const slug = padRight(item.slug, cols.slug);
   const pr = padRight(dim(item.pr || "—"), cols.pr);
   const date = padRight(dim(item.completedAt || ""), cols.date);
   const phases = item.phases ? dim(item.phases) : "";
-  return `${check} ${slug}  ${pr}  ${date}  ${phases}`;
+  return `${check} ${repo}  ${slug}  ${pr}  ${date}  ${phases}`;
 }
 
 // ── Main Render Function ────────────────────────────────────────────

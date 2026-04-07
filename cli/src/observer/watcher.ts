@@ -1,21 +1,21 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { discoverWorktrees } from "./data.js";
+import { discoverWorktrees, type WorktreeEntry } from "./data.js";
 
 export interface WatcherHandle {
   stop: () => void;
-  getWorktrees: () => string[];
+  getWorktrees: () => WorktreeEntry[];
 }
 
 export function startWatching(
-  mainRepoRoot: string,
+  mainRepoRoots: string[],
   onUpdate: () => void
 ): WatcherHandle {
   const watchers = new Map<string, fs.FSWatcher>();
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let stopped = false;
-  let cachedWorktrees: string[] = [];
+  let cachedEntries: WorktreeEntry[] = [];
 
   function debouncedUpdate(): void {
     if (stopped) return;
@@ -60,19 +60,29 @@ export function startWatching(
 
   function refreshWorktrees(): void {
     if (stopped) return;
-    const current = discoverWorktrees(mainRepoRoot);
-    const currentSet = new Set(current);
-
-    // Only trigger update if worktree list actually changed
-    const changed = current.length !== cachedWorktrees.length
-      || current.some((wt, i) => wt !== cachedWorktrees[i]);
-
-    for (const wt of current) {
-      watchStateFile(wt);
+    const seen = new Set<string>();
+    const current: WorktreeEntry[] = [];
+    for (const root of mainRepoRoots) {
+      for (const wt of discoverWorktrees(root)) {
+        if (seen.has(wt)) continue;
+        seen.add(wt);
+        current.push({ root, worktree: wt });
+      }
     }
-    unwatchRemoved(currentSet);
 
-    cachedWorktrees = current;
+    // Only trigger update if the entry list actually changed. Compare
+    // both fields so a worktree path reused under a different root is
+    // detected as a real change.
+    const changed = current.length !== cachedEntries.length
+      || current.some((e, i) =>
+        e.worktree !== cachedEntries[i].worktree || e.root !== cachedEntries[i].root);
+
+    for (const e of current) {
+      watchStateFile(e.worktree);
+    }
+    unwatchRemoved(seen);
+
+    cachedEntries = current;
 
     if (changed) {
       debouncedUpdate();
@@ -82,10 +92,12 @@ export function startWatching(
   // Initial setup
   refreshWorktrees();
 
-  // Poll for new/removed worktrees every 5 seconds
+  // Poll for new/removed worktrees. Each tick spawns one `git worktree
+  // list` per root, so back off when watching many repos under --all.
+  const pollIntervalMs = mainRepoRoots.length > 1 ? 30_000 : 5_000;
   pollTimer = setInterval(() => {
     if (!stopped) refreshWorktrees();
-  }, 5000);
+  }, pollIntervalMs);
 
   return {
     stop() {
@@ -98,7 +110,7 @@ export function startWatching(
       watchers.clear();
     },
     getWorktrees() {
-      return cachedWorktrees;
+      return cachedEntries;
     },
   };
 }

@@ -1,5 +1,4 @@
 import * as path from "node:path";
-import { execFileSync } from "node:child_process";
 import {
   renderDashboard,
   enterAlternateScreen,
@@ -7,27 +6,23 @@ import {
   moveCursorHome,
   renderTooSmall,
 } from "../observer/renderer.js";
-import { collectDashboardData } from "../observer/data.js";
+import { collectDashboardData, discoverWorkKitProjects } from "../observer/data.js";
 import { startWatching } from "../observer/watcher.js";
+import { gitMainRepoRoot } from "../state/store.js";
 
-function findMainRepoRoot(startDir: string): string {
-  // Find the git toplevel
-  try {
-    const result = execFileSync("git", ["rev-parse", "--show-toplevel"], {
-      cwd: startDir,
-      encoding: "utf-8",
-      timeout: 5000,
-    });
-    return result.trim();
-  } catch {
-    return startDir;
+export async function observeCommand(opts: { mainRepo?: string; all?: boolean }): Promise<void> {
+  const cwdRoot = () => gitMainRepoRoot(process.cwd()) ?? process.cwd();
+
+  let mainRepoRoots: string[];
+  if (opts.all) {
+    mainRepoRoots = discoverWorkKitProjects();
+    if (mainRepoRoots.length === 0) {
+      // Fallback to current repo so the dashboard still has something to show
+      mainRepoRoots = [cwdRoot()];
+    }
+  } else {
+    mainRepoRoots = [opts.mainRepo ? path.resolve(opts.mainRepo) : cwdRoot()];
   }
-}
-
-export async function observeCommand(opts: { mainRepo?: string }): Promise<void> {
-  const mainRepoRoot = opts.mainRepo
-    ? path.resolve(opts.mainRepo)
-    : findMainRepoRoot(process.cwd());
 
   let scrollOffset = 0;
   let tick = 0;
@@ -58,7 +53,7 @@ export async function observeCommand(opts: { mainRepo?: string }): Promise<void>
       return;
     }
 
-    const data = collectDashboardData(mainRepoRoot, watcher.getWorktrees());
+    const data = collectDashboardData(mainRepoRoots, watcher.getWorktrees());
     const frame = moveCursorHome() + renderDashboard(data, width, height, scrollOffset, tick);
     process.stdout.write(frame);
   }
@@ -78,7 +73,7 @@ export async function observeCommand(opts: { mainRepo?: string }): Promise<void>
 
   try {
     // Set up file watching (before initial render so worktrees are cached)
-    watcher = startWatching(mainRepoRoot, () => {
+    watcher = startWatching(mainRepoRoots, () => {
       render();
     });
 

@@ -55,8 +55,19 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 | `validate` | Validate state integrity and phase prerequisites |
 | `loopback` | Route back to a previous stage (max 2 per route) |
 | `workflow` | Display the full workflow plan |
+| `pause` | Pause the active session (state preserved on disk) |
+| `resume [--slug <slug>]` | Without `--slug`: list resumable sessions in this repo. With `--slug`: resume the named session |
+| `observe [--all]` | Live TUI dashboard of active/paused/completed sessions. `--all` watches every work-kit project on the system |
 | `doctor` | Run environment health checks (supports `--json`) |
 | `setup` | Install work-kit skills into a Claude Code project |
+
+### Picking up where you left off
+
+`work-kit resume` (or `/resume-kit` in Claude Code) scans every worktree of the current repo for `.work-kit/tracker.json` files in `paused` or `in-progress` state and lets you pick one. It works from the main repo root — no need to `cd` into a worktree first. In-progress sessions are listed too, so a terminal you closed without pausing can be recovered: just look for the row with a stale `lastUpdatedAgoMs`.
+
+### Watching multiple projects
+
+`work-kit observe --all` discovers every work-kit-enabled repo from your `~/.claude/projects/` history and watches them all in one dashboard. Each row shows the project name, work item slug, mode, type, current state, and worktree.
 
 ## Phases
 
