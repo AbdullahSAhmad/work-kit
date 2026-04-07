@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.0 (2026-04-07)
+
+### Added
+- Observer detects "blocked on user input" state via Claude Code hooks. Setup installs `PermissionRequest`, `PreToolUse(AskUserQuestion)`, `PostToolUse`, and `Stop` hooks into the target project's `.claude/settings.json` (idempotent merge that preserves user-defined hooks).
+- Magenta `▶ AWAITING INPUT` badge with pulsing arrow on blocked work items, plus header counter; current step and current phase highlighted in magenta with `← waiting you` hint.
+- Soft `⏸ idle` indicator when the agent yields mid-step (gated on current step still in-progress to avoid false positives between steps).
+- `--dry-run` flag for `/release` slash command: previews next version, changelog section, and tag without writing or pushing.
+- Pause/resume commands and skills (`/pause-kit`, `/resume-kit`).
+- Report command for work-item summaries.
+- Per-project configuration via `.work-kit/config.json`.
+- Single-step archive flow.
+
+### Changed
+- Phase names rendered uppercase + letter-spaced (`P L A N`, `W R A P - U P`) to visually distinguish phases from steps.
+- Branch name moved beneath worktree path in observer dashboard.
+- Removed redundant phase/step timing row above the progress bar (timings already appear under phases and inside the step box).
+- Added space between badge row and progress bar.
+- `wk complete` and `wk next` clear stale `.work-kit/awaiting-input` and `.work-kit/idle` markers as a safety net for edge cases (denied permissions, killed sessions).
+- Internal rename: sub-stage → step, engine → workflow; constants extracted to `cli/src/config/constants.ts`.
+
 ## 0.2.8 (2026-04-06)
 
 ### Changed
