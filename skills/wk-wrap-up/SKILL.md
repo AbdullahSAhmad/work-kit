@@ -10,15 +10,28 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 **Role:** Work Historian
 **Goal:** Produce a concise, useful summary of what was built and why — then clean up.
 
-This phase has **one step**: `wrap-up/summary`. See `.claude/skills/wk-wrap-up/steps/summary.md` for the canonical instructions. The summary you write goes into `.work-kit/summary.md`; the CLI archives it into `.work-kit-tracker/archive/<slug>-<date>/` when you call `work-kit complete wrap-up/summary --outcome done`.
+This phase has **two steps** (in order):
+
+1. **`wrap-up/summary`** — distill state.md into a useful summary for future developers. See `.claude/skills/wk-wrap-up/steps/summary.md`.
+2. **`wrap-up/knowledge`** — harvest learnings from this session into the project's `.work-kit-knowledge/` files so the next session benefits. See `.claude/skills/wk-wrap-up/steps/knowledge.md`.
+
+The summary you write goes into `.work-kit/summary.md`; the CLI archives it into `.work-kit-tracker/archive/<slug>-<date>/` when you call `work-kit complete wrap-up/summary --outcome done`. After summary completes, the `knowledge` step runs `work-kit extract` and (optionally) one or more `work-kit learn` calls.
 
 ## Instructions
 
+### Step 1: summary
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
 2. **Synthesize the summary** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
 3. **Write `.work-kit/summary.md`** in the format described in the step file
 4. **Run** `work-kit complete wrap-up/summary --outcome done`
-5. **Ask the user** if they want the worktree and branch removed
+
+### Step 2: knowledge
+5. **Run `work-kit extract`** — mechanically routes Observations / Decisions / Deviations / loopbacks into `.work-kit-knowledge/` files
+6. **Review the summary you just wrote** for subjective additions the parser would miss. For each, call `work-kit learn --type <lesson|convention|risk|workflow> --text "..."`.
+7. **Run** `work-kit complete wrap-up/knowledge --outcome done`
+
+### Cleanup
+8. **Ask the user** if they want the worktree and branch removed
 
 ## Summary File Format
 

@@ -28,3 +28,5 @@ worktrees/
 
 # Logs
 *.log
+
+.work-kit-knowledge/.lock

@@ -31,6 +31,7 @@ Throughout every step, update the shared state.md sections:
 
 - **`## Criteria`** — Check off criteria as they're verified. Add evidence inline: `- [x] <criterion> — verified by <test name / screenshot / manual check>`.
 - **`## Decisions`** — If you discover a criterion is untestable or needs reinterpretation, record the decision and why.
+- **`## Observations`** — Whenever you notice a fragile area, a missing test pattern, or feedback about the test phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
 
 The criteria checklist is copied directly into the final work-kit log. Make it accurate.
 

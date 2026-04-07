@@ -4,6 +4,8 @@ import * as readline from "node:readline";
 import { spawnSync } from "node:child_process";
 import { doctorCommand } from "./doctor.js";
 import { bold, dim, green, yellow, red, cyan } from "../utils/colors.js";
+import { ensureKnowledgeDir, KNOWLEDGE_DIR, KNOWLEDGE_LOCK } from "../utils/knowledge.js";
+import { ensureGitignored } from "./init.js";
 
 const SKILLS_SOURCE = path.resolve(import.meta.dirname, "..", "..", "..", "skills");
 
@@ -310,6 +312,27 @@ async function ensurePlaywright(projectDir: string): Promise<void> {
   }
 }
 
+// Project knowledge files (lessons/conventions/risks/workflow) are committed
+// to the repo. Only the lockfile is gitignored.
+function setupKnowledgeDir(projectDir: string): void {
+  console.error(`\nScaffolding ${KNOWLEDGE_DIR}/ (project knowledge files)...`);
+  try {
+    const { created } = ensureKnowledgeDir(projectDir);
+    if (created.length > 0) {
+      for (const f of created) {
+        console.error(`  ${green("+")} ${KNOWLEDGE_DIR}/${f}`);
+      }
+      console.error(`  ${yellow("!")} ${bold("These files are committed to your repo.")} Don't write secrets in them.`);
+      console.error(`  ${dim("work-kit redacts known secret shapes at write time, but the regex sweep is best-effort.")}`);
+    } else {
+      console.error(`  ${dim("Already scaffolded.")}`);
+    }
+    ensureGitignored(projectDir, `${KNOWLEDGE_DIR}/${KNOWLEDGE_LOCK}`);
+  } catch (err) {
+    console.error(`  ${red("\u2717")} ${(err as Error).message}`);
+  }
+}
+
 async function promptUser(question: string): Promise<string> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
   return new Promise((resolve) => {
@@ -395,6 +418,9 @@ export async function setupCommand(targetPath?: string): Promise<void> {
 
   // Ensure Playwright is available — wk-test's E2E step requires it.
   await ensurePlaywright(projectDir);
+
+  // Scaffold the project-level knowledge directory.
+  setupKnowledgeDir(projectDir);
 
   // Run doctor against the target project
   console.error("\nRunning doctor...");

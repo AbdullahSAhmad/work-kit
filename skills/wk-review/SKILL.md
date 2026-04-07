@@ -33,6 +33,7 @@ Throughout every step, update the shared state.md sections:
 
 - **`## Decisions`** — If you make judgment calls during review (e.g., "accepted this deviation because..."), record them.
 - **`## Deviations`** — Compliance step will audit these. If you fix a deviation during review, note that it was resolved.
+- **`## Observations`** — Whenever you spot a fragile area, a missing convention, or feedback about the review phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
 
 Review findings feed directly into the Handoff decision and the final work-kit log.
 

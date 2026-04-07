@@ -30,6 +30,7 @@ For each step:
 Update the shared state.md sections:
 
 - **`## Decisions`** — Record merge method choice, any rollback decisions.
+- **`## Observations`** — Whenever you notice deploy fragility, a missing convention, or feedback about the deploy phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
 
 ## This phase is optional
 

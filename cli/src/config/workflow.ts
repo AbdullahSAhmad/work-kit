@@ -44,7 +44,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "review/self-review": "YES", "review/security": "skip", "review/performance": "skip",
     "review/compliance": "skip", "review/handoff": "YES",
     "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
-    "wrap-up/summary": "YES",
+    "wrap-up/summary": "YES", "wrap-up/knowledge": "skip",
   },
   "small-change": {
     "plan/clarify": "YES", "plan/investigate": "skip", "plan/sketch": "skip", "plan/scope": "skip",
@@ -55,7 +55,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "review/self-review": "YES", "review/security": "skip", "review/performance": "skip",
     "review/compliance": "skip", "review/handoff": "YES",
     "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
-    "wrap-up/summary": "YES",
+    "wrap-up/summary": "YES", "wrap-up/knowledge": "skip",
   },
   refactor: {
     "plan/clarify": "YES", "plan/investigate": "YES", "plan/sketch": "skip", "plan/scope": "skip",
@@ -66,7 +66,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "review/self-review": "YES", "review/security": "skip", "review/performance": "YES",
     "review/compliance": "skip", "review/handoff": "YES",
     "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
-    "wrap-up/summary": "YES",
+    "wrap-up/summary": "YES", "wrap-up/knowledge": "YES",
   },
   feature: {
     "plan/clarify": "YES", "plan/investigate": "YES", "plan/sketch": "YES", "plan/scope": "YES",
@@ -77,7 +77,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "review/self-review": "YES", "review/security": "YES", "review/performance": "skip",
     "review/compliance": "YES", "review/handoff": "YES",
     "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
-    "wrap-up/summary": "YES",
+    "wrap-up/summary": "YES", "wrap-up/knowledge": "YES",
   },
   "large-feature": {
     "plan/clarify": "YES", "plan/investigate": "YES", "plan/sketch": "YES", "plan/scope": "YES",
@@ -88,7 +88,7 @@ const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
     "review/self-review": "YES", "review/security": "YES", "review/performance": "YES",
     "review/compliance": "YES", "review/handoff": "YES",
     "deploy/merge": "YES", "deploy/monitor": "optional", "deploy/remediate": "optional",
-    "wrap-up/summary": "YES",
+    "wrap-up/summary": "YES", "wrap-up/knowledge": "YES",
   },
 };
 

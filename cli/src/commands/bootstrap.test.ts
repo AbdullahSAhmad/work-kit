@@ -6,6 +6,7 @@ import * as os from "node:os";
 import { randomUUID } from "node:crypto";
 import { bootstrapCommand } from "./bootstrap.js";
 import { initCommand } from "./init.js";
+import { learnCommand } from "./learn.js";
 
 function makeTmpDir(): string {
   const dir = path.join(os.tmpdir(), `work-kit-test-${randomUUID()}`);
@@ -92,6 +93,45 @@ describe("bootstrapCommand", () => {
     assert.equal(result.active, true);
     assert.equal(result.status, "completed");
     assert.ok(result.nextAction?.includes("complete"));
+  });
+
+  it("injects knowledge field when knowledge files exist", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    initCommand({
+      mode: "full",
+      description: "Knowledge test",
+      worktreeRoot: tmp,
+    });
+
+    // Write entries to lessons, conventions, risks, and workflow
+    learnCommand({ type: "lesson", text: "A useful lesson", worktreeRoot: tmp });
+    learnCommand({ type: "convention", text: "A coding convention", worktreeRoot: tmp });
+    learnCommand({ type: "risk", text: "A fragile area", worktreeRoot: tmp });
+    learnCommand({ type: "workflow", text: "Workflow feedback", worktreeRoot: tmp });
+
+    const result = bootstrapCommand(tmp);
+    assert.ok(result.knowledge, "knowledge field should be present");
+    assert.ok(result.knowledge?.lessons?.includes("A useful lesson"));
+    assert.ok(result.knowledge?.conventions?.includes("A coding convention"));
+    assert.ok(result.knowledge?.risks?.includes("A fragile area"));
+    // workflow.md is intentionally NOT injected
+    assert.equal((result.knowledge as any).workflow, undefined);
+  });
+
+  it("does not inject knowledge field when no knowledge files exist", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+
+    initCommand({
+      mode: "full",
+      description: "No knowledge test",
+      worktreeRoot: tmp,
+    });
+
+    const result = bootstrapCommand(tmp);
+    assert.equal(result.knowledge, undefined);
   });
 
   it("reports failed state", () => {

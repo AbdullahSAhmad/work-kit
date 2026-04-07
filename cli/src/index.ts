@@ -20,6 +20,8 @@ import { cancelCommand } from "./commands/cancel.js";
 import { pauseCommand } from "./commands/pause.js";
 import { resumeCommand } from "./commands/resume.js";
 import { reportCommand } from "./commands/report.js";
+import { learnCommand } from "./commands/learn.js";
+import { extractCommand } from "./commands/extract.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, ModelPolicy, PhaseName } from "./state/schema.js";
 import { isModelPolicy } from "./state/schema.js";
@@ -349,6 +351,57 @@ program
       const result = cancelCommand(opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.action === "error" ? 1 : 0);
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── learn ───────────────────────────────────────────────────────────
+
+program
+  .command("learn")
+  .description("Append a knowledge entry (lesson/convention/risk/workflow) to .work-kit-knowledge/")
+  .requiredOption("--type <type>", "Entry type: lesson, convention, risk, workflow")
+  .requiredOption("--text <text>", "Free-form text. Secrets are auto-redacted at write time.")
+  .option("--scope <glob>", "Optional path glob (stored, not yet used for filtering)")
+  .option("--phase <phase>", "Override session phase auto-fill")
+  .option("--step <step>", "Override session step auto-fill")
+  .option("--source <source>", "Override entry source label", "explicit-cli")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      const result = learnCommand({
+        type: opts.type,
+        text: opts.text,
+        scope: opts.scope,
+        phase: opts.phase,
+        step: opts.step,
+        source: opts.source,
+        worktreeRoot: opts.worktreeRoot,
+      });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.action === "error") process.exit(1);
+      if (result.redacted) {
+        console.error(yellow(`! Redacted ${result.redactedKinds?.length ?? 0} secret(s) before writing.`));
+      }
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── extract ─────────────────────────────────────────────────────────
+
+program
+  .command("extract")
+  .description("Parse current session's state.md + tracker.json and append entries to knowledge files")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      const result = extractCommand({ worktreeRoot: opts.worktreeRoot });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.action === "error") process.exit(1);
     } catch (e: any) {
       console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);

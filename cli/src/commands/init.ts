@@ -86,6 +86,15 @@ ${description}
 <!-- Append here whenever you choose between real alternatives -->
 <!-- Format: **<context>**: chose <X> over <Y> — <why> -->
 
+## Observations
+<!-- Append typed bullets as you notice things worth preserving across sessions. -->
+<!-- wrap-up/knowledge routes these to .work-kit-knowledge/. -->
+<!-- Grammar: - [lesson|convention|risk|workflow] text  (workflow tag may include :phase/step) -->
+<!-- Examples: -->
+<!--   - [risk] auth.middleware.ts breaks if SESSION_SECRET is unset. -->
+<!--   - [convention] All API errors must use createApiError() helper. -->
+<!--   - [workflow:test/e2e] The e2e step doesn't tell agents to start the dev server first. -->
+
 ## Deviations
 <!-- Append here whenever implementation diverges from the Blueprint -->
 <!-- Format: **<Blueprint step>**: <what changed> — <why> -->
@@ -94,9 +103,12 @@ ${description}
   return md;
 }
 
-function ensureGitignored(worktreeRoot: string): void {
-  const gitignorePath = path.join(worktreeRoot, ".gitignore");
-  const entry = `${STATE_DIR}/`;
+/**
+ * Append `entry` to `<root>/.gitignore` if it isn't already present.
+ * Idempotent. Creates the file if missing. Reused by setup.ts.
+ */
+export function ensureGitignored(root: string, entry: string): void {
+  const gitignorePath = path.join(root, ".gitignore");
 
   if (fs.existsSync(gitignorePath)) {
     const content = fs.readFileSync(gitignorePath, "utf-8");
@@ -205,7 +217,7 @@ export function initCommand(options: {
   };
 
   // Ensure .work-kit/ is gitignored (temp working state, not for commits)
-  ensureGitignored(worktreeRoot);
+  ensureGitignored(worktreeRoot, `${STATE_DIR}/`);
 
   // Write state files
   writeState(worktreeRoot, state);

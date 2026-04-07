@@ -8,7 +8,7 @@ export const BUILD_STEPS = ["setup", "migration", "red", "core", "ui", "refactor
 export const TEST_STEPS = ["verify", "e2e", "validate"] as const;
 export const REVIEW_STEPS = ["self-review", "security", "performance", "compliance", "handoff"] as const;
 export const DEPLOY_STEPS = ["merge", "monitor", "remediate"] as const;
-export const WRAPUP_STEPS = ["summary"] as const;
+export const WRAPUP_STEPS = ["summary", "knowledge"] as const;
 
 export type PlanStep = (typeof PLAN_STEPS)[number];
 export type BuildStep = (typeof BUILD_STEPS)[number];

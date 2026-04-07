@@ -127,6 +127,32 @@ export function resolveMainRepoRoot(worktreeRoot: string): string {
   return gitMainRepoRoot(worktreeRoot) ?? worktreeRoot;
 }
 
+// Per-process cache. The HEAD SHA can drift mid-session in theory, but
+// every callsite either tags a stable artifact at session end (wrap-up)
+// or stamps an event during normal phase work — close enough for telemetry.
+const headShaCache = new Map<string, string>();
+
+/** Resolve the current HEAD commit SHA for `cwd`. Returns undefined outside a git repo. */
+export function gitHeadSha(cwd: string): string | undefined {
+  const cached = headShaCache.get(cwd);
+  if (cached !== undefined) return cached;
+  try {
+    const out = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd,
+      encoding: "utf-8",
+      timeout: 5000,
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    if (out) {
+      headShaCache.set(cwd, out);
+      return out;
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
+}
+
 // ── Migration ───────────────────────────────────────────────────────
 
 function migrateState(raw: any, worktreeRoot: string): WorkKitState {

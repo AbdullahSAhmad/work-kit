@@ -12,6 +12,12 @@ Run `work-kit bootstrap` to detect work-kit state.
 ## If active work exists
 
 - Report current state to the user: slug, phase, step, status
+- **If `knowledge` is present in the bootstrap output**, surface it to the agent and the user:
+  - `knowledge.lessons` — project-specific learnings from prior sessions
+  - `knowledge.conventions` — codified rules this project follows
+  - `knowledge.risks` — fragile or dangerous areas to handle with care
+  - Read each of these silently into your working context — they're prior knowledge you should respect when planning and building. Briefly mention to the user that prior knowledge was loaded (one line; do not dump the full text into the chat).
+  - `workflow.md` is intentionally NOT loaded — it's a write-only artifact for human curators.
 - If recovery is suggested: follow the recovery instruction
 - Otherwise: run `work-kit next` to continue the workflow
 

@@ -2,6 +2,13 @@ import fs from "node:fs";
 import { findWorktreeRoot, readState, writeState, statePath } from "../state/store.js";
 import { unpause } from "../state/helpers.js";
 import { CLI_BINARY, STALE_THRESHOLD_MS } from "../config/constants.js";
+import { fileForType, readKnowledgeFile } from "../utils/knowledge.js";
+
+export interface BootstrapKnowledge {
+  lessons?: string;
+  conventions?: string;
+  risks?: string;
+}
 
 export interface BootstrapResult {
   active: boolean;
@@ -16,6 +23,13 @@ export interface BootstrapResult {
   resumeReason?: string;
   nextAction?: string;
   recovery?: string | null;
+  /**
+   * Project-level knowledge files (lessons/conventions/risks) read from
+   * <mainRepoRoot>/.work-kit-knowledge/. Capped at 200 lines per file.
+   * workflow.md is intentionally excluded — it's a write-only artifact for
+   * human curators, not session context.
+   */
+  knowledge?: BootstrapKnowledge;
 }
 
 export interface BootstrapOptions {
@@ -75,6 +89,29 @@ export function bootstrapCommand(startDir?: string, options: BootstrapOptions = 
     nextAction = `Continue ${state.currentPhase ?? "next phase"}${state.currentStep ? "/" + state.currentStep : ""}. Run \`${CLI_BINARY} next\` to get the agent prompt.`;
   }
 
+  // Load project-level knowledge files (best effort, never breaks bootstrap).
+  // workflow.md is intentionally excluded — it's a write-only artifact for
+  // human curators, not session context.
+  let knowledge: BootstrapKnowledge | undefined;
+  try {
+    const mainRepoRoot = state.metadata?.mainRepoRoot;
+    if (mainRepoRoot) {
+      const lessons = readKnowledgeFile(mainRepoRoot, fileForType("lesson"));
+      const conventions = readKnowledgeFile(mainRepoRoot, fileForType("convention"));
+      const risks = readKnowledgeFile(mainRepoRoot, fileForType("risk"));
+      if (lessons || conventions || risks) {
+        knowledge = {
+          ...(lessons && { lessons }),
+          ...(conventions && { conventions }),
+          ...(risks && { risks }),
+        };
+      }
+    }
+  } catch (err: any) {
+    // Non-fatal: log to stderr but don't break bootstrap
+    process.stderr.write(`work-kit: failed to load knowledge files: ${err.message}\n`);
+  }
+
   return {
     active: true,
     slug: state.slug,
@@ -87,5 +124,6 @@ export function bootstrapCommand(startDir?: string, options: BootstrapOptions = 
     ...(resumed && { resumed: true, resumeReason }),
     nextAction,
     recovery,
+    ...(knowledge && { knowledge }),
   };
 }

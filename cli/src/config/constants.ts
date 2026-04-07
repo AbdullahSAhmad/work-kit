@@ -34,6 +34,16 @@ export const CLI_NPX_BINARY = "npx work-kit-cli";
  */
 export const PROJECT_CONFIG_FILE = ".work-kit-config.json";
 
+// ── Knowledge ───────────────────────────────────────────────────────
+
+/**
+ * Project knowledge directory at the main repo root. Holds curated
+ * lessons/conventions/risks/workflow files. Committed to git; only
+ * KNOWLEDGE_LOCK is gitignored.
+ */
+export const KNOWLEDGE_DIR = ".work-kit-knowledge";
+export const KNOWLEDGE_LOCK = ".lock";
+
 // ── Limits ──────────────────────────────────────────────────────────
 
 export const MAX_LOOPBACKS_PER_ROUTE = 2;

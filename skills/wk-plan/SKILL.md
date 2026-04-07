@@ -33,11 +33,12 @@ Maintain context across all steps — each builds on the previous. Reference pri
 
 ## Recording
 
-Throughout every step, capture two things in the shared state.md sections:
+Throughout every step, capture these things in the shared state.md sections:
 
 - **`## Decisions`** — Whenever you choose between real alternatives, append: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
+- **`## Observations`** — Whenever you notice a project convention, a fragile area, a learning, or feedback about the work-kit workflow itself, append a typed bullet: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
 
-These feed into the final work-kit log summary. If you don't record decisions here, they're lost.
+These feed into the final work-kit log summary and the project knowledge files. If you don't record them here, they're lost.
 
 ## Loop-back
 
