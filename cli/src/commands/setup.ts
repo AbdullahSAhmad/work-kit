@@ -243,7 +243,23 @@ function installPlaywrightPackage(pm: PackageManager, projectDir: string): boole
     pm === "yarn" ? ["add", "-D", "@playwright/test"] :
     ["install", "-D", "@playwright/test"];
   console.error(`  ${dim(`$ ${pm} ${args.join(" ")}`)}`);
-  return runStreamed(pm, args, projectDir);
+  if (runStreamed(pm, args, projectDir)) return true;
+
+  // The most common npm failure here is ERESOLVE — the user's project has
+  // a pre-existing peer-dep conflict that npm refuses to resolve. Retry with
+  // --legacy-peer-deps so Playwright still installs; the user's underlying
+  // conflict is left for them to fix separately.
+  if (pm === "npm") {
+    console.error(`  ${yellow("!")} npm install failed (likely peer-dep conflict). Retrying with --legacy-peer-deps...`);
+    const fallbackArgs = [...args, "--legacy-peer-deps"];
+    console.error(`  ${dim(`$ ${pm} ${fallbackArgs.join(" ")}`)}`);
+    if (runStreamed(pm, fallbackArgs, projectDir)) {
+      console.error(`  ${dim("Note: installed with --legacy-peer-deps. Your project still has the original peer-dep conflict — fix it separately when convenient.")}`);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function installPlaywrightBrowsers(projectDir: string): boolean {
