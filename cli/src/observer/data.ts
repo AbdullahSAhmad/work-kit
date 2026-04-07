@@ -3,8 +3,11 @@ import * as path from "node:path";
 import { execFileSync } from "node:child_process";
 import type { WorkKitState, PhaseName } from "../state/schema.js";
 import { PHASE_NAMES, STEPS_BY_PHASE, MODE_AUTO } from "../state/schema.js";
-import { readState, stateExists } from "../state/store.js";
+import { readState, stateExists, STATE_DIR, AWAITING_INPUT_MARKER_FILE, IDLE_MARKER_FILE } from "../state/store.js";
 import { TRACKER_DIR, INDEX_FILE } from "../config/constants.js";
+
+const AWAITING_INPUT_MARKER = path.join(STATE_DIR, AWAITING_INPUT_MARKER_FILE);
+const IDLE_MARKER = path.join(STATE_DIR, IDLE_MARKER_FILE);
 
 // ── View Types ─────────────────────────────────────────────────────
 
@@ -22,6 +25,8 @@ export interface WorkItemView {
   currentStepStartedAt?: string;
   currentPhaseTotal?: number;
   gated: boolean;
+  awaitingInput: boolean;
+  idle: boolean;
   worktreePath: string;
   phaseSteps: { name: string; status: string; startedAt?: string; completedAt?: string; outcome?: string }[];
   startedAt: string;
@@ -191,6 +196,14 @@ export function collectWorkItem(worktreeRoot: string): WorkItemView | null {
     currentStepStartedAt,
     currentPhaseTotal,
     gated: state.gated ?? false,
+    awaitingInput: fs.existsSync(path.join(worktreeRoot, AWAITING_INPUT_MARKER)),
+    // Idle badge only fires when the agent ended its turn *mid-step*
+    // (suggesting it asked a prose question) — not during normal gaps
+    // between steps.
+    idle:
+      fs.existsSync(path.join(worktreeRoot, IDLE_MARKER)) &&
+      state.status === "in-progress" &&
+      currentStepStatus === "in-progress",
     worktreePath: state.metadata.worktreeRoot,
     phaseSteps,
     startedAt: state.started,

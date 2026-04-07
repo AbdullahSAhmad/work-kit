@@ -22,3 +22,4 @@ export const boldCyan = (s: string) => `${code(1)}${code(36)}${s}${reset}`;
 export const boldGreen = (s: string) => `${code(1)}${code(32)}${s}${reset}`;
 export const boldYellow = (s: string) => `${code(1)}${code(33)}${s}${reset}`;
 export const boldRed = (s: string) => `${code(1)}${code(31)}${s}${reset}`;
+export const boldMagenta = (s: string) => `${code(1)}${code(35)}${s}${reset}`;

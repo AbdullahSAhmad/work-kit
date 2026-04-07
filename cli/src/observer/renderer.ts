@@ -1,7 +1,7 @@
 import {
   bold, dim, green, yellow, red, cyan, magenta,
   bgYellow, bgCyan, bgRed, bgMagenta, bgGreen, bgBlue,
-  boldCyan, boldGreen,
+  boldCyan, boldGreen, boldMagenta,
 } from "../utils/colors.js";
 import { formatDurationMs, formatDurationSince } from "../utils/time.js";
 import { MODE_FULL } from "../state/schema.js";
@@ -159,13 +159,20 @@ function stepIndicator(status: string, tick: number): string {
   }
 }
 
+function phaseDisplayName(name: string): string {
+  // Uppercase with letter-spacing to visually distinguish phases from steps.
+  // e.g. "plan" → "P L A N", "wrap-up" → "W R A P - U P"
+  return name.toUpperCase().split("").join(" ");
+}
+
 function phaseName(name: string, status: string, tick: number): string {
+  const display = phaseDisplayName(name);
   switch (status) {
-    case "completed": return boldGreen(name);
-    case "in-progress": return tick % 2 === 0 ? boldCyan(name) : bold(cyan(name));
-    case "waiting": return bold(yellow(name));
-    case "failed": return bold(red(name));
-    default: return dim(name);
+    case "completed": return boldGreen(display);
+    case "in-progress": return tick % 2 === 0 ? boldCyan(display) : bold(cyan(display));
+    case "waiting": return bold(yellow(display));
+    case "failed": return bold(red(display));
+    default: return dim(display);
   }
 }
 
@@ -216,7 +223,9 @@ function phaseDuration(p: { status: string; startedAt?: string; completedAt?: st
 
 function renderPhasePipeline(
   phases: WorkItemView["phases"],
-  tick: number
+  tick: number,
+  awaitingInput: boolean = false,
+  currentPhase: string | null = null,
 ): string[] {
   const connector = dim(" ── ");
   const connectorLen = 4; // " ── "
@@ -227,8 +236,13 @@ function renderPhasePipeline(
 
   for (let i = 0; i < phases.length; i++) {
     const p = phases[i];
-    const icon = phaseIndicator(p.status, tick);
-    const name = phaseName(p.name, p.status, tick);
+    const isBlockedHere = awaitingInput && p.name === currentPhase && p.status === "in-progress";
+    const icon = isBlockedHere
+      ? magenta(tick % 2 === 0 ? "▶" : "▷")
+      : phaseIndicator(p.status, tick);
+    const name = isBlockedHere
+      ? boldMagenta(phaseDisplayName(p.name))
+      : phaseName(p.name, p.status, tick);
     const segment = `${icon} ${name}`;
     topParts.push(segment);
 
@@ -280,7 +294,7 @@ function renderStepBox(
   if (!subs || subs.length === 0 || !item.currentPhase) return [];
 
   const lines: string[] = [];
-  const label = dim(item.currentPhase);
+  const label = bold(phaseDisplayName(item.currentPhase));
   const boxInner = innerWidth - 8; // indent + border padding
 
   // Top border with phase label
@@ -291,15 +305,28 @@ function renderStepBox(
   // Render steps in rows that fit the width
   const entries: string[] = [];
   for (const ss of subs) {
-    const icon = stepIndicator(ss.status, tick);
+    // Highlight the current in-progress step in magenta if the agent is
+    // blocked waiting for human input (permission prompt / AskUserQuestion).
+    const isBlockedHere =
+      item.awaitingInput && ss.status === "in-progress" && ss.name === item.currentStep;
+
+    let icon: string;
     let nameStr: string;
-    switch (ss.status) {
-      case "completed": nameStr = green(ss.name); break;
-      case "in-progress": nameStr = boldCyan(ss.name); break;
-      case "waiting": nameStr = yellow(ss.name); break;
-      case "failed": nameStr = red(ss.name); break;
-      default: nameStr = dim(ss.name);
+    if (isBlockedHere) {
+      // Pulsing magenta pointer + bold magenta name
+      icon = magenta(tick % 2 === 0 ? "▶" : "▷");
+      nameStr = boldMagenta(ss.name);
+    } else {
+      icon = stepIndicator(ss.status, tick);
+      switch (ss.status) {
+        case "completed": nameStr = green(ss.name); break;
+        case "in-progress": nameStr = boldCyan(ss.name); break;
+        case "waiting": nameStr = yellow(ss.name); break;
+        case "failed": nameStr = red(ss.name); break;
+        default: nameStr = dim(ss.name);
+      }
     }
+
     let duration = "";
     if (ss.status === "completed" && ss.startedAt && ss.completedAt) {
       const ms = new Date(ss.completedAt).getTime() - new Date(ss.startedAt).getTime();
@@ -307,7 +334,10 @@ function renderStepBox(
     } else if (ss.status === "in-progress" && ss.startedAt) {
       duration = dim(` ${formatDuration(ss.startedAt)}`);
     }
-    entries.push(`${icon} ${nameStr}${duration}`);
+
+    // Append an inline "waiting you" hint next to the blocked step
+    const hint = isBlockedHere ? magenta(" ← waiting you") : "";
+    entries.push(`${icon} ${nameStr}${duration}${hint}`);
   }
 
   // Flow entries into rows
@@ -355,28 +385,24 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
   const gap1 = Math.max(2, innerWidth - slugLen - elapsedLen);
   lines.push(slugText + " ".repeat(gap1) + elapsedText);
 
-  // Line 2: branch + mode badge + gated badge + classification
-  const branchText = dim("⎇ " + item.branch);
-  let badges = "  " + renderModeBadge(item.mode);
+  // Line 2: mode badge + gated badge + classification + blocking state
+  let badges = renderModeBadge(item.mode);
   if (item.gated) badges += " " + renderGatedBadge();
   if (item.status === "paused") badges += " " + bgYellow(" PAUSED ");
   if (item.status === "failed") badges += " " + bgRed(" FAILED ");
   if (item.classification) badges += " " + renderClassificationBadge(item.classification);
-  lines.push("  " + branchText + badges);
+  if (item.awaitingInput) {
+    // Loud: agent definitely blocked on a permission prompt or AskUserQuestion
+    const arrow = tick % 2 === 0 ? "▶" : "▷";
+    badges += " " + bgMagenta(` ${arrow} AWAITING INPUT `);
+  } else if (item.idle) {
+    // Soft: turn ended but step not complete — probably asking a question in prose
+    badges += " " + dim("⏸ idle");
+  }
+  lines.push("  " + badges);
+  lines.push("");
 
-  // Line 3: timing — phase elapsed + step elapsed
-  const timingParts: string[] = [];
-  if (item.currentPhase && item.currentPhaseStartedAt) {
-    timingParts.push(cyan("phase") + dim(`: ${formatDuration(item.currentPhaseStartedAt)}`));
-  }
-  if (item.currentStep && item.currentStepStartedAt) {
-    timingParts.push(cyan("step") + dim(`: ${formatDuration(item.currentStepStartedAt)}`));
-  }
-  if (timingParts.length > 0) {
-    lines.push("  " + timingParts.join(dim("  │  ")));
-  }
-
-  // Line 4: progress bar with animated head
+  // Line 3: progress bar with animated head
   const barMaxWidth = Math.max(20, Math.min(40, innerWidth - 20));
   lines.push("  " + renderProgressBar(
     item.progress.completed,
@@ -386,8 +412,8 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     tick
   ));
 
-  // Line 5-6: phase pipeline with connectors, spinner, and timing row
-  const pipelineLines = renderPhasePipeline(item.phases, tick);
+  // Line 4-5: phase pipeline with connectors, spinner, and timing row
+  const pipelineLines = renderPhasePipeline(item.phases, tick, item.awaitingInput, item.currentPhase);
   for (const pl of pipelineLines) {
     lines.push("  " + pl);
   }
@@ -413,7 +439,7 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     lines.push(loopStr);
   }
 
-  // Worktree path
+  // Worktree path, then branch beneath it
   if (item.worktreePath) {
     let displayPath = item.worktreePath;
     const maxPathLen = innerWidth - 8;
@@ -422,6 +448,7 @@ function renderWorkItem(item: WorkItemView, innerWidth: number, tick: number): s
     }
     lines.push("  " + dim("⌂ " + displayPath));
   }
+  lines.push("  " + dim("⎇ " + item.branch));
 
   return lines;
 }
@@ -472,11 +499,14 @@ export function renderDashboard(
 
   // Header counts
   let activeCount = 0, pausedCount = 0, failedCount = 0, waitingCount = 0;
+  let awaitingInputCount = 0, idleCount = 0;
   for (const item of data.activeItems) {
     if (item.status === "in-progress") activeCount++;
     else if (item.status === "paused") pausedCount++;
     else if (item.status === "failed") failedCount++;
     if (item.currentStepStatus === "waiting") waitingCount++;
+    if (item.awaitingInput) awaitingInputCount++;
+    else if (item.idle) idleCount++;
   }
   const completedCount = data.completedItems.length;
   const hasActive = activeCount > 0;
@@ -484,7 +514,9 @@ export function renderDashboard(
   // Header: mascot + title + counts
   let headerRight = "";
   if (activeCount > 0) headerRight += `${green("●")} ${activeCount} active`;
-  if (waitingCount > 0) headerRight += `  ${yellow("◉")} ${waitingCount} waiting`;
+  if (awaitingInputCount > 0) headerRight += `  ${magenta("▶")} ${awaitingInputCount} awaiting`;
+  if (idleCount > 0) headerRight += `  ${dim("⏸")} ${idleCount} idle`;
+  if (waitingCount > 0) headerRight += `  ${yellow("◉")} ${waitingCount} gated`;
   if (pausedCount > 0) headerRight += `  ${yellow("○")} ${pausedCount} paused`;
   if (failedCount > 0) headerRight += `  ${red("✗")} ${failedCount} failed`;
   if (completedCount > 0) headerRight += `  ${green("✓")} ${completedCount} done`;

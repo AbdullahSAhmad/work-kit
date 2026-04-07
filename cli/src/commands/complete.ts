@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot, STATE_MD_FILE, STATE_FILE } from "../state/store.js";
+import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot, clearBlockingMarkers, STATE_MD_FILE, STATE_FILE } from "../state/store.js";
 import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
 import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
 import { PHASE_ORDER } from "../config/workflow.js";
@@ -14,6 +14,9 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
   if (!root) {
     return { action: "error", message: "No work-kit state found. Run `work-kit init` first." };
   }
+
+  // Forward state transition → clear any stale "blocked on user" markers
+  clearBlockingMarkers(root);
 
   // Validate outcome against the closed enum
   let typedOutcome: StepOutcome | undefined;

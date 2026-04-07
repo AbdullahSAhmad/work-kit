@@ -1,4 +1,4 @@
-import { readState, writeState, findWorktreeRoot, readStateMd } from "../state/store.js";
+import { readState, writeState, findWorktreeRoot, readStateMd, clearBlockingMarkers } from "../state/store.js";
 import { determineNextStep } from "../workflow/transitions.js";
 import { validatePhasePrerequisites } from "../state/validators.js";
 import { buildAgentPrompt } from "../context/prompt-builder.js";
@@ -13,6 +13,9 @@ export function nextCommand(worktreeRoot?: string): Action {
   if (!root) {
     return { action: "error", message: "No work-kit state found. Run `work-kit init` first." };
   }
+
+  // Forward state transition → clear any stale "blocked on user" markers
+  clearBlockingMarkers(root);
 
   const state = readState(root);
 

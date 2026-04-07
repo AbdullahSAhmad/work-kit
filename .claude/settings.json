@@ -1,0 +1,57 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .work-kit && date -u +%s > .work-kit/awaiting-input # work-kit-hook"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .work-kit && date -u +%s > .work-kit/awaiting-input # work-kit-hook"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rm -f .work-kit/idle # work-kit-hook"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rm -f .work-kit/awaiting-input # work-kit-hook"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .work-kit && date -u +%s > .work-kit/idle && rm -f .work-kit/awaiting-input # work-kit-hook"
+          }
+        ]
+      }
+    ]
+  }
+}

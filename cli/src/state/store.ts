@@ -7,6 +7,22 @@ import { WorkKitState } from "./schema.js";
 export const STATE_DIR = ".work-kit";
 export const STATE_FILE = "tracker.json";
 export const STATE_MD_FILE = "state.md";
+export const AWAITING_INPUT_MARKER_FILE = "awaiting-input";
+export const IDLE_MARKER_FILE = "idle";
+
+/**
+ * Remove any "blocked on user" marker files (awaiting-input, idle).
+ *
+ * Hook-installed cleanup normally handles these (PostToolUse/Stop),
+ * but edge cases (denied permission, killed session, sentinel drift)
+ * can leave stale markers. Any forward state transition should clear
+ * them as a belt-and-suspenders safety net.
+ */
+export function clearBlockingMarkers(worktreeRoot: string): void {
+  const dir = path.join(worktreeRoot, STATE_DIR);
+  fs.rmSync(path.join(dir, AWAITING_INPUT_MARKER_FILE), { force: true });
+  fs.rmSync(path.join(dir, IDLE_MARKER_FILE), { force: true });
+}
 
 // ── Worktree Discovery ──────────────────────────────────────────────
 

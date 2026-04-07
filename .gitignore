@@ -13,6 +13,9 @@ worktrees/
 # Local Claude settings
 .claude/settings.local.json
 
+# Dogfood install of skills (symlink or copy of ./skills)
+.claude/skills
+
 # OS
 .DS_Store
 

@@ -69,6 +69,132 @@ function copySkills(targetDir: string): { copied: string[]; skipped: string[] } 
   return { copied, skipped };
 }
 
+// ── Hooks installation ──────────────────────────────────────────────
+//
+// Writes marker files the observer polls to detect "blocked on user" state.
+// Each hook command carries a sentinel comment so setup can be re-run
+// idempotently — existing work-kit entries are stripped and re-added.
+
+const HOOK_SENTINEL = "# work-kit-hook";
+
+type HookEntry = { type: "command"; command: string };
+type HookMatcherGroup = { matcher?: string; hooks: HookEntry[] };
+type HookSettings = Record<string, HookMatcherGroup[]>;
+
+interface WorkKitHookSpec {
+  event: string;
+  matcher: string;
+  command: string;
+}
+
+// Markers live under the per-worktree `.work-kit/` state dir.
+// Hook commands run from Claude Code's CWD, which is the project/worktree root.
+const WK_HOOKS: WorkKitHookSpec[] = [
+  // PermissionRequest → agent blocked on a tool permission prompt
+  {
+    event: "PermissionRequest",
+    matcher: "",
+    command: `mkdir -p .work-kit && date -u +%s > .work-kit/awaiting-input ${HOOK_SENTINEL}`,
+  },
+  // AskUserQuestion tool call → agent explicitly asking the user
+  {
+    event: "PreToolUse",
+    matcher: "AskUserQuestion",
+    command: `mkdir -p .work-kit && date -u +%s > .work-kit/awaiting-input ${HOOK_SENTINEL}`,
+  },
+  {
+    event: "PostToolUse",
+    matcher: "AskUserQuestion",
+    command: `rm -f .work-kit/awaiting-input ${HOOK_SENTINEL}`,
+  },
+  // Any tool call → clear idle marker (agent is active again)
+  {
+    event: "PreToolUse",
+    matcher: "",
+    command: `rm -f .work-kit/idle ${HOOK_SENTINEL}`,
+  },
+  // Stop → turn ended. Write idle marker (soft signal); also clear
+  // any stale awaiting-input marker that wasn't paired with PostToolUse
+  // (e.g. permission prompt was denied).
+  {
+    event: "Stop",
+    matcher: "",
+    command: `mkdir -p .work-kit && date -u +%s > .work-kit/idle && rm -f .work-kit/awaiting-input ${HOOK_SENTINEL}`,
+  },
+];
+
+function stripWorkKitHooks(hooks: HookSettings): HookSettings {
+  const cleaned: HookSettings = {};
+  for (const [event, groups] of Object.entries(hooks)) {
+    if (!Array.isArray(groups)) continue;
+    const cleanedGroups: HookMatcherGroup[] = [];
+    for (const group of groups) {
+      const cleanedEntries = (group.hooks || []).filter(
+        (h) => !(h.type === "command" && typeof h.command === "string" && h.command.includes(HOOK_SENTINEL))
+      );
+      if (cleanedEntries.length > 0) {
+        cleanedGroups.push({ ...group, hooks: cleanedEntries });
+      }
+    }
+    if (cleanedGroups.length > 0) {
+      cleaned[event] = cleanedGroups;
+    }
+  }
+  return cleaned;
+}
+
+function addWorkKitHooks(hooks: HookSettings): HookSettings {
+  const out: HookSettings = { ...hooks };
+  for (const spec of WK_HOOKS) {
+    const groups = out[spec.event] ? [...out[spec.event]] : [];
+    const entry: HookEntry = { type: "command", command: spec.command };
+    // Try to reuse an existing matcher group with the same matcher
+    const existingIdx = groups.findIndex((g) => (g.matcher ?? "") === spec.matcher);
+    if (existingIdx >= 0) {
+      groups[existingIdx] = {
+        ...groups[existingIdx],
+        hooks: [...(groups[existingIdx].hooks || []), entry],
+      };
+    } else {
+      groups.push({ matcher: spec.matcher, hooks: [entry] });
+    }
+    out[spec.event] = groups;
+  }
+  return out;
+}
+
+function installHooks(projectDir: string): { added: number; file: string } {
+  const settingsDir = path.join(projectDir, ".claude");
+  const settingsFile = path.join(settingsDir, "settings.json");
+
+  if (!fs.existsSync(settingsDir)) {
+    fs.mkdirSync(settingsDir, { recursive: true });
+  }
+
+  let settings: Record<string, unknown> = {};
+  if (fs.existsSync(settingsFile)) {
+    try {
+      const raw = fs.readFileSync(settingsFile, "utf-8");
+      settings = raw.trim() ? JSON.parse(raw) : {};
+    } catch (err) {
+      throw new Error(
+        `Failed to parse ${settingsFile}: ${(err as Error).message}. Fix or remove the file and re-run setup.`
+      );
+    }
+  }
+
+  const existingHooks: HookSettings =
+    (settings.hooks && typeof settings.hooks === "object" ? (settings.hooks as HookSettings) : {}) ?? {};
+
+  const stripped = stripWorkKitHooks(existingHooks);
+  const merged = addWorkKitHooks(stripped);
+
+  settings.hooks = merged;
+  fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2) + "\n");
+
+  return { added: WK_HOOKS.length, file: settingsFile };
+}
+
 async function promptUser(question: string): Promise<string> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
   return new Promise((resolve) => {
@@ -140,6 +266,16 @@ export async function setupCommand(targetPath?: string): Promise<void> {
   }
   if (copied.length === 0 && skipped.length > 0) {
     console.error(`  ${dim("Already up to date.")}`);
+  }
+
+  // Install Claude Code hooks so the observer can detect "blocked on user" state
+  console.error(`\nInstalling Claude Code hooks into ${projectDir}/.claude/settings.json...`);
+  try {
+    const { added, file } = installHooks(projectDir);
+    console.error(`  ${green("+")} ${added} hook${added === 1 ? "" : "s"} merged into ${path.relative(projectDir, file) || file}`);
+    console.error(`  ${dim("Observer will now detect permission prompts and AskUserQuestion calls.")}`);
+  } catch (err) {
+    console.error(`  ${red("✗")} ${(err as Error).message}`);
   }
 
   // Run doctor against the target project
