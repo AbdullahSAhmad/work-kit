@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
+import { spawnSync } from "node:child_process";
 import { doctorCommand } from "./doctor.js";
 import { bold, dim, green, yellow, red, cyan } from "../utils/colors.js";
 
@@ -195,6 +196,120 @@ function installHooks(projectDir: string): { added: number; file: string } {
   return { added: WK_HOOKS.length, file: settingsFile };
 }
 
+// ── Playwright detection / install ─────────────────────────────────
+//
+// Work-kit's Test phase requires a real E2E framework. We standardize on
+// Playwright. setup/upgrade detect whether the target project already has
+// it; if not, we offer to install it (and optionally scaffold a config).
+
+type PackageManager = "pnpm" | "yarn" | "npm";
+
+function detectPackageManager(projectDir: string): PackageManager {
+  if (fs.existsSync(path.join(projectDir, "pnpm-lock.yaml"))) return "pnpm";
+  if (fs.existsSync(path.join(projectDir, "yarn.lock"))) return "yarn";
+  return "npm";
+}
+
+function hasPlaywrightInstalled(projectDir: string): boolean {
+  const pkgPath = path.join(projectDir, "package.json");
+  if (!fs.existsSync(pkgPath)) return false;
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+    return Boolean(deps["@playwright/test"] || deps["playwright"]);
+  } catch {
+    return false;
+  }
+}
+
+function hasPlaywrightConfig(projectDir: string): boolean {
+  return ["playwright.config.ts", "playwright.config.js", "playwright.config.mjs", "playwright.config.cjs"]
+    .some((f) => fs.existsSync(path.join(projectDir, f)));
+}
+
+function runStreamed(cmd: string, args: string[], cwd: string): boolean {
+  const result = spawnSync(cmd, args, { cwd, stdio: "inherit" });
+  return result.status === 0;
+}
+
+function installPlaywrightPackage(pm: PackageManager, projectDir: string): boolean {
+  const args =
+    pm === "pnpm" ? ["add", "-D", "@playwright/test"] :
+    pm === "yarn" ? ["add", "-D", "@playwright/test"] :
+    ["install", "-D", "@playwright/test"];
+  console.error(`  ${dim(`$ ${pm} ${args.join(" ")}`)}`);
+  return runStreamed(pm, args, projectDir);
+}
+
+function installPlaywrightBrowsers(projectDir: string): boolean {
+  // Chromium-only — fastest install, covers most E2E needs.
+  console.error(`  ${dim("$ npx playwright install chromium")}`);
+  return runStreamed("npx", ["playwright", "install", "chromium"], projectDir);
+}
+
+function scaffoldPlaywrightConfig(pm: PackageManager, projectDir: string): boolean {
+  // `npm init playwright@latest` works regardless of pm (it just runs the create-playwright bin).
+  // Yarn/pnpm have their own equivalents but npm init is universally available.
+  console.error(`  ${dim("$ npm init playwright@latest -- --quiet --browser=chromium --no-examples")}`);
+  return runStreamed(
+    "npm",
+    ["init", "playwright@latest", "--", "--quiet", "--browser=chromium", "--no-examples"],
+    projectDir
+  );
+}
+
+async function ensurePlaywright(projectDir: string): Promise<void> {
+  console.error(`\nChecking Playwright (required for work-kit's E2E test step)...`);
+
+  // Non-Node project — nothing to do.
+  if (!fs.existsSync(path.join(projectDir, "package.json"))) {
+    console.error(`  ${dim("No package.json found — skipping Playwright setup.")}`);
+    return;
+  }
+
+  const pm = detectPackageManager(projectDir);
+  const installed = hasPlaywrightInstalled(projectDir);
+  const configured = hasPlaywrightConfig(projectDir);
+
+  if (installed && configured) {
+    console.error(`  ${green("\u2713")} Playwright already installed and configured.`);
+    return;
+  }
+
+  if (!installed) {
+    const answer = (await promptUser(`  Install Playwright (@playwright/test) via ${pm}? [y/N]: `)).toLowerCase();
+    if (answer !== "y" && answer !== "yes") {
+      console.error(`  ${yellow("!")} Skipped. The wk-test E2E step will fail until Playwright is installed.`);
+      return;
+    }
+    if (!installPlaywrightPackage(pm, projectDir)) {
+      console.error(`  ${red("\u2717")} Failed to install @playwright/test.`);
+      return;
+    }
+    if (!installPlaywrightBrowsers(projectDir)) {
+      console.error(`  ${red("\u2717")} Failed to install Chromium browser.`);
+      return;
+    }
+    console.error(`  ${green("+")} Installed @playwright/test and Chromium.`);
+  }
+
+  if (!hasPlaywrightConfig(projectDir)) {
+    const answer = (await promptUser(`  No playwright.config found. Scaffold one now? [y/N]: `)).toLowerCase();
+    if (answer !== "y" && answer !== "yes") {
+      console.error(`  ${yellow("!")} Skipped scaffolding. Create a playwright.config.ts before running wk-test.`);
+      return;
+    }
+    if (!scaffoldPlaywrightConfig(pm, projectDir)) {
+      console.error(`  ${red("\u2717")} Scaffolding failed. Run \`npm init playwright@latest\` manually.`);
+      return;
+    }
+    console.error(`  ${green("+")} Playwright config scaffolded.`);
+  }
+}
+
 async function promptUser(question: string): Promise<string> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
   return new Promise((resolve) => {
@@ -277,6 +392,9 @@ export async function setupCommand(targetPath?: string): Promise<void> {
   } catch (err) {
     console.error(`  ${red("✗")} ${(err as Error).message}`);
   }
+
+  // Ensure Playwright is available — wk-test's E2E step requires it.
+  await ensurePlaywright(projectDir);
 
   // Run doctor against the target project
   console.error("\nRunning doctor...");
