@@ -15,11 +15,11 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
    work-kit extract
    ```
    This parses `.work-kit/state.md` and `.work-kit/tracker.json` and routes entries to `.work-kit-knowledge/{lessons,conventions,risks,workflow}.md`. It pulls from:
-   - `## Observations` typed bullets (`- [lesson|convention|risk|workflow] text`)
-   - `## Decisions` → conventions
-   - `## Deviations` → workflow feedback
+   - `## Observations` typed bullets (`- [lesson|convention|risk|workflow] text`) — the only section that is auto-harvested
    - `tracker.json.loopbacks[]` → workflow feedback
    - Skipped/failed steps → workflow feedback
+
+   `## Decisions` and `## Deviations` are **not** auto-harvested — they're agent scratch space and routinely contain test plans and review notes. If something in there is worth preserving, restate it as a typed bullet under `## Observations` (or call `work-kit learn` directly in step 2).
 
    The output JSON tells you how many entries were `written` vs `duplicates`. Re-running is idempotent.
 

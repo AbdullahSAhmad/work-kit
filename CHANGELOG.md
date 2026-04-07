@@ -4,7 +4,7 @@
 
 ### Added
 - Two-layer knowledge persistence so sessions stop being amnesiac. New `.work-kit-knowledge/` directory at the main repo root holds `lessons.md`, `conventions.md`, `risks.md` (project-specific, injected into every new session via `wk-bootstrap`) and `workflow.md` (kit-level feedback, mined manually across projects to improve work-kit upstream).
-- New `wrap-up/knowledge` step runs after `wrap-up/summary`. Calls `work-kit extract` to parse `## Observations` / `## Decisions` / `## Deviations` from `state.md` plus loopbacks/skipped/failed steps from `tracker.json`, then routes entries into the four knowledge files. Skipped by default for `bug-fix` and `small-change` classifications.
+- New `wrap-up/knowledge` step runs after `wrap-up/summary`. Calls `work-kit extract` to parse typed `## Observations` bullets from `state.md` plus loopbacks/skipped/failed steps from `tracker.json`, then routes entries into the four knowledge files. Skipped by default for `bug-fix` and `small-change` classifications.
 - `work-kit learn --type {lesson|convention|risk|workflow} --text "..."` CLI command for explicit mid-session captures. Auto-fills slug/phase/step from current `tracker.json`. Secret redaction at write time.
 - `work-kit extract` CLI command. Idempotent (content-hash dedup); batches one read-modify-write per file under a single lockfile acquisition.
 - New `## Observations` section in the `state.md` template with a typed-bullet grammar (`- [lesson|convention|risk|workflow] text`) so agents can capture observations as a normal part of phase work.

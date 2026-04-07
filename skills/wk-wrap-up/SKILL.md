@@ -26,7 +26,7 @@ The summary you write goes into `.work-kit/summary.md`; the CLI archives it into
 4. **Run** `work-kit complete wrap-up/summary --outcome done`
 
 ### Step 2: knowledge
-5. **Run `work-kit extract`** — mechanically routes Observations / Decisions / Deviations / loopbacks into `.work-kit-knowledge/` files
+5. **Run `work-kit extract`** — routes typed `## Observations` bullets and tracker loopbacks/skipped/failed steps into `.work-kit-knowledge/` files. `## Decisions` and `## Deviations` are not auto-harvested (they're scratch space).
 6. **Review the summary you just wrote** for subjective additions the parser would miss. For each, call `work-kit learn --type <lesson|convention|risk|workflow> --text "..."`.
 7. **Run** `work-kit complete wrap-up/knowledge --outcome done`
 

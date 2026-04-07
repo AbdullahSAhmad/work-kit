@@ -176,6 +176,33 @@ describe("learnCommand", () => {
     assert.ok(workflowMd.includes("e2e step needs server"));
   });
 
+  it("ignores bullets under ## Decisions and ## Deviations", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+    setupSession(tmp);
+
+    // Simulate an agent dumping test-plan noise into Decisions/Deviations.
+    // None of these should be harvested — only ## Observations is auto-routed.
+    const stateMdPath = path.join(tmp, ".work-kit", "state.md");
+    const original = fs.readFileSync(stateMdPath, "utf-8");
+    const injected = original
+      .replace(
+        "## Decisions\n<!-- Append here whenever you choose between real alternatives -->",
+        "## Decisions\n<!-- Append here whenever you choose between real alternatives -->\n- Picked Zod over Yup\n- Use Firestore onSnapshot\n- **Expected:** Badge renders X / Y"
+      )
+      .replace(
+        "## Deviations\n<!-- Append here whenever implementation diverges from the Blueprint -->",
+        "## Deviations\n<!-- Append here whenever implementation diverges from the Blueprint -->\n- Navigate to / and verify cards render\n- Check badge shows 0 / 0\n- **Flow 3:** Pass"
+      );
+    fs.writeFileSync(stateMdPath, injected);
+
+    const r = extractCommand({ worktreeRoot: tmp });
+    assert.equal(r.action, "extracted");
+    assert.equal(r.written, 0, "no bullets from Decisions/Deviations should be harvested");
+    assert.equal(r.byType.convention, 0);
+    assert.equal(r.byType.workflow, 0);
+  });
+
   it("extract is idempotent (re-run produces only duplicates)", () => {
     const tmp = makeTmpDir();
     tmpDirs.push(tmp);

@@ -51,49 +51,39 @@ function parseStateMd(stateMd: string): RawEntry[] {
   const out: RawEntry[] = [];
   if (!stateMd) return out;
 
-  let section: "observations" | "decisions" | "deviations" | null = null;
+  // Only `## Observations` is auto-harvested. `## Decisions` and `## Deviations`
+  // are agent scratch space during normal phase work — they routinely contain
+  // test plans, acceptance-criteria checklists, and self-review dumps. Auto-
+  // routing them floods workflow.md with noise. Agents opt into harvesting by
+  // writing typed bullets (`- [lesson|convention|risk|workflow] text`) under
+  // `## Observations`.
+  let inObservations = false;
 
   for (const rawLine of stateMd.split("\n")) {
     const trimmed = rawLine.trim();
 
     if (trimmed.startsWith("## ")) {
-      const header = trimmed.slice(3).trim().toLowerCase();
-      if (header === "observations") section = "observations";
-      else if (header === "decisions") section = "decisions";
-      else if (header === "deviations") section = "deviations";
-      else section = null;
+      inObservations = trimmed.slice(3).trim().toLowerCase() === "observations";
       continue;
     }
 
-    if (section === null) continue;
+    if (!inObservations) continue;
     if (!trimmed.startsWith("-") || trimmed.startsWith("<!--")) continue;
 
-    if (section === "observations") {
-      const m = trimmed.match(OBSERVATION_RE);
-      if (!m) continue;
-      const tag = m[1].toLowerCase();
-      if (!isKnowledgeType(tag)) continue;
-      const phaseStep = m[2];
-      const text = m[3].trim();
-      if (text.length === 0) continue;
-      const entry: RawEntry = { type: tag, text, source: "auto-state-md" };
-      if (phaseStep) {
-        const [p, s] = phaseStep.split("/");
-        entry.phase = p;
-        entry.step = s;
-      }
-      out.push(entry);
-      continue;
-    }
-
-    const text = trimmed.replace(/^-\s*/, "").trim();
+    const m = trimmed.match(OBSERVATION_RE);
+    if (!m) continue;
+    const tag = m[1].toLowerCase();
+    if (!isKnowledgeType(tag)) continue;
+    const phaseStep = m[2];
+    const text = m[3].trim();
     if (text.length === 0) continue;
-
-    if (section === "decisions") {
-      out.push({ type: "convention", text, source: "auto-state-md" });
-    } else if (section === "deviations") {
-      out.push({ type: "workflow", text: `[deviation] ${text}`, source: "auto-state-md" });
+    const entry: RawEntry = { type: tag, text, source: "auto-state-md" };
+    if (phaseStep) {
+      const [p, s] = phaseStep.split("/");
+      entry.phase = p;
+      entry.step = s;
     }
+    out.push(entry);
   }
 
   return out;
