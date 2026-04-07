@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 (2026-04-08)
+
+### Added
+- Two-layer knowledge persistence so sessions stop being amnesiac. New `.work-kit-knowledge/` directory at the main repo root holds `lessons.md`, `conventions.md`, `risks.md` (project-specific, injected into every new session via `wk-bootstrap`) and `workflow.md` (kit-level feedback, mined manually across projects to improve work-kit upstream).
+- New `wrap-up/knowledge` step runs after `wrap-up/summary`. Calls `work-kit extract` to parse `## Observations` / `## Decisions` / `## Deviations` from `state.md` plus loopbacks/skipped/failed steps from `tracker.json`, then routes entries into the four knowledge files. Skipped by default for `bug-fix` and `small-change` classifications.
+- `work-kit learn --type {lesson|convention|risk|workflow} --text "..."` CLI command for explicit mid-session captures. Auto-fills slug/phase/step from current `tracker.json`. Secret redaction at write time.
+- `work-kit extract` CLI command. Idempotent (content-hash dedup); batches one read-modify-write per file under a single lockfile acquisition.
+- New `## Observations` section in the `state.md` template with a typed-bullet grammar (`- [lesson|convention|risk|workflow] text`) so agents can capture observations as a normal part of phase work.
+- Per-step model routing: `--opus`, `--sonnet`, `--haiku`, `--inherit` flags on `/full-kit` and `/auto-kit` set a session-wide model policy. Layered precedence: workspace JSON override → user global override → session policy → classification override → step default → phase default → hard default. New `cli/src/config/model-routing.ts` with full test coverage.
+- `work-kit setup` now scaffolds `.work-kit-knowledge/` with stub files and a README on first install, gitignores `.work-kit-knowledge/.lock`, and prints a one-time "files are committed to your repo" warning.
+- `work-kit setup` and `work-kit upgrade` now detect Playwright and offer to install `@playwright/test` + Chromium when missing. The `wk-test/e2e` step is updated to require Playwright (no manual fallback).
+- `wk-bootstrap` reads `lessons.md`, `conventions.md`, and `risks.md` (capped at 200 lines each) and injects them into every new session's opening context. `workflow.md` is intentionally not injected — it's a write-only artifact for human curators.
+- Process-wide caches for `gitHeadSha` and `ensureKnowledgeDir` to eliminate redundant subprocess spawns and stat calls during multi-entry wrap-ups.
+- Shared `atomicWriteFile` helper in `cli/src/utils/fs.ts` for crash-safe writes (temp + rename).
+- Generalized `ensureGitignored(root, entry)` helper, reused by `setup` for the knowledge lockfile entry.
+
+### Changed
+- Each phase `SKILL.md` (`wk-plan`, `wk-build`, `wk-test`, `wk-review`, `wk-deploy`) gains a one-line reminder to append typed bullets to `## Observations` in `state.md` during normal phase work, alongside the existing Decisions/Deviations recording guidance.
+- `wk-wrap-up/SKILL.md` now describes two steps (`summary` then `knowledge`) instead of one.
+
 ## 0.3.0 (2026-04-07)
 
 ### Added
