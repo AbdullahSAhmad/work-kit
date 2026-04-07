@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 (2026-04-08)
+
+### Fixed
+- `work-kit extract` no longer auto-harvests bullets under `## Decisions` and `## Deviations`. Those sections are agent scratch space and routinely contain test-plan walkthroughs and self-review notes, which flooded `workflow.md` with dozens of `[deviation]` entries that had no signal about the work-kit workflow itself. Only typed `## Observations` bullets (`- [lesson|convention|risk|workflow] text`) plus tracker loopbacks/skipped/failed steps are now extracted.
+- `work-kit setup` retries Playwright install with `--legacy-peer-deps` when npm fails with ERESOLVE (e.g., target project has a pre-existing vite peer-dep conflict). Warns the user that the underlying conflict still needs separate attention.
+
 ## 0.4.0 (2026-04-08)
 
 ### Added
