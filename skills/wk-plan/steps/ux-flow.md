@@ -32,7 +32,7 @@ description: "Plan step: Define user-facing flows, screens, interactions, edge c
 - <page/component> — <new or modified> — <what changes>
 
 **Interactions:**
-- <element>: <what happens on click/submit/hover>
+- <element>: default / hover / focus / active / disabled / loading behavior
 
 **Edge Cases:**
 - Empty state: <what shows when no data>
