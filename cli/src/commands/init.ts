@@ -44,7 +44,16 @@ function buildPhases(workflow?: WorkflowStep[]): Record<PhaseName, PhaseState> {
   return phases;
 }
 
-function generateStateMd(slug: string, branch: string, mode: string, description: string, classification?: string, workflow?: WorkflowStep[]): string {
+function generateStateMd(
+  slug: string,
+  branch: string,
+  mode: string,
+  description: string,
+  firstPhase: string,
+  firstStep: string,
+  classification?: string,
+  workflow?: WorkflowStep[]
+): string {
   const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const date = new Date().toISOString().split("T")[0];
 
@@ -60,8 +69,8 @@ function generateStateMd(slug: string, branch: string, mode: string, description
     md += `**Classification:** ${classification}\n`;
   }
 
-  md += `**Phase:** plan
-**Step:** clarify
+  md += `**Phase:** ${firstPhase}
+**Step:** ${firstStep}
 **Status:** in-progress
 
 ## Description
@@ -182,21 +191,19 @@ export function initCommand(options: {
     workflow = buildFullWorkflow();
   }
 
-  // Find first active step
-  let firstPhase: PhaseName = "plan";
-  let firstStep = "clarify";
-
-  if (workflow) {
-    const first = workflow.find((s) => s.included);
-    if (first) {
-      firstPhase = first.phase;
-      firstStep = first.step;
-    }
+  // First active step is always the first `included` entry in the workflow.
+  // For full-kit that's define/refine; for auto-kit it depends on classification.
+  let firstPhase: PhaseName = "define";
+  let firstStep = "refine";
+  const first = workflow?.find((s) => s.included);
+  if (first) {
+    firstPhase = first.phase;
+    firstStep = first.step;
   }
 
   // Build state
   const state: WorkKitState = {
-    version: 2,
+    version: 3,
     slug,
     branch,
     started: new Date().toISOString(),
@@ -221,7 +228,7 @@ export function initCommand(options: {
 
   // Write state files
   writeState(worktreeRoot, state);
-  writeStateMd(worktreeRoot, generateStateMd(slug, branch, modeLabel, description, classification, workflow));
+  writeStateMd(worktreeRoot, generateStateMd(slug, branch, modeLabel, description, firstPhase, firstStep, classification, workflow));
 
   const model = resolveModel(state, firstPhase, firstStep);
 

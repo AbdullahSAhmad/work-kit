@@ -1,6 +1,13 @@
 # work-kit
 
-Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 6 phases, 27 steps — orchestrated by a TypeScript CLI with reusable skill files.
+Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 31 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files.
+
+## What's new in v0.5
+
+- **Define phase** runs before Plan to refine vague asks into a concrete spec (auto-skipped for bug fixes/refactors).
+- **wk-debug** triage skill auto-fires when any step reports `needs_debug`, then the originating step retries (max 2 iterations). Not user-invocable — fires from inside the pipeline.
+- **`test/browser`** drives the running app via Chrome DevTools MCP and verifies user-facing acceptance criteria in a real browser. Skips gracefully if the MCP isn't installed.
+- **`decision` knowledge type** auto-graduates `## Decisions` bullets into `.work-kit-knowledge/decisions.md` so future sessions don't re-litigate settled choices.
 
 ## Installation
 

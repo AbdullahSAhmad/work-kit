@@ -14,7 +14,7 @@ function makeState(): WorkKitState {
     phases[phase] = { status: "pending", steps };
   }
   return {
-    version: 2,
+    version: 3,
     slug: "test",
     branch: "feature/test",
     started: "2026-01-01",
@@ -38,14 +38,32 @@ function completePhase(state: WorkKitState, phase: PhaseName): void {
 }
 
 describe("validatePhasePrerequisites", () => {
-  it("plan has no prerequisites — valid", () => {
+  it("define has no prerequisites — valid", () => {
     const state = makeState();
+    const result = validatePhasePrerequisites(state, "define");
+    assert.equal(result.valid, true);
+  });
+
+  it("plan with define complete — valid", () => {
+    const state = makeState();
+    completePhase(state, "define");
+    const result = validatePhasePrerequisites(state, "plan");
+    assert.equal(result.valid, true);
+  });
+
+  it("plan with define skipped — valid (skipped satisfies prerequisite)", () => {
+    const state = makeState();
+    state.phases.define.status = "skipped";
+    for (const s of Object.values(state.phases.define.steps)) {
+      s.status = "skipped";
+    }
     const result = validatePhasePrerequisites(state, "plan");
     assert.equal(result.valid, true);
   });
 
   it("build with plan incomplete — invalid", () => {
     const state = makeState();
+    completePhase(state, "define");
     const result = validatePhasePrerequisites(state, "build");
     assert.equal(result.valid, false);
     assert.equal(result.missingPrerequisite, "plan");
@@ -53,6 +71,7 @@ describe("validatePhasePrerequisites", () => {
 
   it("build with plan complete — valid", () => {
     const state = makeState();
+    completePhase(state, "define");
     completePhase(state, "plan");
     const result = validatePhasePrerequisites(state, "build");
     assert.equal(result.valid, true);

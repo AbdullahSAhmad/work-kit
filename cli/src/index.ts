@@ -361,8 +361,8 @@ program
 
 program
   .command("learn")
-  .description("Append a knowledge entry (lesson/convention/risk/workflow) to .work-kit-knowledge/")
-  .requiredOption("--type <type>", "Entry type: lesson, convention, risk, workflow")
+  .description("Append a knowledge entry (lesson/convention/risk/workflow/decision) to .work-kit-knowledge/")
+  .requiredOption("--type <type>", "Entry type: lesson, convention, risk, workflow, decision")
   .requiredOption("--text <text>", "Free-form text. Secrets are auto-redacted at write time.")
   .option("--scope <glob>", "Optional path glob (stored, not yet used for filtering)")
   .option("--phase <phase>", "Override session phase auto-fill")

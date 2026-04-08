@@ -26,12 +26,15 @@ Do not proceed until `doctor` reports all checks passed.
 
 These are the building blocks you pick from:
 
+- **Define:** Refine, Spec  *(included for `feature` and `large-feature` only)*
 - **Plan:** Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit
 - **Build:** Setup, Migration, Red, Core, UI, Refactor, Integration, Commit
-- **Test:** Verify, E2E, Validate
+- **Test:** Verify, E2E, Browser, Validate  *(Browser uses Chrome DevTools MCP, included for `if UI`)*
 - **Review:** Self-Review, Security, Performance, Compliance, Handoff
 - **Deploy:** Merge, Monitor, Remediate (optional)
 - **Wrap-up**
+
+**Debug recovery:** any step can report outcome `needs_debug`. The CLI auto-spawns the **wk-debug** skill (5-step triage), then the originating step retries. Max 2 debug attempts per step.
 
 ## Starting New Work (`/auto-kit <description>`)
 
@@ -55,6 +58,8 @@ Based on the classification, select steps. Use this table as a starting point, t
 
 | Step              | bug-fix | small-change | refactor | feature | large-feature |
 |------------------------|---------|--------------|----------|---------|---------------|
+| **Define: Refine**     | skip    | skip         | skip     | YES     | YES           |
+| **Define: Spec**       | skip    | skip         | skip     | YES     | YES           |
 | **Plan: Clarify**      | YES     | YES          | YES      | YES     | YES           |
 | **Plan: Investigate**  | YES     | skip         | YES      | YES     | YES           |
 | **Plan: Sketch**       | skip    | skip         | skip     | YES     | YES           |
@@ -73,6 +78,7 @@ Based on the classification, select steps. Use this table as a starting point, t
 | **Build: Commit**      | YES     | YES          | YES      | YES     | YES           |
 | **Test: Verify**       | YES     | YES          | YES      | YES     | YES           |
 | **Test: E2E**          | skip    | skip         | skip     | if UI   | YES           |
+| **Test: Browser**      | skip    | skip         | skip     | if UI   | if UI         |
 | **Test: Validate**     | YES     | skip         | skip     | YES     | YES           |
 | **Review: Self-Review**| YES     | YES          | YES      | YES     | YES           |
 | **Review: Security**   | skip    | skip         | skip     | YES     | YES           |
@@ -205,6 +211,7 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 3. Follow the action type:
    - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. **If the action includes a `model` field, pass it as the Agent tool's `model` parameter; if the field is absent, do not set `model` (let Claude Code's default pick).** After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
    - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. **For each agent, pass its `model` field as the Agent tool's `model` parameter when present; omit when absent.** Wait for all to complete. Then spawn `thenSequential` if provided (same rule for its `model` field). After all complete: `work-kit complete <onComplete target>`
+   - **`spawn_debug_agent`**: A previous step reported `needs_debug`. Spawn the **wk-debug** skill via the Agent tool with the provided `agentPrompt` and `skillFile`. Use the `model` field if present. Do **not** call `work-kit complete` for the debug agent — when it finishes, simply run `work-kit next` and the originating step will retry automatically.
    - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again.
    - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.

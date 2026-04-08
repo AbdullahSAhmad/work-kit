@@ -48,6 +48,13 @@ export const KNOWLEDGE_LOCK = ".lock";
 
 export const MAX_LOOPBACKS_PER_ROUTE = 2;
 
+/**
+ * Max times wk-debug can be invoked for the same originating step before the
+ * orchestrator surfaces the failure to the user. Tracked separately from
+ * standard loopbacks via `LoopbackRecord.kind === "debug"`.
+ */
+export const MAX_DEBUG_ITERATIONS = 2;
+
 // ── Staleness ───────────────────────────────────────────────────────
 
 /** Threshold (ms) after which an in-progress state is considered stale. */

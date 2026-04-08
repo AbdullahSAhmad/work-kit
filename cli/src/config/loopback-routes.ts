@@ -13,6 +13,12 @@ export interface LoopbackRoute {
 
 export const LOOPBACK_ROUTES: LoopbackRoute[] = [
   {
+    from: { phase: "define", step: "spec" },
+    triggerOutcome: "revise",
+    to: { phase: "define", step: "refine" },
+    reason: "Spec found ambiguity — looping back to Refine",
+  },
+  {
     from: { phase: "plan", step: "audit" },
     triggerOutcome: "revise",
     to: { phase: "plan", step: "blueprint" },

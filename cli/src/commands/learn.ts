@@ -4,6 +4,7 @@ import {
   ensureKnowledgeDir,
   fileForType,
   isKnowledgeType,
+  KNOWLEDGE_TYPES,
   redact,
   type KnowledgeEntry,
   type KnowledgeType,
@@ -36,7 +37,7 @@ export function learnCommand(opts: LearnOptions): LearnResult {
   if (!opts.type || !isKnowledgeType(opts.type)) {
     return {
       action: "error",
-      message: `Invalid --type "${opts.type}". Must be one of: lesson, convention, risk, workflow.`,
+      message: `Invalid --type "${opts.type}". Must be one of: ${KNOWLEDGE_TYPES.join(", ")}.`,
     };
   }
   if (!opts.text || opts.text.trim().length === 0) {

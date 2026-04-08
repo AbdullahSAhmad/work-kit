@@ -66,9 +66,9 @@ export function validatePhasePrerequisites(state: WorkKitState, phase: PhaseName
     return { valid: true, message: "Prerequisites met for deploy" };
   }
 
-  // General case
+  // General case: completed OR fully skipped both satisfy the prerequisite.
   const prereqState = state.phases[prereq];
-  if (prereqState.status !== "completed") {
+  if (prereqState.status !== "completed" && prereqState.status !== "skipped") {
     return {
       valid: false,
       message: `${phase} requires ${prereq} to be complete. Current: ${prereqState.status}`,

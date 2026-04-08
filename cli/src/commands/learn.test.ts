@@ -146,8 +146,8 @@ describe("learnCommand", () => {
       path.join(tmp, KNOWLEDGE_DIR, "lessons.md"),
       "utf-8"
     );
-    // Init starts at plan/clarify
-    assert.ok(content.includes("plan/clarify"));
+    // Full-kit init now starts at define/refine (Define is the new first phase)
+    assert.ok(content.includes("define/refine"));
   });
 
   it("extracts typed bullets from state.md ## Observations", () => {

@@ -5,9 +5,12 @@ import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
 import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
 import { PHASE_ORDER } from "../config/workflow.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
-import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, CLI_BINARY } from "../config/constants.js";
-import { isStepOutcome, STEP_OUTCOMES, type Action, type PhaseName, type StepOutcome, type WorkKitState } from "../state/schema.js";
+import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, MAX_DEBUG_ITERATIONS, SKILL_DIR_PREFIX, CLI_BINARY } from "../config/constants.js";
+import { isStepOutcome, STEP_OUTCOMES, type Action, type Location, type PhaseName, type StepOutcome, type StepState, type WorkKitState } from "../state/schema.js";
 import { stateMdPath } from "../state/store.js";
+import { resolveModel } from "../config/model-routing.js";
+
+const DEBUG_SKILL_FILE = `.claude/skills/${SKILL_DIR_PREFIX}debug/SKILL.md`;
 
 export function completeCommand(target: string, outcome?: string, worktreeRoot?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();
@@ -48,6 +51,10 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
   }
   if (stepState.status === "skipped") {
     return { action: "error", message: `${phase}/${step} is skipped and cannot be completed. Add it to the workflow first.` };
+  }
+
+  if (typedOutcome === "needs_debug") {
+    return handleNeedsDebug(root, state, stepState, { phase, step });
   }
 
   stepState.status = "completed";
@@ -142,6 +149,73 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 }
 
 // ── Archive on completion ──────────────────────────────────────────
+
+/**
+ * Divert a step that reported `needs_debug` into the wk-debug skill. The
+ * originating step stays in-progress so the next `next()` call retries it
+ * after the debug agent finishes. Bails to `wait_for_user` once the per-step
+ * iteration cap is reached.
+ */
+function handleNeedsDebug(
+  root: string,
+  state: WorkKitState,
+  stepState: StepState,
+  origin: Location
+): Action {
+  const debugCount = state.loopbacks.filter(
+    (lb) => lb.kind === "debug" && lb.from.phase === origin.phase && lb.from.step === origin.step
+  ).length;
+
+  if (debugCount >= MAX_DEBUG_ITERATIONS) {
+    writeState(root, state);
+    return {
+      action: "wait_for_user",
+      message: `${origin.phase}/${origin.step} reported needs_debug but max debug iterations (${MAX_DEBUG_ITERATIONS}) reached. Surface to user — manual intervention required.`,
+    };
+  }
+
+  const iteration = debugCount + 1;
+  state.loopbacks.push({
+    from: origin,
+    to: origin,
+    reason: `Step reported needs_debug — invoking wk-debug (iteration ${iteration})`,
+    timestamp: new Date().toISOString(),
+    kind: "debug",
+  });
+  stepState.status = "in-progress";
+  delete stepState.outcome;
+  delete stepState.completedAt;
+  writeState(root, state);
+
+  const agentPrompt = [
+    `# Debug Triage`,
+    ``,
+    `**Origin:** ${origin.phase}/${origin.step}`,
+    `**Iteration:** ${iteration} of ${MAX_DEBUG_ITERATIONS}`,
+    `**Worktree:** ${root}`,
+    ``,
+    `## Instructions`,
+    `Read and follow the skill file: \`${DEBUG_SKILL_FILE}\``,
+    ``,
+    `The originating step (${origin.phase}/${origin.step}) hit something it cannot resolve.`,
+    `Read \`.work-kit/state.md\` and the originating agent's working notes for that step.`,
+    ``,
+    `Run the 5-step triage methodology. Write your full report to \`.work-kit/debug-<ISO-timestamp>.md\`.`,
+    `Do NOT call \`work-kit complete\` for the originating step — when you finish, the orchestrator will re-run \`work-kit next\` and the originating step will retry automatically.`,
+  ].join("\n");
+
+  const debugModel = resolveModel(state, origin.phase, origin.step);
+
+  return {
+    action: "spawn_debug_agent",
+    origin,
+    iteration,
+    skillFile: DEBUG_SKILL_FILE,
+    agentPrompt,
+    onComplete: `${CLI_BINARY} next`,
+    ...(debugModel && { model: debugModel }),
+  };
+}
 
 function archiveFolderName(slug: string, completedAt: string): string {
   return `${slug}-${completedAt.split("T")[0]}`;

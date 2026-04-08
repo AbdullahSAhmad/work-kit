@@ -1,15 +1,17 @@
 // ── Phase & Step Types ──────────────────────────────────────────────
 
-export const PHASE_NAMES = ["plan", "build", "test", "review", "deploy", "wrap-up"] as const;
+export const PHASE_NAMES = ["define", "plan", "build", "test", "review", "deploy", "wrap-up"] as const;
 export type PhaseName = (typeof PHASE_NAMES)[number];
 
+export const DEFINE_STEPS = ["refine", "spec"] as const;
 export const PLAN_STEPS = ["clarify", "investigate", "sketch", "scope", "ux-flow", "architecture", "blueprint", "audit"] as const;
 export const BUILD_STEPS = ["setup", "migration", "red", "core", "ui", "refactor", "integration", "commit"] as const;
-export const TEST_STEPS = ["verify", "e2e", "validate"] as const;
+export const TEST_STEPS = ["verify", "e2e", "browser", "validate"] as const;
 export const REVIEW_STEPS = ["self-review", "security", "performance", "compliance", "handoff"] as const;
 export const DEPLOY_STEPS = ["merge", "monitor", "remediate"] as const;
 export const WRAPUP_STEPS = ["summary", "knowledge"] as const;
 
+export type DefineStep = (typeof DEFINE_STEPS)[number];
 export type PlanStep = (typeof PLAN_STEPS)[number];
 export type BuildStep = (typeof BUILD_STEPS)[number];
 export type TestStep = (typeof TEST_STEPS)[number];
@@ -17,9 +19,10 @@ export type ReviewStep = (typeof REVIEW_STEPS)[number];
 export type DeployStep = (typeof DEPLOY_STEPS)[number];
 export type WrapUpStep = (typeof WRAPUP_STEPS)[number];
 
-export type StepName = PlanStep | BuildStep | TestStep | ReviewStep | DeployStep | WrapUpStep;
+export type StepName = DefineStep | PlanStep | BuildStep | TestStep | ReviewStep | DeployStep | WrapUpStep;
 
 export const STEPS_BY_PHASE: Record<PhaseName, readonly string[]> = {
+  define: DEFINE_STEPS,
   plan: PLAN_STEPS,
   build: BUILD_STEPS,
   test: TEST_STEPS,
@@ -87,6 +90,7 @@ export const STEP_OUTCOMES = [
   "changes_requested",   // review handoff requested changes
   "fix_needed",          // deploy merge blocked, fix required
   "fix_and_redeploy",    // remediation requires another deploy cycle
+  "needs_debug",         // step hit an error it can't resolve — invoke wk-debug, then return
   "blocked",             // step cannot proceed without external input
   "skipped",             // step intentionally skipped at runtime
 ] as const;
@@ -127,6 +131,8 @@ export interface LoopbackRecord {
   to: Location;
   reason: string;
   timestamp: string;
+  /** "debug" loopbacks are virtual: the agent spawns wk-debug then retries the same step. */
+  kind?: "standard" | "debug";
 }
 
 // ── Workflow (auto-kit) ─────────────────────────────────────────────
@@ -144,7 +150,7 @@ export type WorkStatus = "in-progress" | "paused" | "completed" | "failed";
 // ── Main State ──────────────────────────────────────────────────────
 
 export interface WorkKitState {
-  version: 2;
+  version: 3;
   slug: string;
   branch: string;
   started: string;
@@ -182,6 +188,7 @@ export interface AgentSpec {
 export type Action =
   | { action: "spawn_agent"; phase: PhaseName; step: string; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier }
   | { action: "spawn_parallel_agents"; agents: AgentSpec[]; thenSequential?: AgentSpec; onComplete: string }
+  | { action: "spawn_debug_agent"; origin: Location; iteration: number; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier }
   | { action: "wait_for_user"; message: string }
   | { action: "loopback"; from: Location; to: Location; reason: string }
   | { action: "complete"; message: string }

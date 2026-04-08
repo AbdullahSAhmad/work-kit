@@ -1,7 +1,7 @@
 {
   "name": "work-kit-cli",
-  "version": "0.4.1",
-  "description": "Structured development workflow for Claude Code. Two modes, 6 phases, 27 steps.",
+  "version": "0.5.0",
+  "description": "Structured development workflow for Claude Code. Two modes, 7 phases, 31 steps, plus debug recovery.",
   "type": "module",
   "bin": {
     "work-kit": "cli/bin/work-kit.mjs",

@@ -43,47 +43,69 @@ function emptyByType(): Record<KnowledgeType, number> {
 const OBSERVATION_RE = /^-\s*\[([a-z]+)(?::([a-z0-9-]+\/[a-z0-9-]+))?\]\s*(.+)$/i;
 
 /**
- * Walk state.md once and emit raw entries from the three sections we know:
- * Observations (typed bullets), Decisions (any bullet → convention),
- * Deviations (any bullet → workflow with [deviation] prefix).
+ * A bullet under `## Decisions` is harvested when it follows the documented
+ * shape `**<context>**: chose <X> over <Y> — <why>`. Free-form lines are
+ * skipped (not errors). The leading `**context**:` becomes the entry's title.
+ */
+const DECISION_RE = /^-\s*\*\*([^*]+)\*\*\s*:\s*(.+)$/;
+
+/**
+ * Walk state.md once and emit raw entries from:
+ *   - `## Observations` — typed bullets (`- [lesson|convention|risk|workflow|decision] text`)
+ *   - `## Decisions`    — bullets matching `**<context>**: chose X over Y — <why>`
+ *
+ * `## Deviations` stays scratch — agents routinely dump test plans there.
  */
 function parseStateMd(stateMd: string): RawEntry[] {
   const out: RawEntry[] = [];
   if (!stateMd) return out;
 
-  // Only `## Observations` is auto-harvested. `## Decisions` and `## Deviations`
-  // are agent scratch space during normal phase work — they routinely contain
-  // test plans, acceptance-criteria checklists, and self-review dumps. Auto-
-  // routing them floods workflow.md with noise. Agents opt into harvesting by
-  // writing typed bullets (`- [lesson|convention|risk|workflow] text`) under
-  // `## Observations`.
-  let inObservations = false;
+  type Section = "observations" | "decisions" | "other";
+  let section: Section = "other";
 
   for (const rawLine of stateMd.split("\n")) {
     const trimmed = rawLine.trim();
 
     if (trimmed.startsWith("## ")) {
-      inObservations = trimmed.slice(3).trim().toLowerCase() === "observations";
+      const heading = trimmed.slice(3).trim().toLowerCase();
+      if (heading === "observations") section = "observations";
+      else if (heading === "decisions") section = "decisions";
+      else section = "other";
       continue;
     }
 
-    if (!inObservations) continue;
+    if (section === "other") continue;
     if (!trimmed.startsWith("-") || trimmed.startsWith("<!--")) continue;
 
-    const m = trimmed.match(OBSERVATION_RE);
-    if (!m) continue;
-    const tag = m[1].toLowerCase();
-    if (!isKnowledgeType(tag)) continue;
-    const phaseStep = m[2];
-    const text = m[3].trim();
-    if (text.length === 0) continue;
-    const entry: RawEntry = { type: tag, text, source: "auto-state-md" };
-    if (phaseStep) {
-      const [p, s] = phaseStep.split("/");
-      entry.phase = p;
-      entry.step = s;
+    if (section === "observations") {
+      const m = trimmed.match(OBSERVATION_RE);
+      if (!m) continue;
+      const tag = m[1].toLowerCase();
+      if (!isKnowledgeType(tag)) continue;
+      const phaseStep = m[2];
+      const text = m[3].trim();
+      if (text.length === 0) continue;
+      const entry: RawEntry = { type: tag, text, source: "auto-state-md" };
+      if (phaseStep) {
+        const [p, s] = phaseStep.split("/");
+        entry.phase = p;
+        entry.step = s;
+      }
+      out.push(entry);
+      continue;
     }
-    out.push(entry);
+
+    // section === "decisions"
+    const m = trimmed.match(DECISION_RE);
+    if (!m) continue;
+    const context = m[1].trim();
+    const rationale = m[2].trim();
+    if (context.length === 0 || rationale.length === 0) continue;
+    out.push({
+      type: "decision",
+      text: `**${context}**: ${rationale}`,
+      source: "auto-state-md",
+    });
   }
 
   return out;

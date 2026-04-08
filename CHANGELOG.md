@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.5.0 (2026-04-08)
+
+### Added
+- **New Define phase** runs before Plan with two steps: `refine` (surface ambiguity, propose framings, ask the user to pick) and `spec` (lightweight 5-section PRD: goal, non-goals, users, success signal, constraints). The phase exists to catch vague asks before Plan wastes effort investigating the wrong target. Auto-skipped for `bug-fix`, `small-change`, and `refactor` classifications; runs by default for `feature` and `large-feature`. `full-kit` always starts at Define.
+- **wk-debug recovery skill** is auto-invoked when any step reports outcome `needs_debug`. Five-step triage methodology (Reproduce → Isolate → Hypothesize → Test → Fix or escalate). The originating step retries automatically after the debug agent finishes; max 2 debug iterations per step before surfacing to the user. New `spawn_debug_agent` action type returned by `work-kit complete`. Not user-invocable — fires from inside the pipeline only.
+- **`test/browser` step** drives the running app via Chrome DevTools MCP and verifies each user-facing acceptance criterion in a real browser. No `*.spec.ts` files to maintain — the agent uses MCP tools interactively. Runs in parallel with `verify` and `e2e` (validate consolidates), gated `if UI` for feature/large-feature. `work-kit doctor` probes for the MCP server and warns (does not fail) when missing; the step skips itself gracefully if the MCP isn't installed.
+- **`decision` as a 5th knowledge type** routed into `.work-kit-knowledge/decisions.md`. `work-kit extract` now harvests bullets under `## Decisions` that match the documented `**<context>**: chose X over Y — <why>` shape and graduates them into the knowledge layer. `work-kit learn --type decision --text "..."` works for explicit captures. `wk-bootstrap` injects `decisions.md` alongside lessons/conventions/risks so future sessions don't re-litigate settled choices. No separate `docs/adr/` system, no Nygard format, no new commands — the existing two-layer knowledge persistence handles everything.
+- New `needs_debug` step outcome in the `STEP_OUTCOMES` enum.
+- New `kind: "debug"` field on `LoopbackRecord` to distinguish debug retries from standard loop-backs.
+
+### Changed
+- **`WorkKitState.version` bumped from 2 to 3.** No backwards-compatibility shim — v0.5 is a clean break. Cancel or complete in-flight v2 sessions before upgrading.
+- `PHASE_NAMES` now leads with `define`. `STEPS_BY_PHASE.define = ["refine", "spec"]`. `TEST_STEPS` reordered to `["verify", "e2e", "browser", "validate"]`.
+- `validatePhasePrerequisites` treats a fully-skipped prerequisite phase as satisfied, so the new Define phase doesn't block Plan when the workflow matrix opts out.
+- `WORKFLOW_MATRIX` extended with `define/refine`, `define/spec`, and `test/browser` rows for every classification. Define gating: feature + large-feature only by default. Browser gating: `if UI` for feature/large-feature.
+- `LOOPBACK_ROUTES` adds `define/spec --revise→ define/refine` (max 2 iterations).
+- `agent-map.ts`: Plan now reads `### Define: Final` when present (silently skipped when absent). New step contexts for `define/refine`, `define/spec`, and `test/browser`.
+- `model-routing.ts`: Define phase defaults to `opus`; `define/refine` = opus, `define/spec` = sonnet, `test/browser` = sonnet.
+- `wk-wrap-up/steps/knowledge.md`: documentation updated to reflect that `## Decisions` is now auto-harvested. Free-form decision bullets are skipped silently — only those matching the documented format graduate.
+- `full-kit/SKILL.md` and `auto-kit/SKILL.md`: phase tables updated, `spawn_debug_agent` action handler added to the execution loop.
+- `wk-bootstrap/SKILL.md`: surfaces `knowledge.decisions` alongside lessons/conventions/risks; documents v0.5 capabilities.
+- `work-kit doctor` checks for the new `wk-define` and `wk-debug` skills, and probes for Chrome DevTools MCP availability via `~/.claude/settings.json`, `~/.claude/mcp.json`, and `./.mcp.json`.
+
 ## 0.4.1 (2026-04-08)
 
 ### Fixed

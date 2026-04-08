@@ -14,7 +14,7 @@ function makeState(): WorkKitState {
     phases[phase] = { status: "pending", steps };
   }
   return {
-    version: 2,
+    version: 3,
     slug: "test",
     branch: "feature/test",
     started: "2026-01-01",
@@ -91,7 +91,7 @@ describe("determineNextStep", () => {
     state.currentPhase = null;
     const result = determineNextStep(state);
     assert.equal(result.type, "phase-boundary");
-    assert.equal(result.phase, "plan");
+    assert.equal(result.phase, "define");
   });
 
   it("returns step for current phase with pending work", () => {

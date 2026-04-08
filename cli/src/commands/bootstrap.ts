@@ -2,12 +2,13 @@ import fs from "node:fs";
 import { findWorktreeRoot, readState, writeState, statePath } from "../state/store.js";
 import { unpause } from "../state/helpers.js";
 import { CLI_BINARY, STALE_THRESHOLD_MS } from "../config/constants.js";
-import { fileForType, readKnowledgeFile } from "../utils/knowledge.js";
+import { fileForType, readKnowledgeFile, KNOWLEDGE_TYPES, type KnowledgeType } from "../utils/knowledge.js";
 
 export interface BootstrapKnowledge {
   lessons?: string;
   conventions?: string;
   risks?: string;
+  decisions?: string;
 }
 
 export interface BootstrapResult {
@@ -24,8 +25,8 @@ export interface BootstrapResult {
   nextAction?: string;
   recovery?: string | null;
   /**
-   * Project-level knowledge files (lessons/conventions/risks) read from
-   * <mainRepoRoot>/.work-kit-knowledge/. Capped at 200 lines per file.
+   * Project-level knowledge files (lessons/conventions/risks/decisions) read
+   * from <mainRepoRoot>/.work-kit-knowledge/. Capped at 200 lines per file.
    * workflow.md is intentionally excluded — it's a write-only artifact for
    * human curators, not session context.
    */
@@ -89,26 +90,33 @@ export function bootstrapCommand(startDir?: string, options: BootstrapOptions = 
     nextAction = `Continue ${state.currentPhase ?? "next phase"}${state.currentStep ? "/" + state.currentStep : ""}. Run \`${CLI_BINARY} next\` to get the agent prompt.`;
   }
 
-  // Load project-level knowledge files (best effort, never breaks bootstrap).
   // workflow.md is intentionally excluded — it's a write-only artifact for
   // human curators, not session context.
+  const INJECTED_TYPES: KnowledgeType[] = KNOWLEDGE_TYPES.filter(
+    (t) => t !== "workflow"
+  ) as KnowledgeType[];
+  // Map each knowledge type to its plural field name on BootstrapKnowledge.
+  const TYPE_TO_FIELD: Record<Exclude<KnowledgeType, "workflow">, keyof BootstrapKnowledge> = {
+    lesson: "lessons",
+    convention: "conventions",
+    risk: "risks",
+    decision: "decisions",
+  };
+
   let knowledge: BootstrapKnowledge | undefined;
   try {
     const mainRepoRoot = state.metadata?.mainRepoRoot;
     if (mainRepoRoot) {
-      const lessons = readKnowledgeFile(mainRepoRoot, fileForType("lesson"));
-      const conventions = readKnowledgeFile(mainRepoRoot, fileForType("convention"));
-      const risks = readKnowledgeFile(mainRepoRoot, fileForType("risk"));
-      if (lessons || conventions || risks) {
-        knowledge = {
-          ...(lessons && { lessons }),
-          ...(conventions && { conventions }),
-          ...(risks && { risks }),
-        };
+      const collected: BootstrapKnowledge = {};
+      for (const type of INJECTED_TYPES) {
+        const content = readKnowledgeFile(mainRepoRoot, fileForType(type));
+        if (content) {
+          collected[TYPE_TO_FIELD[type as Exclude<KnowledgeType, "workflow">]] = content;
+        }
       }
+      if (Object.keys(collected).length > 0) knowledge = collected;
     }
   } catch (err: any) {
-    // Non-fatal: log to stderr but don't break bootstrap
     process.stderr.write(`work-kit: failed to load knowledge files: ${err.message}\n`);
   }
 

@@ -32,6 +32,7 @@ const HARD_DEFAULT: ModelTier = "sonnet";
 // ── Phase defaults ──────────────────────────────────────────────────
 
 export const BY_PHASE: Record<PhaseName, ModelTier> = {
+  define: "opus",
   plan: "sonnet",
   build: "sonnet",
   test: "sonnet",
@@ -43,6 +44,10 @@ export const BY_PHASE: Record<PhaseName, ModelTier> = {
 // ── Step-level overrides (phase/step keys) ──────────────────────────
 
 export const BY_STEP: Record<string, ModelTier> = {
+  // Define — refining a vague ask is reasoning-heavy
+  "define/refine": "opus",
+  "define/spec": "sonnet",
+
   // Plan — research/design-heavy steps benefit from opus
   "plan/clarify": "sonnet",
   "plan/investigate": "opus",
@@ -63,8 +68,9 @@ export const BY_STEP: Record<string, ModelTier> = {
   "build/integration": "sonnet",
   "build/commit": "haiku",
 
-  // Test — verify is mechanical, e2e/validate need judgment
+  // Test — verify is mechanical, browser/e2e/validate need judgment
   "test/verify": "haiku",
+  "test/browser": "sonnet",
   "test/e2e": "sonnet",
   "test/validate": "sonnet",
 

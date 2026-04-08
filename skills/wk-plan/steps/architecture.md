@@ -51,3 +51,19 @@ description: "Plan step: Define technical design — data model, API surface, co
 - Include TypeScript types/interfaces that will be needed
 - If you need a migration, specify the exact columns and types
 - This is the technical contract — Blueprint will reference it directly
+
+## Recording Decisions
+
+When you choose between real alternatives in this step (a library, a data shape, a layering choice), append a bullet to `## Decisions` in state.md using **this exact shape**:
+
+```
+- **<context>**: chose <X> over <Y> — <one-sentence why>
+```
+
+Examples:
+```
+- **State store**: chose Zustand over Redux Toolkit — smaller surface, no boilerplate, project already uses it elsewhere.
+- **ID generation**: chose ULID over UUID v4 — sortable, K-ordered for index locality.
+```
+
+`work-kit extract` (run during `wrap-up/knowledge`) auto-graduates these into `.work-kit-knowledge/decisions.md` so the rationale survives the session. Bullets that don't match this shape are skipped silently — they stay scratch.

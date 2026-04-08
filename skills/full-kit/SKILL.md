@@ -24,12 +24,17 @@ Do not proceed until `doctor` reports all checks passed.
 
 ## Phases
 
-1. **Plan** (8 steps) — Clarify → Investigate → Sketch → Scope → UX Flow → Architecture → Blueprint → Audit
-2. **Build** (8 steps) — Setup → Migration → Red → Core → UI → Refactor → Integration → Commit
-3. **Test** (3 steps) — Verify → E2E → Validate
-4. **Review** (5 steps) — Self-Review → Security → Performance → Compliance → Handoff
-5. **Deploy** (3 steps) — Merge → Monitor → Remediate
-6. **Wrap-up** — Synthesize work-kit summary, clean up worktree
+1. **Define** (2 steps) — Refine → Spec  *(catches vague asks before Plan investigates)*
+2. **Plan** (8 steps) — Clarify → Investigate → Sketch → Scope → UX Flow → Architecture → Blueprint → Audit
+3. **Build** (8 steps) — Setup → Migration → Red → Core → UI → Refactor → Integration → Commit
+4. **Test** (4 steps) — Verify, E2E, Browser (parallel) → Validate
+5. **Review** (5 steps) — Self-Review → Security → Performance → Compliance → Handoff
+6. **Deploy** (3 steps) — Merge → Monitor → Remediate
+7. **Wrap-up** — Synthesize work-kit summary, clean up worktree
+
+**Browser test step** uses the Chrome DevTools MCP server. If it isn't installed, `work-kit doctor` warns but does not block — the browser step is skipped gracefully.
+
+**Debug recovery:** any step can report outcome `needs_debug` when it hits an error it can't resolve. The CLI will automatically spawn the **wk-debug** skill (5-step triage), then the originating step retries. Max 2 debug attempts per step before surfacing to you.
 
 ## Starting New Work (`/full-kit <description>`)
 
@@ -80,6 +85,7 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 3. Follow the action type:
    - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. **If the action includes a `model` field, pass it as the Agent tool's `model` parameter; if the field is absent, do not set `model` (let Claude Code's default pick).** After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
    - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. **For each agent, pass its `model` field as the Agent tool's `model` parameter when present; omit when absent.** Wait for all to complete. Then spawn `thenSequential` if provided (same rule for its `model` field). After all complete: `work-kit complete <onComplete target>`
+   - **`spawn_debug_agent`**: A previous step reported `needs_debug`. Spawn the **wk-debug** skill via the Agent tool with the provided `agentPrompt` and `skillFile`. Use the `model` field if present. Do **not** call `work-kit complete` for the debug agent — when it finishes writing its `.work-kit/debug-*.md` file, simply run `work-kit next` and the originating step will retry automatically.
    - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again. (Only appears in `--gated` mode.)
    - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
    - **`complete`**: Done — run wrap-up if not already done.
@@ -93,7 +99,8 @@ Prerequisites are enforced by the CLI (`work-kit validate <phase>`). You don't n
 
 | Phase    | Requires                          |
 |----------|-----------------------------------|
-| Plan     | — (first phase, always allowed)   |
+| Define   | — (first phase, always allowed)   |
+| Plan     | Define (complete or skipped)      |
 | Build    | Plan (complete)                   |
 | Test     | Build (complete)                  |
 | Review   | Test (complete)                   |

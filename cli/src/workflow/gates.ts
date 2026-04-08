@@ -14,6 +14,7 @@ export const WAIT_AFTER_PHASE: Set<PhaseName> = new Set([
 // ── Phase Display Names ──────────────────────────────────────────────
 
 export const PHASE_DISPLAY_NAMES: Record<PhaseName, string> = {
+  define: "Define",
   plan: "Plan",
   build: "Build",
   test: "Test",

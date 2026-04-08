@@ -13,7 +13,7 @@ export const AUTO_BLOCK_START = "<!-- work-kit:auto:start -->";
 export const AUTO_BLOCK_END = "<!-- work-kit:auto:end -->";
 export const MANUAL_HEADER = "## Manual";
 
-export const KNOWLEDGE_TYPES = ["lesson", "convention", "risk", "workflow"] as const;
+export const KNOWLEDGE_TYPES = ["lesson", "convention", "risk", "workflow", "decision"] as const;
 export type KnowledgeType = (typeof KNOWLEDGE_TYPES)[number];
 
 export function isKnowledgeType(value: string): value is KnowledgeType {
@@ -25,6 +25,7 @@ const TYPE_TO_FILE: Record<KnowledgeType, string> = {
   convention: "conventions.md",
   risk: "risks.md",
   workflow: "workflow.md",
+  decision: "decisions.md",
 };
 
 const FILE_TO_TITLE: Record<string, string> = {
@@ -32,6 +33,7 @@ const FILE_TO_TITLE: Record<string, string> = {
   "conventions.md": "Conventions",
   "risks.md": "Risks",
   "workflow.md": "Workflow Feedback",
+  "decisions.md": "Decisions",
 };
 
 const FILE_TO_BLURB: Record<string, string> = {
@@ -43,6 +45,8 @@ const FILE_TO_BLURB: Record<string, string> = {
     "Known fragile or dangerous areas. Touch these with care.",
   "workflow.md":
     "Feedback about the work-kit workflow itself as observed in this project — skill quality, step skips, loopbacks, failure modes. Mined manually to improve work-kit upstream.",
+  "decisions.md":
+    "Architectural and design decisions made during work-kit sessions: what was chosen, what was rejected, why. Format mirrors a lightweight ADR — read these before re-litigating a settled choice.",
 };
 
 // ── Path Resolvers ──────────────────────────────────────────────────
@@ -180,6 +184,8 @@ benefits.
 - **lessons.md** — things you learned about this codebase (project-specific).
 - **conventions.md** — codified rules this project follows.
 - **risks.md** — fragile or dangerous areas to handle with care.
+- **decisions.md** — architectural choices made during sessions: what was
+  picked, what was rejected, why. Read before re-litigating a settled choice.
 - **workflow.md** — feedback about the work-kit workflow itself as observed
   in this project. Mined manually across projects to improve work-kit.
 

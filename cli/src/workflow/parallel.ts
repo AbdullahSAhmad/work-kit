@@ -15,7 +15,12 @@ export interface ParallelGroup {
  */
 export const DEFAULT_PARALLEL_GROUPS: Record<string, ParallelGroup> = {
   test: {
-    parallel: ["verify", "e2e"],
+    // verify (test suite), e2e (Playwright/etc), and browser (Chrome DevTools
+    // MCP) all run as independent observations. validate consolidates them.
+    // browser is auto-skipped on non-UI classifications, so the parallel set
+    // shrinks naturally. browser.md is responsible for graceful behavior if
+    // the dev server is shared with e2e.
+    parallel: ["verify", "e2e", "browser"],
     thenSequential: "validate",
   },
   review: {

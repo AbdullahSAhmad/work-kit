@@ -14,12 +14,15 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
    ```bash
    work-kit extract
    ```
-   This parses `.work-kit/state.md` and `.work-kit/tracker.json` and routes entries to `.work-kit-knowledge/{lessons,conventions,risks,workflow}.md`. It pulls from:
-   - `## Observations` typed bullets (`- [lesson|convention|risk|workflow] text`) — the only section that is auto-harvested
+   This parses `.work-kit/state.md` and `.work-kit/tracker.json` and routes entries to `.work-kit-knowledge/{lessons,conventions,risks,workflow,decisions}.md`. It pulls from:
+   - `## Observations` typed bullets (`- [lesson|convention|risk|workflow|decision] text`) — auto-harvested
+   - `## Decisions` bullets matching `**<context>**: chose X over Y — <why>` — auto-harvested into `decisions.md`
    - `tracker.json.loopbacks[]` → workflow feedback
    - Skipped/failed steps → workflow feedback
 
-   `## Decisions` and `## Deviations` are **not** auto-harvested — they're agent scratch space and routinely contain test plans and review notes. If something in there is worth preserving, restate it as a typed bullet under `## Observations` (or call `work-kit learn` directly in step 2).
+   `## Deviations` is **not** auto-harvested — it's agent scratch space (test plans, review notes). If something in there is worth preserving, restate it as a typed bullet under `## Observations` (or call `work-kit learn` directly in step 2).
+
+   Free-form bullets under `## Decisions` (lines that don't match `**context**: chose X over Y`) are skipped silently — they're treated as scratch.
 
    The output JSON tells you how many entries were `written` vs `duplicates`. Re-running is idempotent.
 
@@ -29,6 +32,7 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
    work-kit learn --type lesson --text "Discovered that the test fixtures must be reset between Playwright suites, otherwise auth state leaks."
    work-kit learn --type risk --text "src/payment/webhook.ts has no integration test coverage for retries."
    work-kit learn --type convention --text "All new API endpoints must register a Zod schema in src/schemas/."
+   work-kit learn --type decision --text "**Browser driver**: chose Chrome DevTools MCP over Playwright — agentic, no spec files to maintain."
    work-kit learn --type workflow --text "The wk-test/e2e step doesn't tell agents to start the dev server before running Playwright."
    ```
 
@@ -46,6 +50,7 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
 | `lesson` | lessons.md | Project-specific learnings — facts about *this* codebase. |
 | `convention` | conventions.md | Codified rules this project follows. Future sessions should respect these. |
 | `risk` | risks.md | Fragile or dangerous areas. Touch with care. |
+| `decision` | decisions.md | Architectural choices: what was picked, what was rejected, why. Read before re-litigating. Auto-harvested from `## Decisions` when bullets follow the `**context**: chose X over Y — <why>` format. |
 | `workflow` | workflow.md | Feedback about the work-kit kit itself — skill quality, step skips, loopbacks, failure modes. **Mined manually across projects to improve work-kit upstream.** |
 
 ## Boundaries

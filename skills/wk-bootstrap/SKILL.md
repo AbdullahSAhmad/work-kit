@@ -16,6 +16,7 @@ Run `work-kit bootstrap` to detect work-kit state.
   - `knowledge.lessons` — project-specific learnings from prior sessions
   - `knowledge.conventions` — codified rules this project follows
   - `knowledge.risks` — fragile or dangerous areas to handle with care
+  - `knowledge.decisions` — architectural choices made in past sessions (what was picked, what was rejected, why) — read this **before** proposing any choice that might re-litigate a settled one
   - Read each of these silently into your working context — they're prior knowledge you should respect when planning and building. Briefly mention to the user that prior knowledge was loaded (one line; do not dump the full text into the chat).
   - `workflow.md` is intentionally NOT loaded — it's a write-only artifact for human curators.
 - If recovery is suggested: follow the recovery instruction
@@ -26,6 +27,13 @@ Run `work-kit bootstrap` to detect work-kit state.
 - Inform the user that work-kit is available
 - Available commands: `/full-kit <description>` or `/auto-kit <description>`
 - Do not start work unprompted
+
+## v0.5 capabilities to be aware of
+
+- **Define phase** — runs before Plan for `feature` and `large-feature` work, refines vague asks into a concrete spec.
+- **wk-debug** — auto-invoked when any step reports outcome `needs_debug`. You don't trigger it; the orchestrator does.
+- **test/browser** — exercises the running app via Chrome DevTools MCP. Skips gracefully if the MCP isn't installed (doctor will warn at session start).
+- **decisions in knowledge layer** — `## Decisions` bullets matching `**<context>**: chose X over Y — <why>` are auto-graduated to `.work-kit-knowledge/decisions.md` during wrap-up.
 
 ## If session is stale
 
