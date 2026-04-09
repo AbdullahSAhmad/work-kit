@@ -20,7 +20,7 @@ Check the diff for:
 7. **Missing Pagination** — Unbounded queries or list renders
 8. **Memory Leaks** — Event listeners, intervals, or subscriptions not cleaned up
 
-Fix what you can. Document what needs deeper investigation.
+Document all findings. Do NOT fix code — the Fix step handles all fixes.
 
 ## Output (append to state.md)
 
@@ -31,16 +31,18 @@ Fix what you can. Document what needs deeper investigation.
 **Findings:**
 - <finding — or "None">
 
-**Fixes Applied:**
-- <what was fixed — or "None">
-
 **Recommendations:**
 - <suggestions for future optimization — or "None">
 ```
+
+## Scope Awareness
+
+Check the **Scope boundaries** from `### Review: Triage`. Items listed there are intentionally excluded from this feature — do NOT flag performance concerns for features that were explicitly deferred or marked out of scope.
 
 ## Rules
 
 - Focus on actual problems, not theoretical ones
 - Don't prematurely optimize code that runs once on page load
 - DO flag anything that scales with data (queries, list renders, loops)
-- If you add an index, include it in the migration or note it as needed
+- If an index is needed, note it as a finding — Fix step will add it
+- Do not flag deferred or out-of-scope items as performance issues

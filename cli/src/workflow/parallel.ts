@@ -25,7 +25,7 @@ export const DEFAULT_PARALLEL_GROUPS: Record<string, ParallelGroup> = {
   },
   review: {
     parallel: ["self-review", "security", "performance", "compliance"],
-    thenSequential: "handoff",
+    thenSequential: "fix",
   },
 };
 

@@ -22,7 +22,7 @@ Review the diff against OWASP Top 10:
 9. **Insufficient Logging** — Security events logged? But no sensitive data in logs?
 10. **CSRF** — State-changing requests protected?
 
-Fix issues directly when possible. Document what you can't fix.
+Document all findings with severity. Do NOT fix code — the Fix step handles all fixes.
 
 ## Output (append to state.md)
 
@@ -35,21 +35,23 @@ Fix issues directly when possible. Document what you can't fix.
 **Findings:**
 - <finding with severity: critical/high/medium/low — or "None">
 
-**Fixes Applied:**
-- <what was fixed — or "None">
-
-**Remaining Risks:**
+**Risks:**
 - <risks that need human attention — or "None">
 
 **Severity Summary:** no issues | low | medium | high | critical
 ```
+
+## Scope Awareness
+
+Check the **Scope boundaries** from `### Review: Triage`. Items listed there are intentionally excluded from this feature — do NOT flag missing security controls for features that were explicitly deferred. Only audit security in code that was actually written or modified.
 
 ## Rules
 
 - Focus on code YOU wrote/modified — not the entire codebase
 - Not every feature touches all 10 categories — skip irrelevant ones
 - Don't add security theater (unnecessary complexity for non-existent threats)
-- If you find a critical issue, fix it immediately and note it prominently
+- If you find a critical issue, note it prominently — Fix step will prioritize it
+- Do not flag deferred or out-of-scope items as security risks
 
 ## Anti-Rationalization
 

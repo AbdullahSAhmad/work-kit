@@ -28,7 +28,7 @@ Do not proceed until `doctor` reports all checks passed.
 2. **Plan** (8 steps) — Clarify → Investigate → Sketch → Scope → UX Flow → Architecture → Blueprint → Audit
 3. **Build** (8 steps) — Setup → Migration → Red → Core → UI → Refactor → Integration → Commit
 4. **Test** (4 steps) — Verify, E2E, Browser (parallel) → Validate
-5. **Review** (5 steps) — Self-Review → Security → Performance → Compliance → Handoff
+5. **Review** (7 steps) — Triage → Self-Review, Security, Performance, Compliance (parallel) → Fix → Handoff
 6. **Deploy** (3 steps) — Merge → Monitor → Remediate
 7. **Wrap-up** — Synthesize work-kit summary, clean up worktree
 
@@ -131,13 +131,15 @@ Orchestrator (main agent — you)
 │   ├── then: Validate (after both complete)
 │   └── writes: ### Test: Final (results, criteria status, confidence)
 │
-├── Agent: Review (orchestrates 4 parallel + 1 sequential)
+├── Agent: Review (Triage → parallel reviewers → Fix → Handoff)
 │   ├── reads: ### Plan: Final, ### Build: Final, ### Test: Final, ## Criteria
+│   ├── Triage (sequential — classifies diff, selects reviewers, extracts scope boundaries)
 │   ├── Sub-agent: Self-Review  ──┐
-│   ├── Sub-agent: Security     ──┤ (all 4 parallel)
-│   ├── Sub-agent: Performance  ──┤
-│   ├── Sub-agent: Compliance   ──┘
-│   ├── then: Handoff (reads all 4 results → ship decision)
+│   ├── Sub-agent: Security*    ──┤ (parallel, * = if Triage selected)
+│   ├── Sub-agent: Performance* ──┤
+│   ├── Sub-agent: Compliance*  ──┘
+│   ├── then: Fix (reads all findings, aggressively fixes everything fixable)
+│   ├── then: Handoff (reads post-fix state → ship decision)
 │   └── writes: ### Review: Final (decision, issues, concerns)
 │
 ├── Agent: Deploy (single agent, all 3 steps)
@@ -159,11 +161,13 @@ Orchestrator (main agent — you)
 | Test: Verify | Sub-agent | `auto` | `### Build: Final`, `## Criteria` |
 | Test: E2E | Sub-agent | `auto` | `### Build: Final`, `### Plan: Final` |
 | Test: Validate | Single agent | `auto` | `### Test: Verify`, `### Test: E2E`, `## Criteria` |
-| Review: Self-Review | Sub-agent | `auto` | `### Build: Final`, git diff |
-| Review: Security | Sub-agent | `auto` | `### Build: Final`, git diff |
-| Review: Performance | Sub-agent | `auto` | `### Build: Final`, git diff |
-| Review: Compliance | Sub-agent | `auto` | `### Plan: Final`, `### Build: Final`, git diff |
-| Review: Handoff | Single agent | `auto` | All `### Review:` sections, `### Test: Final`, `## Criteria` |
+| Review: Triage | Sequential | `auto` | `### Plan: Final`, `### Build: Final`, git diff --stat |
+| Review: Self-Review | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Security | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Performance | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Compliance | Sub-agent (parallel) | `auto` | `### Plan: Final`, `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Fix | Sequential | `auto` | All `### Review:` sections, git diff |
+| Review: Handoff | Sequential | `auto` | All `### Review:` sections, `### Review: Fix`, `### Test: Final`, `## Criteria` |
 | Deploy | Single agent | `auto` | `### Review: Final`, `### Build: Final` |
 | Wrap-up | Single agent | `auto` | Full state.md |
 

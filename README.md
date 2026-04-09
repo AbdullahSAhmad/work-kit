@@ -83,7 +83,7 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 | **Plan** | Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit | Single |
 | **Build** | Setup, Migration, Red, Core, UI, Refactor, Integration, Commit | Single |
 | **Test** | Verify, E2E, Validate | Verify + E2E parallel, then Validate |
-| **Review** | Self-Review, Security, Performance, Compliance, Handoff | 4 parallel reviewers, then Handoff |
+| **Review** | Triage, Self-Review, Security, Performance, Compliance, Fix, Handoff | Triage → parallel reviewers → Fix → Handoff |
 | **Deploy** | Merge, Monitor, Remediate | Single (optional) |
 | **Wrap-up** | Summary + Archive | Single |
 
@@ -107,7 +107,7 @@ All writes are atomic to prevent state corruption.
 ### Parallel agents
 
 - **Test phase**: Verify and E2E run in parallel, then Validate runs sequentially
-- **Review phase**: Self-Review, Security, Performance, and Compliance run as 4 parallel reviewers, then Handoff runs sequentially
+- **Review phase**: Triage classifies the diff and selects reviewers, then selected reviewers run in parallel, then Fix aggressively resolves findings, then Handoff makes the ship decision
 
 ### Loop-back routing
 

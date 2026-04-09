@@ -30,7 +30,7 @@ These are the building blocks you pick from:
 - **Plan:** Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit
 - **Build:** Setup, Migration, Red, Core, UI, Refactor, Integration, Commit
 - **Test:** Verify, E2E, Browser, Validate  *(Browser uses Chrome DevTools MCP, included for `if UI`)*
-- **Review:** Self-Review, Security, Performance, Compliance, Handoff
+- **Review:** Triage, Self-Review, Security, Performance, Compliance, Fix, Handoff
 - **Deploy:** Merge, Monitor, Remediate (optional)
 - **Wrap-up**
 
@@ -80,10 +80,12 @@ Based on the classification, select steps. Use this table as a starting point, t
 | **Test: E2E**          | skip    | skip         | skip     | if UI   | YES           |
 | **Test: Browser**      | skip    | skip         | skip     | if UI   | if UI         |
 | **Test: Validate**     | YES     | skip         | skip     | YES     | YES           |
+| **Review: Triage**     | YES     | YES          | YES      | YES     | YES           |
 | **Review: Self-Review**| YES     | YES          | YES      | YES     | YES           |
 | **Review: Security**   | skip    | skip         | skip     | YES     | YES           |
 | **Review: Performance**| skip    | skip         | YES      | skip    | YES           |
 | **Review: Compliance** | skip    | skip         | skip     | YES     | YES           |
+| **Review: Fix**        | YES     | YES          | YES      | YES     | YES           |
 | **Review: Handoff**    | YES     | YES          | YES      | YES     | YES           |
 | **Deploy: Merge**      | YES     | YES          | YES      | YES     | YES           |
 | **Wrap-up**            | YES     | YES          | YES      | YES     | YES           |
@@ -166,7 +168,9 @@ Orchestrator (main agent — you)
 │
 ├── Agent: Review (runs only Review steps from Workflow)
 │   ├── reads: ### Plan: Final, ### Build: Final, ### Test: Final, ## Criteria
-│   ├── Self-Review, Security, Performance, Compliance as parallel sub-agents (whichever are in workflow)
+│   ├── Triage (sequential — classifies diff, selects reviewers, extracts scope boundaries)
+│   ├── Self-Review, Security, Performance, Compliance as parallel sub-agents (whichever Triage selects)
+│   ├── then Fix (reads all findings, aggressively fixes)
 │   ├── then Handoff
 │   └── writes: ### Review: Final
 │
@@ -188,11 +192,13 @@ Orchestrator (main agent — you)
 | Test: Verify | Sub-agent (parallel) | `### Build: Final`, `## Criteria` |
 | Test: E2E | Sub-agent (parallel) | `### Build: Final`, `### Plan: Final` |
 | Test: Validate | Sequential after above | `### Test: Verify`, `### Test: E2E`, `## Criteria` |
-| Review: Self-Review | Sub-agent (parallel) | `### Build: Final`, git diff |
-| Review: Security | Sub-agent (parallel) | `### Build: Final`, git diff |
-| Review: Performance | Sub-agent (parallel) | `### Build: Final`, git diff |
-| Review: Compliance | Sub-agent (parallel) | `### Plan: Final`, `### Build: Final`, git diff |
-| Review: Handoff | Sequential after above | All `### Review:` sections, `### Test: Final`, `## Criteria` |
+| Review: Triage | Sequential | `### Plan: Final`, `### Build: Final`, git diff --stat |
+| Review: Self-Review | Sub-agent (parallel) | `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Security | Sub-agent (parallel) | `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Performance | Sub-agent (parallel) | `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Compliance | Sub-agent (parallel) | `### Plan: Final`, `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Fix | Sequential | All `### Review:` sections, git diff |
+| Review: Handoff | Sequential | All `### Review:` sections, `### Review: Fix`, `### Test: Final`, `## Criteria` |
 | Deploy | Single agent | `### Review: Final`, `### Build: Final` |
 | Wrap-up | Single agent | Full state.md |
 

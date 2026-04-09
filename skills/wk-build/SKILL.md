@@ -81,6 +81,16 @@ This phase runs as a **fresh agent**. Read only these sections from `.work-kit/s
 
 Do NOT read the Plan step working notes (Clarify, Investigate, Sketch, etc.) — they're consumed by Plan: Final.
 
+## Fresh Context Strategy
+
+Long builds accumulate context that degrades quality in later steps. For heavy steps (**Core**, **UI**, **Integration**), consider spawning a fresh sub-agent that:
+1. Re-reads `### Plan: Final` and `## Criteria` from disk (not from memory)
+2. Reads the outputs of prior Build steps from state.md to know what's been done
+3. Executes only its assigned step
+4. Writes its output section back to state.md
+
+This prevents token bloat from earlier steps polluting later ones. Use your judgment — if the build is small (few files, simple logic), running sequentially in one context is fine. If the build is large (many files, complex logic, or you're past step 4), prefer fresh sub-agents for remaining heavy steps.
+
 ## Final Output
 
 After all steps are done, append a `### Build: Final` section to state.md. This is the **only section the Test agent reads**.

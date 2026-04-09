@@ -7,7 +7,7 @@ export const DEFINE_STEPS = ["refine", "spec"] as const;
 export const PLAN_STEPS = ["clarify", "investigate", "sketch", "scope", "ux-flow", "architecture", "blueprint", "audit"] as const;
 export const BUILD_STEPS = ["setup", "migration", "red", "core", "ui", "refactor", "integration", "commit"] as const;
 export const TEST_STEPS = ["verify", "e2e", "browser", "validate"] as const;
-export const REVIEW_STEPS = ["self-review", "security", "performance", "compliance", "handoff"] as const;
+export const REVIEW_STEPS = ["triage", "self-review", "security", "performance", "compliance", "fix", "handoff"] as const;
 export const DEPLOY_STEPS = ["merge", "monitor", "remediate"] as const;
 export const WRAPUP_STEPS = ["summary", "knowledge"] as const;
 

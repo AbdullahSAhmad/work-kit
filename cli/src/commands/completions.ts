@@ -11,7 +11,7 @@ _work_kit_completions() {
   local cmd="\${COMP_WORDS[1]}"
   case "\$cmd" in
     complete|context|validate)
-      local phases="plan/clarify plan/investigate plan/sketch plan/scope plan/ux-flow plan/architecture plan/blueprint plan/audit build/setup build/migration build/red build/core build/ui build/refactor build/integration build/commit test/verify test/e2e test/validate review/self-review review/security review/performance review/compliance review/handoff deploy/merge deploy/monitor deploy/remediate"
+      local phases="plan/clarify plan/investigate plan/sketch plan/scope plan/ux-flow plan/architecture plan/blueprint plan/audit build/setup build/migration build/red build/core build/ui build/refactor build/integration build/commit test/verify test/e2e test/validate review/triage review/self-review review/security review/performance review/compliance review/fix review/handoff deploy/merge deploy/monitor deploy/remediate"
       COMPREPLY=(\$(compgen -W "\$phases" -- "\$cur"))
       ;;
     init)
@@ -51,8 +51,8 @@ _work_kit() {
     'build/setup' 'build/migration' 'build/red' 'build/core'
     'build/ui' 'build/refactor' 'build/integration' 'build/commit'
     'test/verify' 'test/e2e' 'test/validate'
-    'review/self-review' 'review/security' 'review/performance'
-    'review/compliance' 'review/handoff'
+    'review/triage' 'review/self-review' 'review/security' 'review/performance'
+    'review/compliance' 'review/fix' 'review/handoff'
     'deploy/merge' 'deploy/monitor' 'deploy/remediate'
   )
 
@@ -105,7 +105,7 @@ complete -c work-kit -n '__fish_use_subcommand' -a 'completions' -d 'Output shel
 
 # Phase completions for complete, context, validate
 set -l phase_cmds 'complete context validate'
-set -l phases 'plan/clarify' 'plan/investigate' 'plan/sketch' 'plan/scope' 'plan/ux-flow' 'plan/architecture' 'plan/blueprint' 'plan/audit' 'build/setup' 'build/migration' 'build/red' 'build/core' 'build/ui' 'build/refactor' 'build/integration' 'build/commit' 'test/verify' 'test/e2e' 'test/validate' 'review/self-review' 'review/security' 'review/performance' 'review/compliance' 'review/handoff' 'deploy/merge' 'deploy/monitor' 'deploy/remediate'
+set -l phases 'plan/clarify' 'plan/investigate' 'plan/sketch' 'plan/scope' 'plan/ux-flow' 'plan/architecture' 'plan/blueprint' 'plan/audit' 'build/setup' 'build/migration' 'build/red' 'build/core' 'build/ui' 'build/refactor' 'build/integration' 'build/commit' 'test/verify' 'test/e2e' 'test/validate' 'review/triage' 'review/self-review' 'review/security' 'review/performance' 'review/compliance' 'review/fix' 'review/handoff' 'deploy/merge' 'deploy/monitor' 'deploy/remediate'
 for phase in \$phases
   complete -c work-kit -n "__fish_seen_subcommand_from \$phase_cmds" -a "\$phase"
 end

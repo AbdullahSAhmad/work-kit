@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Run the Review phase — 5 steps: Self-Review, Security, Performance, Compliance, Handoff."
+description: "Run the Review phase — 7 steps: Triage, 4 parallel reviewers, Fix, Handoff."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
@@ -9,23 +9,24 @@ You are the **Senior Reviewer**. Perform multi-dimensional code review before th
 
 ## Steps (in order)
 
-1. **Self-Review** — Check your own diff for obvious issues
-2. **Security** — OWASP top 10 security review
-3. **Performance** — Query efficiency, bundle size, rendering performance
-4. **Compliance** — Compare final code against Blueprint
-5. **Handoff** — Finalize PR description, flag concerns, make ship/no-ship decision
+1. **Triage** — Classify diff, decide which reviewers to spawn, extract scope boundaries
+2. **Self-Review** — Check your own diff for obvious issues
+3. **Security** — OWASP top 10 security review (if Triage says to run it)
+4. **Performance** — Query efficiency, bundle size, rendering performance (if Triage says to run it)
+5. **Compliance** — Compare final code against Blueprint (if Triage says to run it)
+6. **Fix** — Aggressively fix all findings from reviewers
+7. **Handoff** — Finalize PR description, flag concerns, make ship/no-ship decision
 
 ## Execution
 
-For each step:
-1. Read the step file (e.g., `.claude/skills/wk-review/steps/self-review.md`)
-2. Follow its instructions — fix issues directly when possible
-3. Update `.work-kit/state.md` with findings
-4. Proceed to next step
+1. Run **Triage** first (sequential) — it decides which reviewers are needed and extracts scope boundaries
+2. Spawn the reviewers Triage selected as **parallel sub-agents**, passing each the scope boundaries
+3. After all reviewers complete, run **Fix** (sequential) — reads all findings, fixes aggressively
+4. Run **Handoff** (sequential) — makes the ship decision based on post-fix state
 
 ## Key Principle
 
-**Fix issues directly when possible.** A review that only lists problems without fixing them is half a review. If you can fix it in under 5 minutes, fix it. If it's bigger, document it for the Handoff decision.
+**Reviewers report, Fix resolves.** The 4 parallel reviewers focus purely on finding issues — they do NOT fix code. All fixing is consolidated in the Fix step, which reads every finding and resolves them in a single pass. This avoids duplicate fix attempts and conflicting edits across parallel agents.
 
 ## Recording
 
@@ -45,32 +46,38 @@ This phase runs as a **fresh agent** (the orchestrator). Read only these section
 - `### Test: Final` — test results, criteria status, confidence
 - `## Criteria` — acceptance criteria
 
-## Parallel Sub-agents
-
-**Self-Review, Security, Performance, and Compliance** are independent and run as **4 parallel sub-agents**. **Handoff** runs after all 4 complete.
+## Execution Flow
 
 ```
+Triage (sequential)
+  ↓ decides which reviewers + extracts scope boundaries
+  ↓
 Agent: Self-Review  ──┐
-Agent: Security     ──┤
-Agent: Performance  ──├──→ Agent: Handoff
-Agent: Compliance   ──┘
+Agent: Security*    ──┤  (* only if Triage selected)
+Agent: Performance* ──├──→ Fix (sequential) ──→ Handoff (sequential)
+Agent: Compliance*  ──┘
 ```
+
+**Triage** runs first. It classifies the diff (trivial/small/medium/large), decides which of the 4 reviewers are relevant, and extracts scope boundaries from the Blueprint (items explicitly out of scope or deferred).
 
 Each sub-agent receives:
 - The git diff (`git diff main...HEAD`)
 - The relevant Context Input sections
 - Its step skill file instructions
+- **Scope boundaries from Triage** — items to NOT flag as issues
 
 Each writes its own `### Review: <step>` section to state.md.
 
-**Handoff agent** reads all 4 review sections + Test: Final → makes the ship decision.
+**Fix agent** reads all review sections, aggressively fixes everything fixable (default: FIX, not SKIP).
+
+**Handoff agent** reads all review sections + Fix results + Test: Final → makes the ship decision.
 
 ## Boundaries
 
 ### Always
 - Read the full git diff before making any review judgments
-- Fix issues directly when fixable in under 5 minutes
-- Run the test suite after any fixes made during review
+- Do not fix code during the 4 parallel reviews — report only (Fix step handles all fixes)
+- Run the test suite after the Fix step to confirm nothing broke
 - Check every Blueprint step in the Compliance review
 - Produce a clear ship/no-ship verdict with specific reasoning
 
@@ -84,7 +91,9 @@ Each writes its own `### Review: <step>` section to state.md.
 - Approve without checking acceptance criteria status
 - Rubber-stamp without reading the diff ("looks good" is not a review)
 - Make changes_requested without specifying exactly what needs to change
-- Skip any of the 4 parallel review steps
+- Skip Triage (it gates everything else)
+- Skip Self-Review (always runs regardless of Triage category)
+- Flag out-of-scope items as issues (respect Blueprint boundaries)
 
 ## Final Output
 

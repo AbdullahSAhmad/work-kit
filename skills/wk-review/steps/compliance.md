@@ -40,12 +40,17 @@ description: "Review step: Compare final code against Blueprint."
 - <anything built that wasn't planned — or "None">
 ```
 
+## Scope Awareness
+
+Check the **Scope boundaries** from `### Review: Triage`. The Blueprint may explicitly mark items as "NOT Building", deferred, or out of scope. These are **not** missing steps — they are intentional exclusions. Only flag a Blueprint step as "skipped" if it was supposed to be built but wasn't.
+
 ## Rules
 
 - Deviations aren't always bad — sometimes the plan was wrong and the code adapted
 - But deviations need justification — "I felt like it" is not acceptable
 - Missing steps are a red flag — they need to be implemented or explicitly dropped with reason
 - Scope creep should be called out even if the extra code is good
+- Intentionally deferred items are not deviations or scope gaps — respect the Blueprint boundaries
 
 ## Anti-Rationalization
 

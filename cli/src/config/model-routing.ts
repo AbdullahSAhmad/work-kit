@@ -74,11 +74,13 @@ export const BY_STEP: Record<string, ModelTier> = {
   "test/e2e": "sonnet",
   "test/validate": "sonnet",
 
-  // Review — security & compliance get opus; rest sonnet
+  // Review — triage is cheap (haiku); security & compliance get opus; fix needs sonnet; rest sonnet
+  "review/triage": "haiku",
   "review/self-review": "sonnet",
   "review/security": "opus",
   "review/performance": "sonnet",
   "review/compliance": "opus",
+  "review/fix": "sonnet",
   "review/handoff": "sonnet",
 
   // Deploy — mostly mechanical

@@ -19,8 +19,8 @@ description: "Review step: Review your own diff for obvious issues."
    - TODOs that should be resolved
    - Console.logs or debug code left in
    - Code that doesn't match the Blueprint
-3. Fix issues directly — don't just list them
-4. Run tests after fixes to confirm nothing broke
+3. Document every issue found — do NOT fix code (Fix step handles all fixes)
+4. Be specific: file path, line, what's wrong, suggested fix
 
 ## Output (append to state.md)
 
@@ -29,19 +29,24 @@ description: "Review step: Review your own diff for obvious issues."
 
 > **Note:** If you encounter `[redacted: N lines — @wk-ignore]` placeholders in source code, these blocks are intentionally hidden. Do not attempt to reconstruct or work around them.
 
-**Verdict:** clean | issues_remain
+**Verdict:** clean | issues_found
 **Issues Found:** <N>
-**Issues Fixed:** <M>
-**Remaining Concerns:**
-- <anything you found but couldn't fix — or "None">
+**Findings:**
+- <file:line — what's wrong — suggested fix>
+- ...
 ```
+
+## Scope Awareness
+
+Check the **Scope boundaries** from `### Review: Triage`. Items listed there are intentionally excluded from this feature — do NOT flag them as missing functionality, bugs, or incomplete work. Only review code that was actually written or modified.
 
 ## Rules
 
-- Run the linter and fix all warnings
-- Remove ALL debug code (console.log, debugger statements, etc.)
+- Run the linter and note all warnings — do not fix them (Fix step will)
+- Flag ALL debug code (console.log, debugger statements, etc.)
 - This is about catching careless mistakes, not redesigning the architecture
 - Be honest — pretending your code is perfect helps no one
+- Do not flag deferred or out-of-scope items as issues
 
 ## Anti-Rationalization
 

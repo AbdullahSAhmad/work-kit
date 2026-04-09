@@ -14,15 +14,18 @@ description: "Review step: Finalize PR, make ship/no-ship decision."
    - How to test it
    - Screenshots if applicable
    - Any concerns or known limitations
-2. Review all findings from prior review steps
-3. Check acceptance criteria status from Test/Validate
-4. Make the decision: **approved**, **changes_requested**, or **rejected**
+2. Read the `### Review: Fix` section — most findings should already be resolved
+3. Review remaining unfixed items (skipped by Fix) and unresolved concerns
+4. Check acceptance criteria status from Test/Validate
+5. Make the decision: **approved**, **changes_requested**, or **rejected**
+
+The Fix step has already addressed most findings. Your job is to assess the **post-fix state**, not re-review everything from scratch.
 
 ## Decision Criteria
 
-- **approved**: All criteria met, no critical/high security issues, tests pass, compliance is acceptable
-- **changes_requested**: Gaps exist but are fixable — specify exactly what needs to change
-- **rejected**: Fundamental problems that require rethinking the approach
+- **approved**: All criteria met, no critical/high security issues, tests pass, compliance is acceptable. Fix step resolved most findings.
+- **changes_requested**: Fix step couldn't resolve key issues — gaps remain that need Build-phase changes. Specify exactly what.
+- **rejected**: Fundamental problems that require rethinking the approach — Fix can't help here
 
 ## Output (append to state.md)
 
@@ -57,7 +60,7 @@ description: "Review step: Finalize PR, make ship/no-ship decision."
 ## Rules
 
 - Be specific about what needs to change — "needs work" is useless feedback
-- Don't block on cosmetic issues — fix them directly before finalizing
+- Don't block on cosmetic issues that Fix already resolved
 - The PR should be ready for a human reviewer after this step
 - If you're unsure between approved and changes_requested, ask the user
 

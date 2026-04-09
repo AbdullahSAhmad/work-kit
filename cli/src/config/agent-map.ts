@@ -48,15 +48,23 @@ export const STEP_CONTEXT: Record<string, AgentContext> = {
   "test/validate": { sections: ["### Test: Verify", "### Test: Browser", "### Test: E2E", "## Criteria"] },
 
   // Review steps
-  "review/self-review": { sections: ["### Build: Final"], needsGitDiff: true },
-  "review/security": { sections: ["### Build: Final"], needsGitDiff: true },
-  "review/performance": { sections: ["### Build: Final"], needsGitDiff: true },
-  "review/compliance": { sections: ["### Plan: Final", "### Build: Final"], needsGitDiff: true },
+  "review/triage": { sections: ["### Plan: Final", "### Build: Final"], needsGitDiff: true },
+  "review/self-review": { sections: ["### Build: Final", "### Review: Triage"], needsGitDiff: true },
+  "review/security": { sections: ["### Build: Final", "### Review: Triage"], needsGitDiff: true },
+  "review/performance": { sections: ["### Build: Final", "### Review: Triage"], needsGitDiff: true },
+  "review/compliance": { sections: ["### Plan: Final", "### Build: Final", "### Review: Triage"], needsGitDiff: true },
+  "review/fix": {
+    sections: [
+      "### Review: Self-Review", "### Review: Security",
+      "### Review: Performance", "### Review: Compliance",
+    ],
+    needsGitDiff: true,
+  },
   "review/handoff": {
     sections: [
       "### Review: Self-Review", "### Review: Security",
       "### Review: Performance", "### Review: Compliance",
-      "### Test: Final", "## Criteria",
+      "### Review: Fix", "### Test: Final", "## Criteria",
     ],
   },
 };
