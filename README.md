@@ -1,6 +1,6 @@
 # work-kit
 
-Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 31 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files.
+Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 34 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files.
 
 ## What's new in v0.5
 
@@ -80,12 +80,13 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 
 | Phase | Steps | Agent |
 |-------|-----------|-------|
+| **Define** | Refine, Spec | Single (features only; skipped for bug fixes/refactors) |
 | **Plan** | Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit | Single |
 | **Build** | Setup, Migration, Red, Core, UI, Refactor, Integration, Commit | Single |
-| **Test** | Verify, E2E, Validate | Verify + E2E parallel, then Validate |
+| **Test** | Verify, E2E, Browser (parallel) → Validate | Verify + E2E + Browser parallel, then Validate |
 | **Review** | Triage, Self-Review, Security, Performance, Compliance, Fix, Handoff | Triage → parallel reviewers → Fix → Handoff |
 | **Deploy** | Merge, Monitor, Remediate | Single (optional) |
-| **Wrap-up** | Summary + Archive | Single |
+| **Wrap-up** | Summary, Knowledge | Single |
 
 ## Architecture
 
@@ -106,7 +107,7 @@ All writes are atomic to prevent state corruption.
 
 ### Parallel agents
 
-- **Test phase**: Verify and E2E run in parallel, then Validate runs sequentially
+- **Test phase**: Verify, E2E, and Browser run in parallel, then Validate runs sequentially
 - **Review phase**: Triage classifies the diff and selects reviewers, then selected reviewers run in parallel, then Fix aggressively resolves findings, then Handoff makes the ship decision
 
 ### Loop-back routing
@@ -144,19 +145,27 @@ work-kit/
       state/          # State machine and file management
       index.ts        # Entry point
   skills/
-    full-kit/SKILL.md   # /full-kit orchestrator
-    auto-kit/SKILL.md   # /auto-kit orchestrator
-    plan/SKILL.md       # Plan phase runner
-    plan/steps/        # 8 step files
-    build/SKILL.md      # Build phase runner
-    build/steps/       # 8 step files
-    test/SKILL.md       # Test phase runner
-    test/steps/        # 3 step files
-    review/SKILL.md     # Review phase runner
-    review/steps/      # 5 step files
-    deploy/SKILL.md     # Deploy phase runner
-    deploy/steps/      # 3 step files
-    wrap-up/SKILL.md    # Final summary + cleanup
+    full-kit/SKILL.md       # /full-kit orchestrator (all phases, strict order)
+    auto-kit/SKILL.md       # /auto-kit orchestrator (dynamic, only needed steps)
+    wk-bootstrap/SKILL.md   # /wk-bootstrap session detection
+    wk-define/SKILL.md      # Define phase runner
+    wk-define/steps/        # 2 step files: refine, spec
+    wk-plan/SKILL.md        # Plan phase runner
+    wk-plan/steps/          # 8 step files
+    wk-build/SKILL.md       # Build phase runner
+    wk-build/steps/         # 8 step files
+    wk-test/SKILL.md        # Test phase runner
+    wk-test/steps/          # 4 step files: verify, e2e, browser, validate
+    wk-review/SKILL.md      # Review phase runner
+    wk-review/steps/        # 7 step files
+    wk-deploy/SKILL.md      # Deploy phase runner
+    wk-deploy/steps/        # 3 step files: merge, monitor, remediate
+    wk-wrap-up/SKILL.md     # Wrap-up: summary + knowledge harvest
+    wk-wrap-up/steps/       # 2 step files: summary, knowledge
+    wk-debug/SKILL.md       # Auto-debug triage (not user-invocable)
+    pause-kit/SKILL.md      # /pause-kit — pause active session
+    resume-kit/SKILL.md     # /resume-kit — resume paused session
+    cancel-kit/SKILL.md     # /cancel-kit — cancel and clean up session
   package.json
 ```
 
