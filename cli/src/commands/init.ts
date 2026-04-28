@@ -191,10 +191,10 @@ export function initCommand(options: {
     workflow = buildFullWorkflow();
   }
 
-  // First active step is always the first `included` entry in the workflow.
-  // For full-kit that's define/refine; for auto-kit it depends on classification.
-  let firstPhase: PhaseName = "define";
-  let firstStep = "refine";
+  // First active step is always triage/classify — Triage runs first regardless of mode/classification.
+  // For auto-kit without an upfront --classification, the workflow is empty until Triage classifies.
+  let firstPhase: PhaseName = "triage";
+  let firstStep = "classify";
   const first = workflow?.find((s) => s.included);
   if (first) {
     firstPhase = first.phase;

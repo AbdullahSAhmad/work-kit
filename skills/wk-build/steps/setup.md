@@ -1,21 +1,33 @@
 ---
-description: "Build step: Branch creation, dependency installation, scaffolding."
+description: "Build step: Branch, deps, scaffolds, and database migrations. No feature code yet."
 ---
 
 # Setup
 
-**Role:** Project Scaffolder
-**Goal:** Prepare the workspace for implementation. No feature code yet.
+**Role:** Project Scaffolder + Database Engineer
+**Goal:** Prepare the workspace AND apply schema changes — everything that has to land before implementation starts.
 
 ## Instructions
 
+### 1. Workspace prep
+
 1. Verify you're in the correct worktree on the feature branch
-2. Install any new dependencies specified in the Blueprint
-3. Create new files/directories that the Blueprint calls for (empty scaffolds)
+2. Install any new dependencies the Blueprint specifies
+3. Create the new files/directories the Blueprint calls for as **empty scaffolds** (no logic — that's Implement)
 4. Update config files if the Blueprint requires it
-5. Verify the project still builds/compiles cleanly after setup
+5. Verify the project still builds/compiles cleanly
+
+### 2. Migrations (skip if `has_migration: false` in Blueprint)
+
+1. Update the schema definition files per your project's ORM, **respecting the DDD aggregate boundaries from Plan/Design** — one aggregate root per transactional boundary, value objects inlined where the model says so
+2. Generate the migration
+3. Run the migration
+4. **Verify** the migration actually applied by checking the database directly (don't trust "success" output alone)
+5. Verify the application still connects to the DB and existing features still work
 
 ## Output (append to state.md)
+
+Append both sections (the second only if migrations ran):
 
 ```markdown
 ### Build: Setup
@@ -33,10 +45,29 @@ description: "Build step: Branch creation, dependency installation, scaffolding.
 **Build Status:** clean | issues (detail)
 ```
 
+```markdown
+### Build: Migration
+
+**Has Migration:** true/false
+**Migration File:** <path>
+**Changes:**
+- <table.column: type — added/modified/removed>
+
+**Aggregate Mapping:**
+- `<table>` → `<Aggregate>` (root | child of `<root>`)
+
+**Verification:**
+- Schema check: <pass/fail>
+- App connection: <pass/fail>
+```
+
 ## Rules
 
-- Do NOT write implementation code — just scaffolding (empty files, directory structure)
-- Do NOT write tests yet — that's Red
-- If the worktree already has setup from a previous loop-back, verify state and skip what's done
-- If dependency installation fails, diagnose the issue — don't proceed with broken dependencies
-- Run the build/compile check to ensure nothing is broken before proceeding
+- Do NOT write implementation code — just scaffolds and schema
+- Do NOT write tests yet — that's Implement
+- If a previous loop-back already did the setup, verify state and skip what's done
+- Always verify migrations applied — don't trust the migrator's exit code alone
+- Use `IF NOT EXISTS` / `IF EXISTS` guards where appropriate
+- If the project uses Drizzle: run `pnpm db:generate` then `pnpm db:migrate`, then verify with psql
+- If dependency installation or migration fails, diagnose the issue — don't proceed with broken state
+- DDD discipline: one aggregate per transactional boundary; value objects don't get their own table unless multi-row by design

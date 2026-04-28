@@ -21,7 +21,7 @@ function makeState(): WorkKitState {
     mode: "full-kit",
     status: "in-progress",
     currentPhase: "plan",
-    currentStep: "clarify",
+    currentStep: "understand",
     phases,
     loopbacks: [],
     metadata: { worktreeRoot: "/tmp/test", mainRepoRoot: "/tmp/test" },
@@ -29,9 +29,9 @@ function makeState(): WorkKitState {
 }
 
 describe("parseLocation", () => {
-  it("parses plan/clarify correctly", () => {
-    const loc = parseLocation("plan/clarify");
-    assert.deepStrictEqual(loc, { phase: "plan", step: "clarify" });
+  it("parses plan/understand correctly", () => {
+    const loc = parseLocation("plan/understand");
+    assert.deepStrictEqual(loc, { phase: "plan", step: "understand" });
   });
 
   it("throws on invalid format (no slash)", () => {
@@ -66,19 +66,14 @@ describe("resetToLocation", () => {
     state.phases.build.status = "completed";
     state.phases.build.completedAt = "2026-01-02";
 
-    // Reset to plan/blueprint
-    resetToLocation(state, { phase: "plan", step: "blueprint" });
+    // Reset to plan/design
+    resetToLocation(state, { phase: "plan", step: "design" });
 
-    // Steps before blueprint should stay completed
-    assert.equal(state.phases.plan.steps.clarify.status, "completed");
-    assert.equal(state.phases.plan.steps.investigate.status, "completed");
-    assert.equal(state.phases.plan.steps.sketch.status, "completed");
-    assert.equal(state.phases.plan.steps.scope.status, "completed");
-    assert.equal(state.phases.plan.steps["ux-flow"].status, "completed");
-    assert.equal(state.phases.plan.steps.architecture.status, "completed");
+    // Steps before design should stay completed
+    assert.equal(state.phases.plan.steps.understand.status, "completed");
 
-    // Blueprint and audit should be reset
-    assert.equal(state.phases.plan.steps.blueprint.status, "pending");
+    // Design and audit should be reset
+    assert.equal(state.phases.plan.steps.design.status, "pending");
     assert.equal(state.phases.plan.steps.audit.status, "pending");
 
     // Plan phase should be in-progress
@@ -86,6 +81,6 @@ describe("resetToLocation", () => {
 
     // Build (later phase) should be reset
     assert.equal(state.phases.build.status, "pending");
-    assert.equal(state.phases.build.steps.core.status, "pending");
+    assert.equal(state.phases.build.steps.implement.status, "pending");
   });
 });

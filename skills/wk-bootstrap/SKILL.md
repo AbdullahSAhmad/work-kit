@@ -28,12 +28,13 @@ Run `work-kit bootstrap` to detect work-kit state.
 - Available commands: `/full-kit <description>` or `/auto-kit <description>`
 - Do not start work unprompted
 
-## v0.5 capabilities to be aware of
+## Capabilities to be aware of
 
-- **Define phase** — runs before Plan for `feature` and `large-feature` work, refines vague asks into a concrete spec.
+- **Triage phase** — first phase, always runs. Classifies the request (bug-fix / small-change / refactor / feature / large-feature) and the CLI builds the workflow accordingly. Refine and Spec (formerly the Define phase) are now sub-steps inside Plan/Understand.
 - **wk-debug** — auto-invoked when any step reports outcome `needs_debug`. You don't trigger it; the orchestrator does.
 - **test/browser** — exercises the running app via Chrome DevTools MCP. Skips gracefully if the MCP isn't installed (doctor will warn at session start).
 - **decisions in knowledge layer** — `## Decisions` bullets matching `**<context>**: chose X over Y — <why>` are auto-graduated to `.work-kit-knowledge/decisions.md` during wrap-up.
+- **DDD discipline** — Plan models the domain (bounded contexts, aggregates, value objects, repository contracts); Build implements it (TDD inside `build/implement`).
 
 ## If session is stale
 

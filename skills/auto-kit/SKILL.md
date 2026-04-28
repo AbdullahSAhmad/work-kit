@@ -24,13 +24,13 @@ Do not proceed until `doctor` reports all checks passed.
 
 ## All Available Steps
 
-These are the building blocks you pick from:
+These are the building blocks the Triage agent picks from:
 
-- **Define:** Refine, Spec  *(included for `feature` and `large-feature` only)*
-- **Plan:** Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit
-- **Build:** Setup, Migration, Red, Core, UI, Refactor, Integration, Commit
+- **Triage:** Classify  *(always runs — it picks the classification that decides everything below)*
+- **Plan:** Understand (refine + spec for features, then criteria + investigation), Design, Audit  *(Design auto-skips its UX subsection for backend-only work)*
+- **Build:** Setup, Implement, Commit  *(Setup absorbs migrations; Implement runs the full TDD cycle — Red → Core → UI → Refactor → Integration — internally and is DDD-disciplined)*
 - **Test:** Verify, E2E, Browser, Validate  *(Browser uses Chrome DevTools MCP, included for `if UI`)*
-- **Review:** Triage, Self-Review, Security, Performance, Compliance, Fix, Handoff
+- **Review:** Scope (classifies diff), Self-Review, Security, Performance, Compliance, Fix, Handoff
 - **Deploy:** Merge, Monitor, Remediate (optional)
 - **Wrap-up**
 
@@ -38,66 +38,9 @@ These are the building blocks you pick from:
 
 ## Starting New Work (`/auto-kit <description>`)
 
-### Step 1: Analyze
+The orchestrator no longer classifies the request. The **Triage agent** does that, and the workflow gets built when Triage completes.
 
-Before creating the worktree, perform a quick analysis:
-
-1. **Read the description** — understand the type of work
-2. **Classify the work** into one of these categories:
-   - **bug-fix** — fixing broken behavior
-   - **small-change** — config tweak, copy change, minor adjustment
-   - **refactor** — restructuring without behavior change
-   - **feature** — new capability (small to medium scope)
-   - **large-feature** — new capability (large scope, multiple systems)
-3. **Scan the codebase** — quick look at affected areas (not a full investigation)
-4. **Build the workflow** — select only the steps needed
-
-### Step 2: Build Dynamic Workflow
-
-Based on the classification, select steps. Use this table as a starting point, then adjust based on the specific request:
-
-| Step              | bug-fix | small-change | refactor | feature | large-feature |
-|------------------------|---------|--------------|----------|---------|---------------|
-| **Define: Refine**     | skip    | skip         | skip     | YES     | YES           |
-| **Define: Spec**       | skip    | skip         | skip     | YES     | YES           |
-| **Plan: Clarify**      | YES     | YES          | YES      | YES     | YES           |
-| **Plan: Investigate**  | YES     | skip         | YES      | YES     | YES           |
-| **Plan: Sketch**       | skip    | skip         | skip     | YES     | YES           |
-| **Plan: Scope**        | skip    | skip         | skip     | YES     | YES           |
-| **Plan: UX Flow**      | skip    | skip         | skip     | if UI   | if UI         |
-| **Plan: Architecture** | skip    | skip         | skip     | YES     | YES           |
-| **Plan: Blueprint**    | skip    | skip         | skip     | YES     | YES           |
-| **Plan: Audit**        | skip    | skip         | skip     | skip    | YES           |
-| **Build: Setup**       | skip    | skip         | skip     | YES     | YES           |
-| **Build: Migration**   | skip    | skip         | skip     | if DB   | if DB         |
-| **Build: Red**         | YES     | skip         | skip     | YES     | YES           |
-| **Build: Core**        | YES     | YES          | YES      | YES     | YES           |
-| **Build: UI**          | if UI   | if UI        | if UI    | if UI   | if UI         |
-| **Build: Refactor**    | skip    | skip         | YES      | skip    | YES           |
-| **Build: Integration** | skip    | skip         | skip     | YES     | YES           |
-| **Build: Commit**      | YES     | YES          | YES      | YES     | YES           |
-| **Test: Verify**       | YES     | YES          | YES      | YES     | YES           |
-| **Test: E2E**          | skip    | skip         | skip     | if UI   | YES           |
-| **Test: Browser**      | skip    | skip         | skip     | if UI   | if UI         |
-| **Test: Validate**     | YES     | skip         | skip     | YES     | YES           |
-| **Review: Triage**     | YES     | YES          | YES      | YES     | YES           |
-| **Review: Self-Review**| YES     | YES          | YES      | YES     | YES           |
-| **Review: Security**   | skip    | skip         | skip     | YES     | YES           |
-| **Review: Performance**| skip    | skip         | YES      | skip    | YES           |
-| **Review: Compliance** | skip    | skip         | skip     | YES     | YES           |
-| **Review: Fix**        | YES     | YES          | YES      | YES     | YES           |
-| **Review: Handoff**    | YES     | YES          | YES      | YES     | YES           |
-| **Deploy: Merge**      | YES     | YES          | YES      | YES     | YES           |
-| **Wrap-up**            | YES     | YES          | YES      | YES     | YES           |
-
-The table is a guide, not a rigid rule. Adjust based on the actual request:
-- A bug fix that touches auth → add Security review
-- A refactor that changes DB queries → add Migration, Performance review
-- A small-change that affects public API → add Investigate, Blueprint
-
-**Deploy and Wrap-up are MANDATORY and cannot be removed from any workflow.** Deploy handles syncing with the default branch, creating a PR, and merging it — fully autonomous, no user confirmation needed. Wrap-up archives the work history so past work is discoverable in future sessions. Always spawn real agents for both — never just mark them complete.
-
-### Step 3: Initialize
+### Step 1: Initialize
 
 1. Parse flags out of the user's input before building the init command:
    - `--gated` → append `--gated`
@@ -109,24 +52,70 @@ The table is a guide, not a rigid rule. Adjust based on the actual request:
 
    Strip recognized flags from the description text. Only one model flag at a time — if the user passes more than one, report the conflict and stop.
 
-2. Create a git worktree and initialize state with the CLI:
+2. Create a git worktree and initialize state:
    ```bash
    git worktree add worktrees/<slug> -b feature/<slug>
    cd worktrees/<slug>
-   work-kit init --mode auto --description "<description>" --classification <classification> [--gated] [--model-policy <value>]
+   work-kit init --mode auto --description "<description>" [--gated] [--model-policy <value>]
    ```
 
-   Examples:
-   ```
-   /auto-kit fix login bug             → work-kit init --mode auto --description "fix login bug" --classification bug-fix
-   /auto-kit --inherit fix the typo    → work-kit init --mode auto --description "fix the typo" --classification small-change --model-policy inherit
-   /auto-kit --haiku tweak copy        → work-kit init --mode auto --description "tweak copy" --classification small-change --model-policy haiku
-   ```
+   Notice: no `--classification` flag. Triage decides.
 
-3. Show the workflow to the user: `work-kit workflow` (output now includes the resolved model per step and the active policy; review it before approving)
-4. User can adjust: `work-kit workflow --add review/security` or `work-kit workflow --remove test/e2e`
-5. **Wait for approval** — user can add/remove steps before proceeding
-6. Once approved, start the execution loop
+3. Run `work-kit next` — the CLI returns `spawn_agent` for `triage/classify`.
+
+### Step 2: Triage classifies
+
+4. Spawn the Triage agent with the skill file `.claude/skills/wk-triage/SKILL.md`. It reads the description, picks a class, and calls `work-kit complete triage/classify --classification <X>`. The CLI then builds the dynamic workflow.
+
+### Step 3: User reviews the workflow
+
+5. Show `work-kit workflow` — output now includes the resolved model per step and the active policy.
+6. The user can adjust: `work-kit workflow --add review/security` or `--remove test/e2e`. Completed steps cannot be removed.
+7. **Wait for approval** — once the user approves, run the execution loop.
+
+### Workflow skip matrix (informational — Triage applies this automatically)
+
+| Step              | bug-fix | small-change | refactor | feature | large-feature |
+|------------------------|---------|--------------|----------|---------|---------------|
+| **Triage: Classify**   | YES     | YES          | YES      | YES     | YES           |
+| **Plan: Understand**   | YES     | YES          | YES      | YES     | YES           |
+| **Plan: Design**       | skip    | skip         | skip     | YES     | YES           |
+| **Plan: Audit**        | skip    | skip         | skip     | skip    | YES           |
+| **Build: Setup**       | skip    | skip         | skip     | YES     | YES           |
+| **Build: Implement**   | YES     | YES          | YES      | YES     | YES           |
+| **Build: Commit**      | YES     | YES          | YES      | YES     | YES           |
+| **Test: Verify**       | YES     | YES          | YES      | YES     | YES           |
+| **Test: E2E**          | skip    | skip         | skip     | if UI   | YES           |
+| **Test: Browser**      | skip    | skip         | skip     | if UI   | if UI         |
+| **Test: Validate**     | YES     | skip         | skip     | YES     | YES           |
+| **Review: Scope**      | YES     | YES          | YES      | YES     | YES           |
+| **Review: Self-Review**| YES     | YES          | YES      | YES     | YES           |
+| **Review: Security**   | skip    | skip         | skip     | YES     | YES           |
+| **Review: Performance**| skip    | skip         | YES      | skip    | YES           |
+| **Review: Compliance** | skip    | skip         | skip     | YES     | YES           |
+| **Review: Fix**        | YES     | YES          | YES      | YES     | YES           |
+| **Review: Handoff**    | YES     | YES          | YES      | YES     | YES           |
+| **Deploy: Merge**      | YES     | YES          | YES      | YES     | YES           |
+| **Wrap-up**            | YES     | YES          | YES      | YES     | YES           |
+
+The table is a guide. The user can adjust after Triage:
+- A bug fix that touches auth → add Security review
+- A refactor that changes DB queries → enable `Build: Setup` (it handles migrations) and add Performance review
+- A small-change that affects public API → add `Plan: Design` (so Architecture + Blueprint get produced)
+
+**Deploy and Wrap-up are MANDATORY and cannot be removed from any workflow.** Deploy handles syncing with the default branch, creating a PR, and merging it — fully autonomous, no user confirmation needed. Wrap-up archives the work history so past work is discoverable in future sessions. Always spawn real agents for both — never just mark them complete.
+
+### Examples
+
+```
+/auto-kit fix login bug             → work-kit init --mode auto --description "fix login bug"
+                                      → triage classifies as bug-fix
+                                      → workflow built, user approves
+/auto-kit --inherit fix the typo    → work-kit init --mode auto --description "fix the typo" --model-policy inherit
+                                      → triage classifies as small-change
+/auto-kit --haiku tweak copy        → work-kit init --mode auto --description "tweak copy" --model-policy haiku
+                                      → triage classifies as small-change
+```
 
 ## Continuing Work (`/auto-kit` with no args)
 
@@ -168,8 +157,8 @@ Orchestrator (main agent — you)
 │
 ├── Agent: Review (runs only Review steps from Workflow)
 │   ├── reads: ### Plan: Final, ### Build: Final, ### Test: Final, ## Criteria
-│   ├── Triage (sequential — classifies diff, selects reviewers, extracts scope boundaries)
-│   ├── Self-Review, Security, Performance, Compliance as parallel sub-agents (whichever Triage selects)
+│   ├── Scope (sequential — classifies diff, selects reviewers, extracts scope boundaries)
+│   ├── Self-Review, Security, Performance, Compliance as parallel sub-agents (whichever Scope selects)
 │   ├── then Fix (reads all findings, aggressively fixes)
 │   ├── then Handoff
 │   └── writes: ### Review: Final
@@ -192,11 +181,11 @@ Orchestrator (main agent — you)
 | Test: Verify | Sub-agent (parallel) | `### Build: Final`, `## Criteria` |
 | Test: E2E | Sub-agent (parallel) | `### Build: Final`, `### Plan: Final` |
 | Test: Validate | Sequential after above | `### Test: Verify`, `### Test: E2E`, `## Criteria` |
-| Review: Triage | Sequential | `### Plan: Final`, `### Build: Final`, git diff --stat |
-| Review: Self-Review | Sub-agent (parallel) | `### Build: Final`, `### Review: Triage`, git diff |
-| Review: Security | Sub-agent (parallel) | `### Build: Final`, `### Review: Triage`, git diff |
-| Review: Performance | Sub-agent (parallel) | `### Build: Final`, `### Review: Triage`, git diff |
-| Review: Compliance | Sub-agent (parallel) | `### Plan: Final`, `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Scope | Sequential | `### Plan: Final`, `### Build: Final`, git diff --stat |
+| Review: Self-Review | Sub-agent (parallel) | `### Build: Final`, `### Review: Scope`, git diff |
+| Review: Security | Sub-agent (parallel) | `### Build: Final`, `### Review: Scope`, git diff |
+| Review: Performance | Sub-agent (parallel) | `### Build: Final`, `### Review: Scope`, git diff |
+| Review: Compliance | Sub-agent (parallel) | `### Plan: Final`, `### Build: Final`, `### Review: Scope`, git diff |
 | Review: Fix | Sequential | All `### Review:` sections, git diff |
 | Review: Handoff | Sequential | All `### Review:` sections, `### Review: Fix`, `### Test: Final`, `## Criteria` |
 | Deploy | Single agent | `### Review: Final`, `### Build: Final` |
@@ -229,11 +218,11 @@ The CLI manages all state transitions, prerequisites, and loopbacks. Follow this
 
 Loop-backs only apply if the relevant step is in the workflow:
 
-- **Plan Audit** → "revise" → re-run Blueprint
-- **Build Refactor** → "broken" → re-run Core
-- **Review Handoff** → "changes_requested" → re-run Build (from Core)
-- **Deploy Merge** → "fix_needed" → re-run Build (from Core)
-- **Deploy Remediate** → "fix_and_redeploy" → re-run Build (from Core)
+- **Plan Audit** → "revise" → re-run Design
+- **Review Handoff** → "changes_requested" → re-run Build (from Implement)
+- **Deploy Merge** → "fix_needed" → re-run Build (from Implement)
+- **Deploy Remediate** → "fix_and_redeploy" → re-run Build (from Implement)
+*(Build's internal Red/Core/Refactor cycle self-recovers inside Implement — no phase-level loopback)*
 
 On loop-back: uncheck the target step and any steps after it that need re-running. Add a `## Loop-back context` section to state.md with what needs to change and why.
 

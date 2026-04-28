@@ -24,11 +24,11 @@ Do not proceed until `doctor` reports all checks passed.
 
 ## Phases
 
-1. **Define** (2 steps) — Refine → Spec  *(catches vague asks before Plan investigates)*
-2. **Plan** (8 steps) — Clarify → Investigate → Sketch → Scope → UX Flow → Architecture → Blueprint → Audit
-3. **Build** (8 steps) — Setup → Migration → Red → Core → UI → Refactor → Integration → Commit
+1. **Triage** (1 step) — Classify the request (bug-fix / small-change / refactor / feature / large-feature)
+2. **Plan** (3 steps) — Understand (refine + spec for features, then criteria + investigation) → Design → Audit
+3. **Build** (3 steps) — Setup → Implement → Commit
 4. **Test** (4 steps) — Verify, E2E, Browser (parallel) → Validate
-5. **Review** (7 steps) — Triage → Self-Review, Security, Performance, Compliance (parallel) → Fix → Handoff
+5. **Review** (7 steps) — Scope (classify diff) → Self-Review, Security, Performance, Compliance (parallel) → Fix → Handoff
 6. **Deploy** (3 steps) — Merge → Monitor → Remediate
 7. **Wrap-up** — Synthesize work-kit summary, clean up worktree
 
@@ -99,8 +99,8 @@ Prerequisites are enforced by the CLI (`work-kit validate <phase>`). You don't n
 
 | Phase    | Requires                          |
 |----------|-----------------------------------|
-| Define   | — (first phase, always allowed)   |
-| Plan     | Define (complete or skipped)      |
+| Triage   | — (first phase, always allowed)   |
+| Plan     | Triage (complete)                 |
 | Build    | Plan (complete)                   |
 | Test     | Build (complete)                  |
 | Review   | Test (complete)                   |
@@ -114,14 +114,19 @@ Each phase runs as a **fresh agent** (sub-agent spawned by the orchestrator). Th
 ```
 Orchestrator (main agent — you)
 │
-├── Agent: Plan (single agent, all 8 steps)
-│   ├── reads: ## Description, ## Criteria, codebase
-│   ├── runs: Clarify → Investigate → ... → Audit
+├── Agent: Triage (single agent, 1 step)
+│   ├── reads: ## Description
+│   ├── runs: Classify
+│   └── writes: ### Triage: Final (classification, workflow plan)
+│
+├── Agent: Plan (single agent, all 3 steps)
+│   ├── reads: ## Description, ### Triage: Final, ## Criteria, codebase
+│   ├── runs: Understand → Design → Audit
 │   └── writes: ### Plan: Final (Blueprint, Architecture, Scope, Constraints)
 │
-├── Agent: Build (single agent, all 8 steps)
+├── Agent: Build (single agent, all 3 steps)
 │   ├── reads: ### Plan: Final, ## Criteria
-│   ├── runs: Setup → Migration → ... → Commit
+│   ├── runs: Setup → Implement → Commit
 │   └── writes: ### Build: Final (PR, files changed, test status, deviations)
 │
 ├── Agent: Test (orchestrates 2 parallel + 1 sequential)
@@ -131,11 +136,11 @@ Orchestrator (main agent — you)
 │   ├── then: Validate (after both complete)
 │   └── writes: ### Test: Final (results, criteria status, confidence)
 │
-├── Agent: Review (Triage → parallel reviewers → Fix → Handoff)
+├── Agent: Review (Scope → parallel reviewers → Fix → Handoff)
 │   ├── reads: ### Plan: Final, ### Build: Final, ### Test: Final, ## Criteria
-│   ├── Triage (sequential — classifies diff, selects reviewers, extracts scope boundaries)
+│   ├── Scope (sequential — classifies diff, selects reviewers, extracts scope boundaries)
 │   ├── Sub-agent: Self-Review  ──┐
-│   ├── Sub-agent: Security*    ──┤ (parallel, * = if Triage selected)
+│   ├── Sub-agent: Security*    ──┤ (parallel, * = if Scope selected)
 │   ├── Sub-agent: Performance* ──┤
 │   ├── Sub-agent: Compliance*  ──┘
 │   ├── then: Fix (reads all findings, aggressively fixes everything fixable)
@@ -156,16 +161,17 @@ Orchestrator (main agent — you)
 
 | Phase | Agent type | Mode | What it reads from state.md |
 |-------|-----------|------|----------------------------|
-| Plan | Single agent | `auto` | `## Description`, `## Criteria`, codebase |
+| Triage | Single agent | `haiku` | `## Description` |
+| Plan | Single agent | `auto` | `## Description`, `### Triage: Final`, `## Criteria`, codebase |
 | Build | Single agent | `auto` | `### Plan: Final`, `## Criteria` |
 | Test: Verify | Sub-agent | `auto` | `### Build: Final`, `## Criteria` |
 | Test: E2E | Sub-agent | `auto` | `### Build: Final`, `### Plan: Final` |
 | Test: Validate | Single agent | `auto` | `### Test: Verify`, `### Test: E2E`, `## Criteria` |
-| Review: Triage | Sequential | `auto` | `### Plan: Final`, `### Build: Final`, git diff --stat |
-| Review: Self-Review | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Triage`, git diff |
-| Review: Security | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Triage`, git diff |
-| Review: Performance | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Triage`, git diff |
-| Review: Compliance | Sub-agent (parallel) | `auto` | `### Plan: Final`, `### Build: Final`, `### Review: Triage`, git diff |
+| Review: Scope | Sequential | `auto` | `### Plan: Final`, `### Build: Final`, git diff --stat |
+| Review: Self-Review | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Scope`, git diff |
+| Review: Security | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Scope`, git diff |
+| Review: Performance | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Scope`, git diff |
+| Review: Compliance | Sub-agent (parallel) | `auto` | `### Plan: Final`, `### Build: Final`, `### Review: Scope`, git diff |
 | Review: Fix | Sequential | `auto` | All `### Review:` sections, git diff |
 | Review: Handoff | Sequential | `auto` | All `### Review:` sections, `### Review: Fix`, `### Test: Final`, `## Criteria` |
 | Deploy | Single agent | `auto` | `### Review: Final`, `### Build: Final` |
@@ -177,12 +183,13 @@ Each phase writes a `### <Phase>: Final` section — a self-contained summary of
 
 ```
 state.md grows like this:
-  ### Plan: Clarify        ← working notes (Plan agent internal)
-  ### Plan: Investigate    ← working notes (Plan agent internal)
+  ### Plan: Clarify        ← working notes (Understand step)
+  ### Plan: Investigate    ← working notes (Understand step)
   ...
   ### Plan: Final          ← ★ Build agent reads this
   ### Build: Setup         ← working notes (Build agent internal)
-  ### Build: Core          ← working notes (Build agent internal)
+  ### Build: Red           ← working notes (inside Implement step)
+  ### Build: Core          ← working notes (inside Implement step)
   ...
   ### Build: Final         ← ★ Test agent reads this
   ### Test: Verify         ← working notes
@@ -196,7 +203,7 @@ state.md grows like this:
 For each phase:
 1. **Check prerequisites** — verify the required prior phase is marked complete in state.md
 2. **Spawn a fresh agent** for the phase — pass it the phase skill file and the relevant Final sections from state.md
-3. The agent reads each step file when directed (e.g., `.claude/skills/wk-plan/steps/clarify.md`)
+3. The agent reads each step file when directed (e.g., `.claude/skills/wk-plan/steps/understand.md`)
 4. The agent updates `.work-kit/state.md` after each step completes
 5. The agent writes the `### <Phase>: Final` section before exiting
 6. After the agent completes, summarize results to the user and wait for confirmation
@@ -205,11 +212,11 @@ For each phase:
 
 Some steps can route backwards based on their outcome:
 
-- **Plan Audit** → "revise" → re-run Blueprint
-- **Build Refactor** → "broken" → re-run Core
-- **Review Handoff** → "changes_requested" → re-run Build (from Core)
-- **Deploy Merge** → "fix_needed" → re-run Build (from Core)
-- **Deploy Remediate** → "fix_and_redeploy" → re-run Build (from Core)
+- **Plan Audit** → "revise" → re-run Design
+- **Review Handoff** → "changes_requested" → re-run Build (from Implement)
+- **Deploy Merge** → "fix_needed" → re-run Build (from Implement)
+- **Deploy Remediate** → "fix_and_redeploy" → re-run Build (from Implement)
+*(Build's internal Red/Core/Refactor cycle self-recovers inside Implement — no phase-level loopback)*
 
 On loop-back: add a `## Loop-back context` section to state.md with what needs to change and why, then resume at the target step.
 

@@ -48,7 +48,7 @@ describe("bootstrapCommand", () => {
     assert.equal(result.slug, "test-feature");
     assert.equal(result.mode, "full-kit");
     assert.equal(result.status, "in-progress");
-    assert.equal(result.phase, "define");
+    assert.equal(result.phase, "triage");
     assert.equal(result.recovery, null);
   });
 

@@ -21,7 +21,7 @@ function makeState(): WorkKitState {
     mode: "full-kit",
     status: "in-progress",
     currentPhase: "plan",
-    currentStep: "clarify",
+    currentStep: "understand",
     phases,
     loopbacks: [],
     metadata: { worktreeRoot: "/tmp/test", mainRepoRoot: "/tmp/test" },
@@ -38,23 +38,23 @@ function completePhase(state: WorkKitState, phase: PhaseName): void {
 }
 
 describe("validatePhasePrerequisites", () => {
-  it("define has no prerequisites — valid", () => {
+  it("triage has no prerequisites — valid", () => {
     const state = makeState();
-    const result = validatePhasePrerequisites(state, "define");
+    const result = validatePhasePrerequisites(state, "triage");
     assert.equal(result.valid, true);
   });
 
-  it("plan with define complete — valid", () => {
+  it("plan with triage complete — valid", () => {
     const state = makeState();
-    completePhase(state, "define");
+    completePhase(state, "triage");
     const result = validatePhasePrerequisites(state, "plan");
     assert.equal(result.valid, true);
   });
 
-  it("plan with define skipped — valid (skipped satisfies prerequisite)", () => {
+  it("plan with triage skipped — valid (skipped satisfies prerequisite)", () => {
     const state = makeState();
-    state.phases.define.status = "skipped";
-    for (const s of Object.values(state.phases.define.steps)) {
+    state.phases.triage.status = "skipped";
+    for (const s of Object.values(state.phases.triage.steps)) {
       s.status = "skipped";
     }
     const result = validatePhasePrerequisites(state, "plan");
@@ -63,7 +63,7 @@ describe("validatePhasePrerequisites", () => {
 
   it("build with plan incomplete — invalid", () => {
     const state = makeState();
-    completePhase(state, "define");
+    completePhase(state, "triage");
     const result = validatePhasePrerequisites(state, "build");
     assert.equal(result.valid, false);
     assert.equal(result.missingPrerequisite, "plan");
@@ -71,7 +71,7 @@ describe("validatePhasePrerequisites", () => {
 
   it("build with plan complete — valid", () => {
     const state = makeState();
-    completePhase(state, "define");
+    completePhase(state, "triage");
     completePhase(state, "plan");
     const result = validatePhasePrerequisites(state, "build");
     assert.equal(result.valid, true);

@@ -3,16 +3,16 @@ import * as path from "node:path";
 import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot, clearBlockingMarkers, STATE_MD_FILE, STATE_FILE } from "../state/store.js";
 import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
 import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
-import { PHASE_ORDER } from "../config/workflow.js";
+import { PHASE_ORDER, buildDefaultWorkflow } from "../config/workflow.js";
 import { parseLocation, resetToLocation } from "../state/helpers.js";
 import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, MAX_DEBUG_ITERATIONS, SKILL_DIR_PREFIX, CLI_BINARY } from "../config/constants.js";
-import { isStepOutcome, STEP_OUTCOMES, type Action, type Location, type PhaseName, type StepOutcome, type StepState, type WorkKitState } from "../state/schema.js";
+import { isStepOutcome, STEP_OUTCOMES, isClassification, type Action, type Classification, type Location, type PhaseName, type StepOutcome, type StepState, type WorkKitState } from "../state/schema.js";
 import { stateMdPath } from "../state/store.js";
 import { resolveModel } from "../config/model-routing.js";
 
 const DEBUG_SKILL_FILE = `.claude/skills/${SKILL_DIR_PREFIX}debug/SKILL.md`;
 
-export function completeCommand(target: string, outcome?: string, worktreeRoot?: string): Action {
+export function completeCommand(target: string, outcome?: string, worktreeRoot?: string, classification?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();
   if (!root) {
     return { action: "error", message: "No work-kit state found. Run `work-kit init` first." };
@@ -55,6 +55,18 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
   if (typedOutcome === "needs_debug") {
     return handleNeedsDebug(root, state, stepState, { phase, step });
+  }
+
+  // Triage/classify writes classification into state and (for auto-kit) builds the workflow.
+  if (phase === "triage" && step === "classify" && classification) {
+    if (!isClassification(classification)) {
+      return {
+        action: "error",
+        message: `Invalid classification "${classification}".`,
+        suggestion: `Valid: bug-fix, small-change, refactor, feature, large-feature`,
+      };
+    }
+    applyClassification(state, classification);
   }
 
   stepState.status = "completed";
@@ -146,6 +158,40 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
     action: "wait_for_user",
     message: `${phase}/${step} complete${typedOutcome ? ` (outcome: ${typedOutcome})` : ""}. Run \`${CLI_BINARY} next\` to continue.`,
   };
+}
+
+/**
+ * When triage/classify completes with a --classification flag, write the
+ * classification into state and (for auto-kit sessions that started without
+ * one) build the dynamic workflow now that we know the work type. Steps that
+ * the workflow excludes get marked `skipped` so `next` can advance past them.
+ */
+function applyClassification(state: WorkKitState, classification: Classification): void {
+  state.classification = classification;
+
+  if (state.mode !== "auto-kit") return;
+  if (state.workflow && state.workflow.length > 0) return; // already built at init
+
+  const workflow = buildDefaultWorkflow(classification);
+  state.workflow = workflow;
+
+  // Sync phases to the new workflow: any step not flagged `included` becomes skipped.
+  for (const ws of workflow) {
+    const phaseState = state.phases[ws.phase];
+    if (!phaseState) continue;
+    const stepState = phaseState.steps[ws.step];
+    if (!stepState) continue;
+    if (stepState.status === "completed" || stepState.status === "in-progress") continue;
+    stepState.status = ws.included ? "pending" : "skipped";
+  }
+  for (const phase of PHASE_ORDER) {
+    const ps = state.phases[phase];
+    if (!ps) continue;
+    const allSkipped = Object.values(ps.steps).every((s) => s.status === "skipped");
+    if (allSkipped && ps.status !== "completed") {
+      ps.status = "skipped";
+    }
+  }
 }
 
 // ── Archive on completion ──────────────────────────────────────────

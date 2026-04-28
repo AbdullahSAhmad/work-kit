@@ -93,12 +93,13 @@ program
 
 program
   .command("complete <target>")
-  .description("Mark a phase/step as complete (e.g., plan/clarify)")
+  .description("Mark a phase/step as complete (e.g., plan/understand)")
   .option("--outcome <value>", "Outcome of the step (e.g., done, revise, broken, changes_requested)")
+  .option("--classification <value>", "Set classification (only valid with target=triage/classify)")
   .option("--worktree-root <path>", "Override worktree root")
   .action((target, opts) => {
     try {
-      const result = completeCommand(target, opts.outcome, opts.worktreeRoot);
+      const result = completeCommand(target, opts.outcome, opts.worktreeRoot, opts.classification);
       console.log(JSON.stringify(result, null, 2));
     } catch (e: any) {
       console.error(JSON.stringify({ action: "error", message: e.message }));
@@ -160,7 +161,7 @@ program
   .command("loopback")
   .description("Register a loop-back transition")
   .requiredOption("--from <source>", "Source phase/step (e.g., review/handoff)")
-  .requiredOption("--to <target>", "Target phase/step (e.g., build/core)")
+  .requiredOption("--to <target>", "Target phase/step (e.g., build/implement)")
   .requiredOption("--reason <text>", "Reason for loop-back")
   .option("--worktree-root <path>", "Override worktree root")
   .action((opts) => {

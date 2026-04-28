@@ -1,13 +1,17 @@
 # work-kit
 
-Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 34 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files.
+Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 23 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files. **DDD-disciplined** end-to-end (Plan models the domain; Build implements it).
 
-## What's new in v0.5
+## What's new
 
-- **Define phase** runs before Plan to refine vague asks into a concrete spec (auto-skipped for bug fixes/refactors).
-- **wk-debug** triage skill auto-fires when any step reports `needs_debug`, then the originating step retries (max 2 iterations). Not user-invocable — fires from inside the pipeline.
-- **`test/browser`** drives the running app via Chrome DevTools MCP and verifies user-facing acceptance criteria in a real browser. Skips gracefully if the MCP isn't installed.
-- **`decision` knowledge type** auto-graduates `## Decisions` bullets into `.work-kit-knowledge/decisions.md` so future sessions don't re-litigate settled choices.
+- **Triage phase** replaces Define as the first phase. One step (Classify) — picks the work class (bug-fix / small-change / refactor / feature / large-feature), and the CLI builds the workflow. Refine and Spec moved into Plan/Understand.
+- **Review/Triage step renamed to Review/Scope** to disambiguate from the new front Triage.
+- **DDD discipline** baked into Plan and Build — bounded contexts, aggregates, value objects, repository contracts in Plan; TDD-implemented cleanly inside `build/implement`.
+- **Build collapsed to 3 steps** — Setup (branch + deps + migrations), Implement (full TDD cycle internally: Red → Core → UI → Refactor → Integration), Commit.
+- **Plan collapsed to 3 steps** — Understand (refine + spec for features, then criteria + investigation), Design, Audit.
+- **wk-debug** triage skill auto-fires when any step reports `needs_debug`, then the originating step retries (max 2 iterations). Not user-invocable.
+- **`test/browser`** drives the running app via Chrome DevTools MCP. Skips gracefully if the MCP isn't installed.
+- **Decisions** matching `**<context>**: chose X over Y — <why>` auto-graduate into `.work-kit-knowledge/decisions.md` at wrap-up.
 
 ## Installation
 
@@ -80,11 +84,11 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 
 | Phase | Steps | Agent |
 |-------|-----------|-------|
-| **Define** | Refine, Spec | Single (features only; skipped for bug fixes/refactors) |
-| **Plan** | Clarify, Investigate, Sketch, Scope, UX Flow, Architecture, Blueprint, Audit | Single |
-| **Build** | Setup, Migration, Red, Core, UI, Refactor, Integration, Commit | Single |
+| **Triage** | Classify | Single (always — picks the work class) |
+| **Plan** | Understand (refine + spec + criteria + investigate), Design, Audit | Single (DDD-disciplined) |
+| **Build** | Setup, Implement, Commit | Single (Implement runs the full TDD cycle internally, DDD-disciplined) |
 | **Test** | Verify, E2E, Browser (parallel) → Validate | Verify + E2E + Browser parallel, then Validate |
-| **Review** | Triage, Self-Review, Security, Performance, Compliance, Fix, Handoff | Triage → parallel reviewers → Fix → Handoff |
+| **Review** | Scope, Self-Review, Security, Performance, Compliance, Fix, Handoff | Scope → parallel reviewers → Fix → Handoff |
 | **Deploy** | Merge, Monitor, Remediate | Single (optional) |
 | **Wrap-up** | Summary, Knowledge | Single |
 
@@ -148,12 +152,12 @@ work-kit/
     full-kit/SKILL.md       # /full-kit orchestrator (all phases, strict order)
     auto-kit/SKILL.md       # /auto-kit orchestrator (dynamic, only needed steps)
     wk-bootstrap/SKILL.md   # /wk-bootstrap session detection
-    wk-define/SKILL.md      # Define phase runner
-    wk-define/steps/        # 2 step files: refine, spec
+    wk-triage/SKILL.md      # Triage phase runner (1 step: classify)
+    wk-triage/steps/        # 1 step file: classify
     wk-plan/SKILL.md        # Plan phase runner
-    wk-plan/steps/          # 8 step files
+    wk-plan/steps/          # 3 step files: understand (refine+spec+criteria+investigate), design, audit
     wk-build/SKILL.md       # Build phase runner
-    wk-build/steps/         # 8 step files
+    wk-build/steps/         # 3 step files: setup, implement, commit
     wk-test/SKILL.md        # Test phase runner
     wk-test/steps/          # 4 step files: verify, e2e, browser, validate
     wk-review/SKILL.md      # Review phase runner

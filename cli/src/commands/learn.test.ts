@@ -146,8 +146,8 @@ describe("learnCommand", () => {
       path.join(tmp, KNOWLEDGE_DIR, "lessons.md"),
       "utf-8"
     );
-    // Full-kit init now starts at define/refine (Define is the new first phase)
-    assert.ok(content.includes("define/refine"));
+    // Full-kit init now starts at triage/classify (Triage is the first phase)
+    assert.ok(content.includes("triage/classify"));
   });
 
   it("extracts typed bullets from state.md ## Observations", () => {

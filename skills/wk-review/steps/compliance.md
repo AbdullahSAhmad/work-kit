@@ -42,7 +42,7 @@ description: "Review step: Compare final code against Blueprint."
 
 ## Scope Awareness
 
-Check the **Scope boundaries** from `### Review: Triage`. The Blueprint may explicitly mark items as "NOT Building", deferred, or out of scope. These are **not** missing steps — they are intentional exclusions. Only flag a Blueprint step as "skipped" if it was supposed to be built but wasn't.
+Check the **Scope boundaries** from `### Review: Scope`. The Blueprint may explicitly mark items as "NOT Building", deferred, or out of scope. These are **not** missing steps — they are intentional exclusions. Only flag a Blueprint step as "skipped" if it was supposed to be built but wasn't.
 
 ## Rules
 

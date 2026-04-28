@@ -21,7 +21,7 @@ function makeState(): WorkKitState {
     mode: "full-kit",
     status: "in-progress",
     currentPhase: "plan",
-    currentStep: "clarify",
+    currentStep: "understand",
     phases,
     loopbacks: [],
     metadata: { worktreeRoot: "/tmp/test", mainRepoRoot: "/tmp/test" },
@@ -32,7 +32,7 @@ describe("nextStepInPhase", () => {
   it("returns first pending step", () => {
     const state = makeState();
     const result = nextStepInPhase(state, "plan");
-    assert.equal(result, "clarify");
+    assert.equal(result, "understand");
   });
 
   it("returns null when all complete or skipped", () => {
@@ -46,10 +46,9 @@ describe("nextStepInPhase", () => {
 
   it("skips completed steps and returns next pending", () => {
     const state = makeState();
-    state.phases.plan.steps.clarify.status = "completed";
-    state.phases.plan.steps.investigate.status = "completed";
+    state.phases.plan.steps.understand.status = "completed";
     const result = nextStepInPhase(state, "plan");
-    assert.equal(result, "sketch");
+    assert.equal(result, "design");
   });
 });
 
@@ -91,7 +90,7 @@ describe("determineNextStep", () => {
     state.currentPhase = null;
     const result = determineNextStep(state);
     assert.equal(result.type, "phase-boundary");
-    assert.equal(result.phase, "define");
+    assert.equal(result.phase, "triage");
   });
 
   it("returns step for current phase with pending work", () => {
@@ -101,7 +100,7 @@ describe("determineNextStep", () => {
     const result = determineNextStep(state);
     assert.equal(result.type, "step");
     assert.equal(result.phase, "plan");
-    assert.equal(result.step, "clarify");
+    assert.equal(result.step, "understand");
   });
 
   it("auto-proceeds to next phase by default when current phase is complete", () => {

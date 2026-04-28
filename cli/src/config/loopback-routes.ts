@@ -13,39 +13,27 @@ export interface LoopbackRoute {
 
 export const LOOPBACK_ROUTES: LoopbackRoute[] = [
   {
-    from: { phase: "define", step: "spec" },
-    triggerOutcome: "revise",
-    to: { phase: "define", step: "refine" },
-    reason: "Spec found ambiguity — looping back to Refine",
-  },
-  {
     from: { phase: "plan", step: "audit" },
     triggerOutcome: "revise",
-    to: { phase: "plan", step: "blueprint" },
-    reason: "Audit found gaps — revising Blueprint",
-  },
-  {
-    from: { phase: "build", step: "refactor" },
-    triggerOutcome: "broken",
-    to: { phase: "build", step: "core" },
-    reason: "Refactor broke tests — re-running Core to fix",
+    to: { phase: "plan", step: "design" },
+    reason: "Audit found gaps — revising Design",
   },
   {
     from: { phase: "review", step: "handoff" },
     triggerOutcome: "changes_requested",
-    to: { phase: "build", step: "core" },
-    reason: "Review requested changes — looping back to Build/Core",
+    to: { phase: "build", step: "implement" },
+    reason: "Review requested changes — looping back to Build/Implement",
   },
   {
     from: { phase: "deploy", step: "merge" },
     triggerOutcome: "fix_needed",
-    to: { phase: "build", step: "core" },
-    reason: "Merge blocked — fix needed in Build/Core",
+    to: { phase: "build", step: "implement" },
+    reason: "Merge blocked — fix needed in Build/Implement",
   },
   {
     from: { phase: "deploy", step: "remediate" },
     triggerOutcome: "fix_and_redeploy",
-    to: { phase: "build", step: "core" },
-    reason: "Deployment issue — fix and redeploy from Build/Core",
+    to: { phase: "build", step: "implement" },
+    reason: "Deployment issue — fix and redeploy from Build/Implement",
   },
 ];

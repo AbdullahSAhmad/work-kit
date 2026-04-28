@@ -12,11 +12,11 @@ export interface AgentContext {
 
 // Phase-level context (what the phase runner agent reads)
 export const PHASE_CONTEXT: Record<PhaseName, AgentContext> = {
-  define: {
+  triage: {
     sections: ["## Description"],
   },
   plan: {
-    sections: ["## Description", "### Define: Final", "## Criteria"],
+    sections: ["## Description", "### Triage: Final", "## Criteria"],
   },
   build: {
     sections: ["### Plan: Final", "## Criteria", "## Description"],
@@ -37,9 +37,8 @@ export const PHASE_CONTEXT: Record<PhaseName, AgentContext> = {
 
 // Step-level context (for parallel sub-agents that need specific sections)
 export const STEP_CONTEXT: Record<string, AgentContext> = {
-  // Define steps
-  "define/refine": { sections: ["## Description"] },
-  "define/spec": { sections: ["## Description", "### Define: Refine"] },
+  // Triage steps
+  "triage/classify": { sections: ["## Description"] },
 
   // Test steps
   "test/verify": { sections: ["### Build: Final", "## Criteria"] },
@@ -48,11 +47,11 @@ export const STEP_CONTEXT: Record<string, AgentContext> = {
   "test/validate": { sections: ["### Test: Verify", "### Test: Browser", "### Test: E2E", "## Criteria"] },
 
   // Review steps
-  "review/triage": { sections: ["### Plan: Final", "### Build: Final"], needsGitDiff: true },
-  "review/self-review": { sections: ["### Build: Final", "### Review: Triage"], needsGitDiff: true },
-  "review/security": { sections: ["### Build: Final", "### Review: Triage"], needsGitDiff: true },
-  "review/performance": { sections: ["### Build: Final", "### Review: Triage"], needsGitDiff: true },
-  "review/compliance": { sections: ["### Plan: Final", "### Build: Final", "### Review: Triage"], needsGitDiff: true },
+  "review/scope": { sections: ["### Plan: Final", "### Build: Final"], needsGitDiff: true },
+  "review/self-review": { sections: ["### Build: Final", "### Review: Scope"], needsGitDiff: true },
+  "review/security": { sections: ["### Build: Final", "### Review: Scope"], needsGitDiff: true },
+  "review/performance": { sections: ["### Build: Final", "### Review: Scope"], needsGitDiff: true },
+  "review/compliance": { sections: ["### Plan: Final", "### Build: Final", "### Review: Scope"], needsGitDiff: true },
   "review/fix": {
     sections: [
       "### Review: Self-Review", "### Review: Security",

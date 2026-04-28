@@ -1,17 +1,17 @@
 ---
-description: "Review step: Classify diff complexity and decide which reviewers to spawn."
+description: "Review step: Classify diff complexity, decide which reviewers to spawn, and extract scope boundaries from the Blueprint."
 ---
 
-# Triage
+# Scope
 
-**Role:** Review Classifier
-**Goal:** Quickly assess the diff and decide which review agents are actually needed.
+**Role:** Review Scoper
+**Goal:** Quickly assess the diff and decide which review agents are actually needed, and extract the Blueprint's out-of-scope items so reviewers don't flag them as gaps.
 
 ## Instructions
 
-1. Run `git diff main...HEAD --stat` to see the scope of changes
+1. Run `git diff main...HEAD --stat` to see the size of changes
 2. Skim the actual diff (`git diff main...HEAD`) — spend under 2 minutes
-3. Classify the change:
+3. Classify the diff complexity:
 
 | Category | Description | Example |
 |----------|-------------|---------|
@@ -34,7 +34,7 @@ description: "Review step: Classify diff complexity and decide which reviewers t
 ## Output (append to state.md)
 
 ```markdown
-### Review: Triage
+### Review: Scope
 
 **Diff stats:** <files changed>, <insertions>, <deletions>
 **Category:** trivial | small | medium | large
@@ -52,3 +52,7 @@ description: "Review step: Classify diff complexity and decide which reviewers t
 - Always spawn Self-Review — it catches things the others don't look for
 - If the diff touches anything in OWASP top 10 territory, always include Security
 - Extract scope boundaries from Blueprint and pass them forward — reviewers need this context
+
+## Naming note
+
+This step was called "Triage" prior to v0.6. It was renamed to **Scope** to disambiguate from the new front-phase Triage (which classifies the *request*, not the diff).

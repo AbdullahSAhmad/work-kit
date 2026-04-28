@@ -3,10 +3,10 @@ import * as assert from "node:assert/strict";
 import { checkLoopback } from "./loopbacks.js";
 
 describe("checkLoopback", () => {
-  it("plan/audit with 'revise' loops back to plan/blueprint", () => {
+  it("plan/audit with 'revise' loops back to plan/design", () => {
     const result = checkLoopback("plan", "audit", "revise");
     assert.notEqual(result, null);
-    assert.deepStrictEqual(result!.to, { phase: "plan", step: "blueprint" });
+    assert.deepStrictEqual(result!.to, { phase: "plan", step: "design" });
     assert.ok(result!.reason.length > 0);
   });
 
@@ -15,14 +15,14 @@ describe("checkLoopback", () => {
     assert.equal(result, null);
   });
 
-  it("review/handoff with 'changes_requested' loops back to build/core", () => {
+  it("review/handoff with 'changes_requested' loops back to build/implement", () => {
     const result = checkLoopback("review", "handoff", "changes_requested");
     assert.notEqual(result, null);
-    assert.deepStrictEqual(result!.to, { phase: "build", step: "core" });
+    assert.deepStrictEqual(result!.to, { phase: "build", step: "implement" });
   });
 
-  it("build/core with 'done' returns null", () => {
-    const result = checkLoopback("build", "core", "done");
+  it("build/implement with 'done' returns null", () => {
+    const result = checkLoopback("build", "implement", "done");
     assert.equal(result, null);
   });
 

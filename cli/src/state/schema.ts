@@ -1,17 +1,17 @@
 // ── Phase & Step Types ──────────────────────────────────────────────
 
-export const PHASE_NAMES = ["define", "plan", "build", "test", "review", "deploy", "wrap-up"] as const;
+export const PHASE_NAMES = ["triage", "plan", "build", "test", "review", "deploy", "wrap-up"] as const;
 export type PhaseName = (typeof PHASE_NAMES)[number];
 
-export const DEFINE_STEPS = ["refine", "spec"] as const;
-export const PLAN_STEPS = ["clarify", "investigate", "sketch", "scope", "ux-flow", "architecture", "blueprint", "audit"] as const;
-export const BUILD_STEPS = ["setup", "migration", "red", "core", "ui", "refactor", "integration", "commit"] as const;
+export const TRIAGE_STEPS = ["classify"] as const;
+export const PLAN_STEPS = ["understand", "design", "audit"] as const;
+export const BUILD_STEPS = ["setup", "implement", "commit"] as const;
 export const TEST_STEPS = ["verify", "e2e", "browser", "validate"] as const;
-export const REVIEW_STEPS = ["triage", "self-review", "security", "performance", "compliance", "fix", "handoff"] as const;
+export const REVIEW_STEPS = ["scope", "self-review", "security", "performance", "compliance", "fix", "handoff"] as const;
 export const DEPLOY_STEPS = ["merge", "monitor", "remediate"] as const;
 export const WRAPUP_STEPS = ["summary", "knowledge"] as const;
 
-export type DefineStep = (typeof DEFINE_STEPS)[number];
+export type TriageStep = (typeof TRIAGE_STEPS)[number];
 export type PlanStep = (typeof PLAN_STEPS)[number];
 export type BuildStep = (typeof BUILD_STEPS)[number];
 export type TestStep = (typeof TEST_STEPS)[number];
@@ -19,10 +19,10 @@ export type ReviewStep = (typeof REVIEW_STEPS)[number];
 export type DeployStep = (typeof DEPLOY_STEPS)[number];
 export type WrapUpStep = (typeof WRAPUP_STEPS)[number];
 
-export type StepName = DefineStep | PlanStep | BuildStep | TestStep | ReviewStep | DeployStep | WrapUpStep;
+export type StepName = TriageStep | PlanStep | BuildStep | TestStep | ReviewStep | DeployStep | WrapUpStep;
 
 export const STEPS_BY_PHASE: Record<PhaseName, readonly string[]> = {
-  define: DEFINE_STEPS,
+  triage: TRIAGE_STEPS,
   plan: PLAN_STEPS,
   build: BUILD_STEPS,
   test: TEST_STEPS,

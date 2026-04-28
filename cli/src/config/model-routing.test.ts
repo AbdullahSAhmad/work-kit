@@ -38,7 +38,7 @@ describe("resolveModel — defaults", () => {
   it("uses step default when no policy or override", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp });
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
     assert.equal(resolveModel(state, "build", "commit"), "haiku");
     assert.equal(resolveModel(state, "review", "security"), "opus");
   });
@@ -59,20 +59,20 @@ describe("resolveModel — session policy", () => {
     const state = fakeState({ worktreeRoot: tmp, policy: "opus" });
     assert.equal(resolveModel(state, "build", "commit"), "opus");
     assert.equal(resolveModel(state, "deploy", "monitor"), "opus");
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 
   it("policy=haiku forces haiku everywhere", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "haiku" });
-    assert.equal(resolveModel(state, "plan", "investigate"), "haiku");
+    assert.equal(resolveModel(state, "plan", "understand"), "haiku");
     assert.equal(resolveModel(state, "review", "security"), "haiku");
   });
 
   it("policy=inherit returns undefined so no model is passed", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "inherit" });
-    assert.equal(resolveModel(state, "plan", "investigate"), undefined);
+    assert.equal(resolveModel(state, "plan", "understand"), undefined);
     assert.equal(resolveModel(state, "build", "core"), undefined);
     assert.equal(resolveModel(state, "deploy", "merge"), undefined);
   });
@@ -82,32 +82,32 @@ describe("resolveModel — session policy", () => {
     const autoState = fakeState({ worktreeRoot: tmp, policy: "auto" });
     const unsetState = fakeState({ worktreeRoot: tmp });
     assert.equal(
-      resolveModel(autoState, "plan", "investigate"),
-      resolveModel(unsetState, "plan", "investigate")
+      resolveModel(autoState, "plan", "understand"),
+      resolveModel(unsetState, "plan", "understand")
     );
   });
 });
 
 describe("resolveModel — classification", () => {
-  it("small-change knocks plan/investigate down to haiku in auto-kit mode", () => {
+  it("small-change knocks plan/understand down to haiku in auto-kit mode", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "small-change",
       mode: "auto-kit",
     });
-    assert.equal(resolveModel(state, "plan", "investigate"), "haiku");
+    assert.equal(resolveModel(state, "plan", "understand"), "haiku");
   });
 
-  it("bug-fix keeps plan/investigate on opus (not in its override map)", () => {
+  it("bug-fix keeps plan/understand on opus (not in its override map)", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "bug-fix",
       mode: "auto-kit",
     });
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
-    assert.equal(resolveModel(state, "plan", "blueprint"), "sonnet");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
+    assert.equal(resolveModel(state, "plan", "design"), "sonnet");
   });
 
   it("refactor promotes review/performance to opus", () => {
@@ -127,7 +127,7 @@ describe("resolveModel — classification", () => {
       classification: "small-change",
       mode: "full-kit",
     });
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 
   it("session policy beats classification override", () => {
@@ -138,7 +138,7 @@ describe("resolveModel — classification", () => {
       mode: "auto-kit",
       policy: "opus",
     });
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 });
 
@@ -152,17 +152,17 @@ describe("resolveModel — workspace JSON override", () => {
     const state = fakeState({ worktreeRoot: tmp, policy: "opus" });
     assert.equal(resolveModel(state, "build", "commit"), "sonnet");
     // Other steps still forced to opus by the policy
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 
   it("workspace JSON beats step default", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     fs.writeFileSync(
       path.join(tmp, ".work-kit", "model-config.json"),
-      JSON.stringify({ "plan/investigate": "haiku" })
+      JSON.stringify({ "plan/understand": "haiku" })
     );
     const state = fakeState({ worktreeRoot: tmp });
-    assert.equal(resolveModel(state, "plan", "investigate"), "haiku");
+    assert.equal(resolveModel(state, "plan", "understand"), "haiku");
   });
 
   it("malformed JSON falls back silently to defaults", () => {
@@ -172,19 +172,19 @@ describe("resolveModel — workspace JSON override", () => {
       "{not json"
     );
     const state = fakeState({ worktreeRoot: tmp });
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 
   it("invalid tier values in JSON are ignored", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     fs.writeFileSync(
       path.join(tmp, ".work-kit", "model-config.json"),
-      JSON.stringify({ "plan/investigate": "turbo", "build/core": "opus" })
+      JSON.stringify({ "plan/understand": "turbo", "build/implement": "opus" })
     );
     const state = fakeState({ worktreeRoot: tmp });
     // Bad value ignored → falls back to step default
-    assert.equal(resolveModel(state, "plan", "investigate"), "opus");
+    assert.equal(resolveModel(state, "plan", "understand"), "opus");
     // Good value applied
-    assert.equal(resolveModel(state, "build", "core"), "opus");
+    assert.equal(resolveModel(state, "build", "implement"), "opus");
   });
 });

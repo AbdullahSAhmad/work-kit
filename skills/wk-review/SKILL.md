@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Run the Review phase — 7 steps: Triage, 4 parallel reviewers, Fix, Handoff."
+description: "Run the Review phase — 7 steps: Scope (classify diff), 4 parallel reviewers, Fix, Handoff."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
@@ -9,18 +9,18 @@ You are the **Senior Reviewer**. Perform multi-dimensional code review before th
 
 ## Steps (in order)
 
-1. **Triage** — Classify diff, decide which reviewers to spawn, extract scope boundaries
+1. **Scope** — Classify diff complexity, decide which reviewers to spawn, extract scope boundaries from Blueprint
 2. **Self-Review** — Check your own diff for obvious issues
-3. **Security** — OWASP top 10 security review (if Triage says to run it)
-4. **Performance** — Query efficiency, bundle size, rendering performance (if Triage says to run it)
-5. **Compliance** — Compare final code against Blueprint (if Triage says to run it)
+3. **Security** — OWASP top 10 security review (if Scope says to run it)
+4. **Performance** — Query efficiency, bundle size, rendering performance (if Scope says to run it)
+5. **Compliance** — Compare final code against Blueprint (if Scope says to run it)
 6. **Fix** — Aggressively fix all findings from reviewers
 7. **Handoff** — Finalize PR description, flag concerns, make ship/no-ship decision
 
 ## Execution
 
-1. Run **Triage** first (sequential) — it decides which reviewers are needed and extracts scope boundaries
-2. Spawn the reviewers Triage selected as **parallel sub-agents**, passing each the scope boundaries
+1. Run **Scope** first (sequential) — it decides which reviewers are needed and extracts scope boundaries
+2. Spawn the reviewers Scope selected as **parallel sub-agents**, passing each the scope boundaries
 3. After all reviewers complete, run **Fix** (sequential) — reads all findings, fixes aggressively
 4. Run **Handoff** (sequential) — makes the ship decision based on post-fix state
 
@@ -49,22 +49,22 @@ This phase runs as a **fresh agent** (the orchestrator). Read only these section
 ## Execution Flow
 
 ```
-Triage (sequential)
+Scope (sequential)
   ↓ decides which reviewers + extracts scope boundaries
   ↓
 Agent: Self-Review  ──┐
-Agent: Security*    ──┤  (* only if Triage selected)
+Agent: Security*    ──┤  (* only if Scope selected)
 Agent: Performance* ──├──→ Fix (sequential) ──→ Handoff (sequential)
 Agent: Compliance*  ──┘
 ```
 
-**Triage** runs first. It classifies the diff (trivial/small/medium/large), decides which of the 4 reviewers are relevant, and extracts scope boundaries from the Blueprint (items explicitly out of scope or deferred).
+**Scope** runs first. It classifies the diff (trivial/small/medium/large), decides which of the 4 reviewers are relevant, and extracts scope boundaries from the Blueprint (items explicitly out of scope or deferred).
 
 Each sub-agent receives:
 - The git diff (`git diff main...HEAD`)
 - The relevant Context Input sections
 - Its step skill file instructions
-- **Scope boundaries from Triage** — items to NOT flag as issues
+- **Scope boundaries from Scope** — items to NOT flag as issues
 
 Each writes its own `### Review: <step>` section to state.md.
 
@@ -91,8 +91,8 @@ Each writes its own `### Review: <step>` section to state.md.
 - Approve without checking acceptance criteria status
 - Rubber-stamp without reading the diff ("looks good" is not a review)
 - Make changes_requested without specifying exactly what needs to change
-- Skip Triage (it gates everything else)
-- Skip Self-Review (always runs regardless of Triage category)
+- Skip Scope (it gates everything else)
+- Skip Self-Review (always runs regardless of Scope category)
 - Flag out-of-scope items as issues (respect Blueprint boundaries)
 
 ## Final Output

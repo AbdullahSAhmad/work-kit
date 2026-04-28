@@ -40,8 +40,8 @@ describe("initCommand", () => {
     );
     assert.equal(state.slug, "add-user-login");
     assert.equal(state.status, "in-progress");
-    assert.equal(state.currentPhase, "define");
-    assert.equal(state.currentStep, "refine");
+    assert.equal(state.currentPhase, "triage");
+    assert.equal(state.currentStep, "classify");
     assert.equal(state.version, 3);
   });
 

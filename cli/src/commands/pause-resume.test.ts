@@ -115,7 +115,7 @@ describe("complete outcome validation", () => {
     tmpDirs.push(tmp);
     initCommand({ mode: "full", description: "Outcome test", worktreeRoot: tmp });
 
-    const result = completeCommand("plan/clarify", "totally-bogus", tmp);
+    const result = completeCommand("plan/understand", "totally-bogus", tmp);
     assert.equal(result.action, "error");
     if (result.action === "error") {
       assert.ok(result.message.includes("Invalid outcome"));
@@ -127,7 +127,7 @@ describe("complete outcome validation", () => {
     tmpDirs.push(tmp);
     initCommand({ mode: "full", description: "Outcome ok", worktreeRoot: tmp });
 
-    const result = completeCommand("plan/clarify", "done", tmp);
+    const result = completeCommand("plan/understand", "done", tmp);
     assert.notEqual(result.action, "error");
   });
 
@@ -136,7 +136,7 @@ describe("complete outcome validation", () => {
     tmpDirs.push(tmp);
     initCommand({ mode: "full", description: "No outcome", worktreeRoot: tmp });
 
-    const result = completeCommand("plan/clarify", undefined, tmp);
+    const result = completeCommand("plan/understand", undefined, tmp);
     assert.notEqual(result.action, "error");
   });
 });

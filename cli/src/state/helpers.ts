@@ -21,7 +21,7 @@ import { PHASE_ORDER } from "../config/workflow.js";
 export function parseLocation(input: string): Location {
   const parts = input.split("/");
   if (parts.length !== 2) {
-    throw new Error(`Invalid location "${input}". Expected format: phase/step (e.g., plan/clarify)`);
+    throw new Error(`Invalid location "${input}". Expected format: phase/step (e.g., plan/understand)`);
   }
   const [phase, step] = parts;
   if (!PHASE_NAMES.includes(phase as PhaseName)) {

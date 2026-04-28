@@ -1,50 +1,45 @@
 ---
 name: plan
-description: "Run the Plan phase — 8 steps from Clarify to Audit."
+description: "Run the Plan phase — 3 steps: Understand, Design, Audit."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-You are the **Planning Lead**. Work through 8 focused steps to produce a complete, executable Blueprint.
+You are the **Planning Lead**. Three focused steps produce an executable Blueprint.
 
 ## Steps (in order)
 
-1. **Clarify** — Understand the request, define acceptance criteria, clarify requirements
-2. **Investigate** — Read codebase, trace paths, map blast radius
-3. **Sketch** — Rough directional plan
-4. **Scope** — Define in/out scope, complexity, criteria
-5. **UX Flow** — User-facing flows, screens, interactions
-6. **Architecture** — Technical design: data model, API, components
-7. **Blueprint** — Full ordered implementation plan
-8. **Audit** — Check blueprint for gaps and contradictions
+1. **Understand** — Refine the ask (for features), write the spec, define criteria, and map the code that will be touched
+2. **Design** — Direction, scope, UX (if UI), architecture, ordered blueprint
+3. **Audit** — Catch gaps before Build starts
 
 ## Execution
 
 For each step:
-1. Read the step file (e.g., `.claude/skills/wk-plan/steps/clarify.md`)
+1. Read the step file (e.g., `.claude/skills/wk-plan/steps/understand.md`)
 2. Follow its instructions completely
-3. Write outputs to `.work-kit/state.md` under a section for that step
+3. Write outputs to `.work-kit/state.md` under the sections that step defines
 4. Update `**Phase:** plan` and `**Step:** <current>` in state.md
 5. Proceed to the next step
 
 ## Continuity
 
-Maintain context across all steps — each builds on the previous. Reference prior outputs explicitly. Don't re-discover what you already found.
+Each step builds on the previous. Reference prior outputs explicitly. Don't re-discover what you already found.
 
 ## Recording
 
-Throughout every step, capture these things in the shared state.md sections:
+Throughout every step, capture in shared state.md sections:
 
-- **`## Decisions`** — Whenever you choose between real alternatives, append: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
-- **`## Observations`** — Whenever you notice a project convention, a fragile area, a learning, or feedback about the work-kit workflow itself, append a typed bullet: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
+- **`## Decisions`** — When you choose between real alternatives, append: `- **<context>**: chose <X> over <Y> — <one-sentence why>`. Skip obvious choices.
+- **`## Observations`** — When you notice a project convention, fragile area, learning, or workflow feedback, append `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
 
-These feed into the final work-kit log summary and the project knowledge files. If you don't record them here, they're lost.
+These feed the final work-kit log and project knowledge files. If you don't record them here, they're lost.
 
 ## Loop-back
 
 If **Audit** returns "revise":
 - Read the audit findings
-- Go back to **Blueprint** and revise based on specific gaps identified
+- Go back to **Design** (Blueprint section) and revise based on specific gaps
 - Re-run **Audit** after revision
 - Max 2 revision loops, then proceed with noted caveats
 
@@ -58,10 +53,10 @@ After all steps are done, append a `### Plan: Final` section to state.md. This i
 **Verdict:** ready | revised_with_caveats
 
 **Blueprint:**
-<the full ordered implementation plan from Blueprint step — copy it here>
+<the full ordered implementation plan from Design step — copy it here>
 
 **Architecture:**
-<data model, API surface, components, service layer — from Architecture step>
+<data model, API surface, components, service layer — from Design step>
 
 **Criteria:**
 <reference to ## Criteria section>
@@ -72,7 +67,7 @@ After all steps are done, append a `### Plan: Final` section to state.md. This i
 - Complexity: <small | medium | large | x-large>
 
 **Key Constraints:**
-- <anything the Build agent must know — patterns to follow, libs to use, gotchas>
+- <patterns to follow, libs to use, gotchas the Build agent must know>
 ```
 
 Then:
@@ -82,20 +77,19 @@ Then:
 ## Boundaries
 
 ### Always
-- Read every file referenced in the Description before proposing solutions
-- Ask clarifying questions when requirements have multiple valid interpretations
-- Map blast radius by tracing actual code paths, not guessing from file names
-- Include exact file paths in Blueprint steps
-- Map every acceptance criterion to at least one Blueprint step
+- Define criteria before reading code (intent before implementation)
+- Trace actual code paths in Understand, not guesses from filenames
+- Use exact file paths in Design's Architecture and Blueprint sections
+- Map every acceptance criterion to ≥1 Blueprint step
 
 ### Ask First
-- Changing the scope after Clarify (user must approve scope changes)
-- Adding acceptance criteria the user did not request
-- Recommending a complexity rating of x-large (confirm before proceeding)
+- Scope changes after Understand (user must approve)
+- Adding criteria the user did not request
+- Recommending complexity = x-large
 
 ### Never
-- Propose solutions during Clarify (that is Sketch's job)
-- Skip Investigate to "save time" — code understanding prevents rework
-- Write vague Blueprint steps like "update relevant files" without exact paths
-- Assume the codebase follows standard patterns without verifying in Investigate
-- Proceed past Audit with unresolved gaps in the Blueprint
+- Skip Understand to "save time" — code understanding prevents rework
+- Propose solutions during Understand (that's Design's job)
+- Write vague Blueprint steps without exact paths
+- Assume standard patterns without verifying in Understand
+- Proceed past Audit with unresolved gaps

@@ -37,7 +37,7 @@ Document all findings. Do NOT fix code — the Fix step handles all fixes.
 
 ## Scope Awareness
 
-Check the **Scope boundaries** from `### Review: Triage`. Items listed there are intentionally excluded from this feature — do NOT flag performance concerns for features that were explicitly deferred or marked out of scope.
+Check the **Scope boundaries** from `### Review: Scope`. Items listed there are intentionally excluded from this feature — do NOT flag performance concerns for features that were explicitly deferred or marked out of scope.
 
 ## Rules
 

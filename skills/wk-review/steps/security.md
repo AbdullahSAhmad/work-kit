@@ -43,7 +43,7 @@ Document all findings with severity. Do NOT fix code — the Fix step handles al
 
 ## Scope Awareness
 
-Check the **Scope boundaries** from `### Review: Triage`. Items listed there are intentionally excluded from this feature — do NOT flag missing security controls for features that were explicitly deferred. Only audit security in code that was actually written or modified.
+Check the **Scope boundaries** from `### Review: Scope`. Items listed there are intentionally excluded from this feature — do NOT flag missing security controls for features that were explicitly deferred. Only audit security in code that was actually written or modified.
 
 ## Rules
 

@@ -32,7 +32,7 @@ const HARD_DEFAULT: ModelTier = "sonnet";
 // ── Phase defaults ──────────────────────────────────────────────────
 
 export const BY_PHASE: Record<PhaseName, ModelTier> = {
-  define: "opus",
+  triage: "haiku",
   plan: "sonnet",
   build: "sonnet",
   test: "sonnet",
@@ -44,28 +44,17 @@ export const BY_PHASE: Record<PhaseName, ModelTier> = {
 // ── Step-level overrides (phase/step keys) ──────────────────────────
 
 export const BY_STEP: Record<string, ModelTier> = {
-  // Define — refining a vague ask is reasoning-heavy
-  "define/refine": "opus",
-  "define/spec": "sonnet",
+  // Triage — single classification call, cheap
+  "triage/classify": "haiku",
 
-  // Plan — research/design-heavy steps benefit from opus
-  "plan/clarify": "sonnet",
-  "plan/investigate": "opus",
-  "plan/sketch": "sonnet",
-  "plan/scope": "sonnet",
-  "plan/ux-flow": "sonnet",
-  "plan/architecture": "opus",
-  "plan/blueprint": "opus",
+  // Plan — research/design-heavy steps benefit from opus (Understand now also handles Refine + Spec for features)
+  "plan/understand": "opus",
+  "plan/design": "opus",
   "plan/audit": "opus",
 
-  // Build — mechanical steps drop to haiku, implementation stays sonnet
+  // Build — setup/commit are mechanical (haiku); implement is the TDD cycle (sonnet)
   "build/setup": "haiku",
-  "build/migration": "sonnet",
-  "build/red": "sonnet",
-  "build/core": "sonnet",
-  "build/ui": "sonnet",
-  "build/refactor": "sonnet",
-  "build/integration": "sonnet",
+  "build/implement": "sonnet",
   "build/commit": "haiku",
 
   // Test — verify is mechanical, browser/e2e/validate need judgment
@@ -74,8 +63,8 @@ export const BY_STEP: Record<string, ModelTier> = {
   "test/e2e": "sonnet",
   "test/validate": "sonnet",
 
-  // Review — triage is cheap (haiku); security & compliance get opus; fix needs sonnet; rest sonnet
-  "review/triage": "haiku",
+  // Review — scope (diff classification) is cheap (haiku); security & compliance get opus; fix needs sonnet; rest sonnet
+  "review/scope": "haiku",
   "review/self-review": "sonnet",
   "review/security": "opus",
   "review/performance": "sonnet",
@@ -97,24 +86,15 @@ export const BY_STEP: Record<string, ModelTier> = {
 export const BY_CLASSIFICATION: Record<Classification, Partial<Record<string, ModelTier>>> = {
   "small-change": {
     // Trivial work: knock plan and reviews down a tier
-    "plan/clarify": "haiku",
-    "plan/investigate": "haiku",
-    "plan/sketch": "haiku",
-    "plan/scope": "haiku",
-    "plan/ux-flow": "haiku",
-    "plan/architecture": "haiku",
-    "plan/blueprint": "haiku",
+    "plan/understand": "haiku",
+    "plan/design": "haiku",
     "plan/audit": "haiku",
     "review/security": "sonnet",
     "review/compliance": "sonnet",
   },
   "bug-fix": {
-    // Bug fixes still need opus for investigate; rest can relax
-    "plan/clarify": "sonnet",
-    "plan/sketch": "sonnet",
-    "plan/scope": "sonnet",
-    "plan/architecture": "sonnet",
-    "plan/blueprint": "sonnet",
+    // Bug fixes still need opus for understand (investigation-heavy); design/audit can relax
+    "plan/design": "sonnet",
     "plan/audit": "sonnet",
   },
   refactor: {

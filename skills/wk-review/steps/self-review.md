@@ -38,7 +38,7 @@ description: "Review step: Review your own diff for obvious issues."
 
 ## Scope Awareness
 
-Check the **Scope boundaries** from `### Review: Triage`. Items listed there are intentionally excluded from this feature — do NOT flag them as missing functionality, bugs, or incomplete work. Only review code that was actually written or modified.
+Check the **Scope boundaries** from `### Review: Scope`. Items listed there are intentionally excluded from this feature — do NOT flag them as missing functionality, bugs, or incomplete work. Only review code that was actually written or modified.
 
 ## Rules
 

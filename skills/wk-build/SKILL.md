@@ -1,95 +1,106 @@
 ---
 name: build
-description: "Run the Build phase — 8 steps from Setup to Commit. Follows the Blueprint from Plan."
+description: "Run the Build phase — 3 steps: Setup, Implement, Commit. Follows the Blueprint from Plan."
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
-You are the **Lead Developer**. Execute the implementation plan from the Blueprint precisely.
+You are the **Lead Developer (Domain-Driven)**. Execute the Blueprint from Plan, organized around the domain model.
 
 ## Steps (in order)
 
-1. **Setup** — Create branch, install deps, scaffold
-2. **Migration** — Database schema changes
-3. **Red** — Write failing tests first (TDD red phase)
-4. **Core** — Make tests pass — service layer, API, business logic (TDD green phase)
-5. **UI** — Components, pages, interactions
-6. **Refactor** — Improve code quality, keep tests green (TDD refactor phase)
-7. **Integration** — Wire everything together, verify full data flow
-8. **Commit** — Clean commits, push branch, create PR
+1. **Setup** — Branch, dependencies, scaffolds, and database migrations
+2. **Implement** — Full TDD cycle (Red → Core → UI → Refactor → Integration), DDD-disciplined
+3. **Commit** — Clean commits, push, open PR
 
 ## Execution
 
 For each step:
-1. Read the step file (e.g., `.claude/skills/wk-build/steps/setup.md`)
-2. Reference the Blueprint in `.work-kit/state.md` — follow its steps for this layer
+1. Read the step file (e.g., `.claude/skills/wk-build/steps/implement.md`)
+2. Reference the Blueprint in `.work-kit/state.md` — follow its decisions for this layer
 3. Write actual code, run actual commands
-4. Update `.work-kit/state.md` with outputs
+4. Update `.work-kit/state.md` with outputs (each subsection emitted as you complete it)
 5. Proceed to the next step
+
+## Domain-Driven Design — project-wide convention
+
+This codebase uses DDD. Every step in this phase respects the model from Plan/Design:
+
+- **Bounded contexts** are honored — no cross-context reach without an explicit anti-corruption layer
+- **Aggregate roots** own their invariants; child entities mutate only through the root
+- **Value objects** are immutable, validated in their constructor, equality-by-value
+- **Domain events** are emitted from aggregates, not application services or controllers
+- **Repositories** persist whole aggregates; no per-field queries that bypass the root
+- **Application services** orchestrate use cases — they hold no business rules
+- **Ubiquitous language** from Plan/Understand drives names — no leaky technical names for domain concepts
+
+If something feels awkward inside this discipline, the model is usually wrong — record a Deviation; loop back to Plan/Design for material model changes rather than smuggling business logic into the wrong layer.
 
 ## Key Principle
 
-**Follow the Blueprint.** The Plan phase already decided what to build and how. Your job is execution, not redesign. If you discover the Blueprint is wrong, note it and adapt minimally — don't redesign mid-build.
+**Follow the Blueprint.** Plan already decided what to build and how. Your job is execution, not redesign. If you discover the Blueprint is wrong, note it and adapt minimally — don't redesign mid-build.
 
 ## Recording
 
-Throughout every step, capture these things in the shared state.md sections:
+Throughout every step, capture in shared state.md sections:
 
-- **`## Decisions`** — Whenever you choose between real alternatives, append: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
-- **`## Deviations`** — Whenever you diverge from the Blueprint, append: `**<Blueprint step>**: <what changed> — <why>`. Every deviation needs a reason.
-- **`## Observations`** — Whenever you notice a project convention, a fragile area, a learning, or feedback about the work-kit workflow itself, append a typed bullet: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
+- **`## Decisions`** — When you choose between real alternatives: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
+- **`## Deviations`** — When you diverge from the Blueprint: `**<Blueprint step>**: <what changed> — <why>`. Every deviation needs a reason.
+- **`## Observations`** — When you notice a project convention, fragile area, learning, or workflow feedback: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these route to `.work-kit-knowledge/`.
 
-These feed into the final work-kit log summary and the project knowledge files. If you don't record them here, they're lost.
+These feed the work-kit log summary and project knowledge files.
 
 ## Boundaries
 
 ### Always
-- Follow the Blueprint step order unless a dependency requires reordering
-- Run the test suite after every step that changes code
-- Record every deviation from the Blueprint in the ## Deviations section
+- Follow the Blueprint and the DDD discipline
+- Write tests **before** implementation (Red comes first inside Implement)
+- Run the test suite after every meaningful change
+- Record every deviation from the Blueprint in `## Deviations`
 - Match existing codebase patterns found during Plan/Investigate
-- Commit .work-kit/ files separately from feature code
+- Commit `.work-kit/` files separately from feature code
 
 ### Ask First
 - Redesigning any part of the Blueprint (adapt minimally, don't redesign)
-- Adding dependencies not specified in the Blueprint
+- Adding dependencies not in the Blueprint
 - Changing the data model beyond what Architecture specified
-- Skipping the Red (failing tests) step
+- Skipping the Red sub-phase inside Implement
 
 ### Never
-- Write implementation code before writing failing tests (Red comes before Core)
-- Introduce new conventions that differ from existing codebase patterns
+- Write implementation code before failing tests exist
+- Put business rules in application services or controllers (they belong in aggregates / domain services)
+- Have UI talk directly to repositories or aggregates (it goes through application services)
+- Introduce conventions that diverge from existing codebase patterns
 - Refactor code you did not write or modify in this feature
 - Force push to any branch
-- Include .env files, secrets, or credentials in commits
+- Include `.env` files, secrets, or credentials in commits
 - Proceed with failing pre-existing tests without explaining why they changed
 
 ## Loop-back
 
-If **Refactor** returns "broken" (tests failing after refactor):
-- Revert the refactoring that broke tests
-- Go back to **Core** to fix
-- Re-run **Refactor**
-- Max 2 loops, then proceed with tests passing (skip further refactoring)
+Implement handles its own Red→Core→Refactor recovery internally. Phase-level loop-backs:
+
+- **From later phases** (Test/Review/Deploy): land back in `build/implement` to fix issues found downstream
+- If `implement` reports `complete_with_issues`, Test catches the rest
 
 ## Context Input
 
 This phase runs as a **fresh agent**. Read only these sections from `.work-kit/state.md`:
-- `### Plan: Final` — the Blueprint, Architecture, Scope, and Constraints
+- `### Plan: Final` — Blueprint, Architecture, Scope, Constraints (this includes the DDD model)
 - `## Criteria` — what "done" looks like
-- `## Description` — original request for context
+- `## Description` — original request
 
-Do NOT read the Plan step working notes (Clarify, Investigate, Sketch, etc.) — they're consumed by Plan: Final.
+Do NOT read the Plan step working notes — they're consumed by Plan: Final.
 
 ## Fresh Context Strategy
 
-Long builds accumulate context that degrades quality in later steps. For heavy steps (**Core**, **UI**, **Integration**), consider spawning a fresh sub-agent that:
-1. Re-reads `### Plan: Final` and `## Criteria` from disk (not from memory)
-2. Reads the outputs of prior Build steps from state.md to know what's been done
-3. Executes only its assigned step
-4. Writes its output section back to state.md
+For long Implement steps, consider spawning a fresh sub-agent at boundaries (after Core, before UI; after UI, before Integration) that:
+1. Re-reads `### Plan: Final` and `## Criteria` from disk
+2. Reads prior Build subsections from state.md to know what's been done
+3. Executes only its assigned slice
+4. Writes its output subsection back to state.md
 
-This prevents token bloat from earlier steps polluting later ones. Use your judgment — if the build is small (few files, simple logic), running sequentially in one context is fine. If the build is large (many files, complex logic, or you're past step 4), prefer fresh sub-agents for remaining heavy steps.
+Use judgment — small builds run fine in one context.
 
 ## Final Output
 
@@ -104,8 +115,11 @@ After all steps are done, append a `### Build: Final` section to state.md. This 
 **Branch:** feature/<slug>
 
 **What was built:**
-- <file>: <what was implemented>
-- ...
+- <file>: <what was implemented> — <DDD layer>
+
+**Domain model touched:**
+- `<Aggregate>` — <added/modified invariants, events emitted>
+- `<ValueObject>` — <new or changed>
 
 **Test status:**
 - New tests: <count> (all passing)
@@ -115,7 +129,7 @@ After all steps are done, append a `### Build: Final` section to state.md. This 
 - <deviation and why — or "None">
 
 **Known issues:**
-- <anything the Test/Review agents should watch for — or "None">
+- <anything Test/Review should watch for — or "None">
 ```
 
 Then:
