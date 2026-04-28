@@ -15,14 +15,16 @@ import { PROJECT_CONFIG_FILE } from "./constants.js";
  * Example:
  *   {
  *     "defaults": { "mode": "auto", "classification": "feature", "gated": false },
- *     "parallel": {
- *       "review": { "parallel": ["self-review", "security"], "thenSequential": "handoff" }
- *     },
  *     "workflow": {
- *       "include": ["review/security"],
- *       "exclude": ["review/performance"]
+ *       "include": ["wrap-up/knowledge"],
+ *       "exclude": ["deploy/monitor"]
  *     }
  *   }
+ *
+ * Note: Review's parallel reviewer fan-out (Quality / Efficiency / Security /
+ * Compliance) happens *inside* the review/review step via the Agent tool. It's
+ * not a framework parallel group, so `parallel.review` is no longer applicable.
+ * Test follows the same pattern (test/exercise fans out internally).
  */
 export interface ProjectParallelGroup {
   parallel: string[];

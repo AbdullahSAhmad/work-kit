@@ -102,7 +102,7 @@ ${description}
 <!-- Examples: -->
 <!--   - [risk] auth.middleware.ts breaks if SESSION_SECRET is unset. -->
 <!--   - [convention] All API errors must use createApiError() helper. -->
-<!--   - [workflow:test/e2e] The e2e step doesn't tell agents to start the dev server first. -->
+<!--   - [workflow:test/exercise] The E2E lens doesn't tell agents to start the dev server first. -->
 
 ## Deviations
 <!-- Append here whenever implementation diverges from the Blueprint -->

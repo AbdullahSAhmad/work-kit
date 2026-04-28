@@ -19,21 +19,15 @@ export const LOOPBACK_ROUTES: LoopbackRoute[] = [
     reason: "Audit found gaps — revising Design",
   },
   {
-    from: { phase: "review", step: "handoff" },
+    from: { phase: "review", step: "resolve" },
     triggerOutcome: "changes_requested",
     to: { phase: "build", step: "implement" },
     reason: "Review requested changes — looping back to Build/Implement",
   },
   {
-    from: { phase: "deploy", step: "merge" },
+    from: { phase: "deploy", step: "ship" },
     triggerOutcome: "fix_needed",
     to: { phase: "build", step: "implement" },
-    reason: "Merge blocked — fix needed in Build/Implement",
-  },
-  {
-    from: { phase: "deploy", step: "remediate" },
-    triggerOutcome: "fix_and_redeploy",
-    to: { phase: "build", step: "implement" },
-    reason: "Deployment issue — fix and redeploy from Build/Implement",
+    reason: "Ship blocked or post-deploy issue — fix in Build/Implement",
   },
 ];

@@ -12,7 +12,7 @@ You are invoked by the work-kit orchestrator (not directly by the user) when any
 ## Inputs you'll receive
 
 The orchestrator hands you:
-- `origin` — the phase/step that triggered debug (e.g. `build/implement`, `test/verify`)
+- `origin` — the phase/step that triggered debug (e.g. `build/implement`, `test/exercise`)
 - `iteration` — 1 or 2 (how many debug attempts have already happened for this origin)
 - A snapshot of the relevant state.md sections for the origin step
 

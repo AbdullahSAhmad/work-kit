@@ -57,25 +57,23 @@ export const BY_STEP: Record<string, ModelTier> = {
   "build/implement": "sonnet",
   "build/commit": "haiku",
 
-  // Test — verify is mechanical, browser/e2e/validate need judgment
-  "test/verify": "haiku",
-  "test/browser": "sonnet",
-  "test/e2e": "sonnet",
+  // Test — exercise is the Conductor (fans out 3 lens sub-agents: verify,
+  // e2e, browser); validate aggregates. Per-lens model tier is set inside
+  // exercise.md when each sub-agent is spawned (verify lens prefers haiku).
+  "test/exercise": "sonnet",
   "test/validate": "sonnet",
 
-  // Review — scope (diff classification) is cheap (haiku); security & compliance get opus; fix needs sonnet; rest sonnet
+  // Review — scope (diff classification) is cheap (haiku); review (Conductor
+  // that fans out 4 sub-agents) and resolve (fix loop + ship decision) need
+  // sonnet for synthesis. Per-lens model tier is set inside review.md when
+  // each sub-agent is spawned (security/compliance lenses prefer opus).
   "review/scope": "haiku",
-  "review/self-review": "sonnet",
-  "review/security": "opus",
-  "review/performance": "sonnet",
-  "review/compliance": "opus",
-  "review/fix": "sonnet",
-  "review/handoff": "sonnet",
+  "review/review": "sonnet",
+  "review/resolve": "sonnet",
 
-  // Deploy — mostly mechanical
-  "deploy/merge": "haiku",
-  "deploy/monitor": "haiku",
-  "deploy/remediate": "sonnet",
+  // Deploy — single Ship step running pre-flight → merge → monitor → remediate
+  // with internal recovery; needs sonnet for the rollback/fix-forward judgment.
+  "deploy/ship": "sonnet",
 
   // Wrap-up — synthesis
   "wrap-up/summary": "sonnet",
@@ -85,22 +83,18 @@ export const BY_STEP: Record<string, ModelTier> = {
 
 export const BY_CLASSIFICATION: Record<Classification, Partial<Record<string, ModelTier>>> = {
   "small-change": {
-    // Trivial work: knock plan and reviews down a tier
+    // Trivial work: knock plan down a tier. Review's Conductor (review/review)
+    // stays at sonnet — it fans out, individual lenses set their own tier.
     "plan/understand": "haiku",
     "plan/design": "haiku",
     "plan/audit": "haiku",
-    "review/security": "sonnet",
-    "review/compliance": "sonnet",
   },
   "bug-fix": {
     // Bug fixes still need opus for understand (investigation-heavy); design/audit can relax
     "plan/design": "sonnet",
     "plan/audit": "sonnet",
   },
-  refactor: {
-    // Perf review matters most for refactors — promote it
-    "review/performance": "opus",
-  },
+  refactor: {},
   feature: {},
   "large-feature": {},
 };

@@ -29,8 +29,8 @@ These are the building blocks the Triage agent picks from:
 - **Triage:** Classify  *(always runs — it picks the classification that decides everything below)*
 - **Plan:** Understand (refine + spec for features, then criteria + investigation), Design, Audit  *(Design auto-skips its UX subsection for backend-only work)*
 - **Build:** Setup, Implement, Commit  *(Setup absorbs migrations; Implement runs the full TDD cycle — Red → Core → UI → Refactor → Integration — internally and is DDD-disciplined)*
-- **Test:** Verify, E2E, Browser, Validate  *(Browser uses Chrome DevTools MCP, included for `if UI`)*
-- **Review:** Scope (classifies diff), Self-Review, Security, Performance, Compliance, Fix, Handoff
+- **Test:** Exercise (fans out 3 parallel lens sub-agents internally: Verify, E2E, Browser), Validate (criteria mapping + verdict)  *(Browser lens uses Chrome DevTools MCP and skips itself if MCP unavailable)*
+- **Review:** Scope (classifies diff, selects lenses), Review (4 parallel reviewer sub-agents: Quality, Efficiency, Security, Compliance), Resolve (fix + ship decision)
 - **Deploy:** Merge, Monitor, Remediate (optional)
 - **Wrap-up**
 
@@ -70,7 +70,7 @@ The orchestrator no longer classifies the request. The **Triage agent** does tha
 ### Step 3: User reviews the workflow
 
 5. Show `work-kit workflow` — output now includes the resolved model per step and the active policy.
-6. The user can adjust: `work-kit workflow --add review/security` or `--remove test/e2e`. Completed steps cannot be removed.
+6. The user can adjust: `work-kit workflow --add wrap-up/knowledge` or `--remove plan/audit`. Completed steps cannot be removed.
 7. **Wait for approval** — once the user approves, run the execution loop.
 
 ### Workflow skip matrix (informational — Triage applies this automatically)
@@ -84,24 +84,20 @@ The orchestrator no longer classifies the request. The **Triage agent** does tha
 | **Build: Setup**       | skip    | skip         | skip     | YES     | YES           |
 | **Build: Implement**   | YES     | YES          | YES      | YES     | YES           |
 | **Build: Commit**      | YES     | YES          | YES      | YES     | YES           |
-| **Test: Verify**       | YES     | YES          | YES      | YES     | YES           |
-| **Test: E2E**          | skip    | skip         | skip     | if UI   | YES           |
-| **Test: Browser**      | skip    | skip         | skip     | if UI   | if UI         |
+| **Test: Exercise**     | YES     | YES          | YES      | YES     | YES           |
 | **Test: Validate**     | YES     | skip         | skip     | YES     | YES           |
 | **Review: Scope**      | YES     | YES          | YES      | YES     | YES           |
-| **Review: Self-Review**| YES     | YES          | YES      | YES     | YES           |
-| **Review: Security**   | skip    | skip         | skip     | YES     | YES           |
-| **Review: Performance**| skip    | skip         | YES      | skip    | YES           |
-| **Review: Compliance** | skip    | skip         | skip     | YES     | YES           |
-| **Review: Fix**        | YES     | YES          | YES      | YES     | YES           |
-| **Review: Handoff**    | YES     | YES          | YES      | YES     | YES           |
+| **Review: Review**     | YES     | YES          | YES      | YES     | YES           |
+| **Review: Resolve**    | YES     | YES          | YES      | YES     | YES           |
 | **Deploy: Merge**      | YES     | YES          | YES      | YES     | YES           |
 | **Wrap-up**            | YES     | YES          | YES      | YES     | YES           |
 
 The table is a guide. The user can adjust after Triage:
-- A bug fix that touches auth → add Security review
-- A refactor that changes DB queries → enable `Build: Setup` (it handles migrations) and add Performance review
+- A refactor that changes DB queries → enable `Build: Setup` (it handles migrations)
 - A small-change that affects public API → add `Plan: Design` (so Architecture + Blueprint get produced)
+- A risky change → add `Plan: Audit` to catch gaps before Build
+
+(Review's lens selection — Quality / Efficiency / Security / Compliance — is decided by `review/scope` based on the diff. Test's lens selection — Verify / E2E / Browser — is decided by `test/exercise` based on classification + tooling availability. Neither is in the workflow matrix.)
 
 **Deploy and Wrap-up are MANDATORY and cannot be removed from any workflow.** Deploy handles syncing with the default branch, creating a PR, and merging it — fully autonomous, no user confirmation needed. Wrap-up archives the work history so past work is discoverable in future sessions. Always spawn real agents for both — never just mark them complete.
 
@@ -150,17 +146,20 @@ Orchestrator (main agent — you)
 │   └── writes: ### Build: Final
 │
 ├── Agent: Test (runs only Test steps from Workflow)
-│   ├── reads: ### Build: Final, ### Plan: Final, ## Criteria
-│   ├── Verify + E2E as parallel sub-agents (if both in workflow)
-│   ├── then Validate (if in workflow)
+│   ├── reads: ### Build: Final, ### Plan: Final, ### Triage: Final, ## Criteria
+│   ├── Exercise (sequential step that internally fans out up to 3 parallel
+│   │   lens sub-agents via Agent tool: Verify always; E2E if Playwright +
+│   │   classification opts in; Browser if MCP available + UI surface)
+│   ├── then Validate (if in workflow) — aggregates lens outputs into ### Test: Final
 │   └── writes: ### Test: Final
 │
 ├── Agent: Review (runs only Review steps from Workflow)
 │   ├── reads: ### Plan: Final, ### Build: Final, ### Test: Final, ## Criteria
-│   ├── Scope (sequential — classifies diff, selects reviewers, extracts scope boundaries)
-│   ├── Self-Review, Security, Performance, Compliance as parallel sub-agents (whichever Scope selects)
-│   ├── then Fix (reads all findings, aggressively fixes)
-│   ├── then Handoff
+│   ├── Scope (sequential — classifies diff, selects lenses, extracts scope boundaries)
+│   ├── Review (sequential step that internally fans out 4 parallel reviewer
+│   │   sub-agents via Agent tool: Quality, Efficiency, Security, Compliance —
+│   │   whichever Scope selected; report-only, no fixing)
+│   ├── then Resolve (aggregates findings, fixes aggressively, makes ship/no-ship decision)
 │   └── writes: ### Review: Final
 │
 ├── Agent: Deploy (if in workflow)
@@ -178,16 +177,11 @@ Orchestrator (main agent — you)
 |-------|-----------|----------------------------|
 | Plan | Single agent | `## Description`, `## Criteria`, codebase |
 | Build | Single agent | `### Plan: Final`, `## Criteria` |
-| Test: Verify | Sub-agent (parallel) | `### Build: Final`, `## Criteria` |
-| Test: E2E | Sub-agent (parallel) | `### Build: Final`, `### Plan: Final` |
-| Test: Validate | Sequential after above | `### Test: Verify`, `### Test: E2E`, `## Criteria` |
+| Test: Exercise | Sequential (fans out up to 3 parallel sub-agents internally) | `### Build: Final`, `### Plan: Final`, `### Plan: UX Flow`, `## Criteria` |
+| Test: Validate | Sequential after Exercise | `### Test: Roundup`, all lens outputs (`Verify`, `E2E`, `Browser`), `## Criteria` |
 | Review: Scope | Sequential | `### Plan: Final`, `### Build: Final`, git diff --stat |
-| Review: Self-Review | Sub-agent (parallel) | `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Security | Sub-agent (parallel) | `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Performance | Sub-agent (parallel) | `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Compliance | Sub-agent (parallel) | `### Plan: Final`, `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Fix | Sequential | All `### Review:` sections, git diff |
-| Review: Handoff | Sequential | All `### Review:` sections, `### Review: Fix`, `### Test: Final`, `## Criteria` |
+| Review: Review | Sequential (fans out 4 parallel sub-agents internally) | `### Plan: Final`, `### Build: Final`, `### Review: Scope`, `## Criteria`, git diff |
+| Review: Resolve | Sequential | `### Review: Scope`, `### Review: Roundup`, all lens outputs (`Quality`, `Efficiency`, `Security`, `Compliance`), `### Test: Final`, `## Criteria`, git diff |
 | Deploy | Single agent | `### Review: Final`, `### Build: Final` |
 | Wrap-up | Single agent | Full state.md |
 

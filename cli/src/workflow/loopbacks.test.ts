@@ -15,8 +15,8 @@ describe("checkLoopback", () => {
     assert.equal(result, null);
   });
 
-  it("review/handoff with 'changes_requested' loops back to build/implement", () => {
-    const result = checkLoopback("review", "handoff", "changes_requested");
+  it("review/resolve with 'changes_requested' loops back to build/implement", () => {
+    const result = checkLoopback("review", "resolve", "changes_requested");
     assert.notEqual(result, null);
     assert.deepStrictEqual(result!.to, { phase: "build", step: "implement" });
   });

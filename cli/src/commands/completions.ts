@@ -11,7 +11,7 @@ _work_kit_completions() {
   local cmd="\${COMP_WORDS[1]}"
   case "\$cmd" in
     complete|context|validate)
-      local phases="triage/classify plan/understand plan/design plan/audit build/setup build/implement build/commit test/verify test/e2e test/validate review/scope review/self-review review/security review/performance review/compliance review/fix review/handoff deploy/merge deploy/monitor deploy/remediate"
+      local phases="triage/classify plan/understand plan/design plan/audit build/setup build/implement build/commit test/exercise test/validate review/scope review/review review/resolve deploy/ship"
       COMPREPLY=(\$(compgen -W "\$phases" -- "\$cur"))
       ;;
     init)
@@ -49,10 +49,9 @@ _work_kit() {
     'triage/classify'
     'plan/understand' 'plan/design' 'plan/audit'
     'build/setup' 'build/implement' 'build/commit'
-    'test/verify' 'test/e2e' 'test/validate'
-    'review/scope' 'review/self-review' 'review/security' 'review/performance'
-    'review/compliance' 'review/fix' 'review/handoff'
-    'deploy/merge' 'deploy/monitor' 'deploy/remediate'
+    'test/exercise' 'test/validate'
+    'review/scope' 'review/review' 'review/resolve'
+    'deploy/ship'
   )
 
   init_opts=(
@@ -104,7 +103,7 @@ complete -c work-kit -n '__fish_use_subcommand' -a 'completions' -d 'Output shel
 
 # Phase completions for complete, context, validate
 set -l phase_cmds 'complete context validate'
-set -l phases 'triage/classify' 'plan/understand' 'plan/design' 'plan/audit' 'build/setup' 'build/implement' 'build/commit' 'test/verify' 'test/e2e' 'test/validate' 'review/scope' 'review/self-review' 'review/security' 'review/performance' 'review/compliance' 'review/fix' 'review/handoff' 'deploy/merge' 'deploy/monitor' 'deploy/remediate'
+set -l phases 'triage/classify' 'plan/understand' 'plan/design' 'plan/audit' 'build/setup' 'build/implement' 'build/commit' 'test/exercise' 'test/validate' 'review/scope' 'review/review' 'review/resolve' 'deploy/ship'
 for phase in \$phases
   complete -c work-kit -n "__fish_seen_subcommand_from \$phase_cmds" -a "\$phase"
 end

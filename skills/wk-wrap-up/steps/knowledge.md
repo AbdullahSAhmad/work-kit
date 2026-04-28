@@ -33,7 +33,7 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
    work-kit learn --type risk --text "src/payment/webhook.ts has no integration test coverage for retries."
    work-kit learn --type convention --text "All new API endpoints must register a Zod schema in src/schemas/."
    work-kit learn --type decision --text "**Browser driver**: chose Chrome DevTools MCP over Playwright — agentic, no spec files to maintain."
-   work-kit learn --type workflow --text "The wk-test/e2e step doesn't tell agents to start the dev server before running Playwright."
+   work-kit learn --type workflow --text "The wk-test/exercise step's E2E lens doesn't tell agents to start the dev server before running Playwright."
    ```
 
    Each call appends one entry to the appropriate `.md` file under a lockfile, with secret redaction applied automatically.

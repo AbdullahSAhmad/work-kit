@@ -61,12 +61,12 @@ describe("loadProjectConfig", () => {
       path.join(tmp, PROJECT_CONFIG_FILE),
       JSON.stringify({
         parallel: {
-          test: { parallel: ["verify"], thenSequential: "validate" },
+          test: { parallel: ["exercise"], thenSequential: "validate" },
         },
       }),
     );
     const config = loadProjectConfig(tmp);
-    assert.deepStrictEqual(config.parallel?.test, { parallel: ["verify"], thenSequential: "validate" });
+    assert.deepStrictEqual(config.parallel?.test, { parallel: ["exercise"], thenSequential: "validate" });
   });
 
   it("filters invalid step names from parallel overrides", () => {
@@ -75,11 +75,11 @@ describe("loadProjectConfig", () => {
     fs.writeFileSync(
       path.join(tmp, PROJECT_CONFIG_FILE),
       JSON.stringify({
-        parallel: { test: { parallel: ["verify", "made-up"] } },
+        parallel: { test: { parallel: ["exercise", "made-up"] } },
       }),
     );
     const config = loadProjectConfig(tmp);
-    assert.deepStrictEqual(config.parallel?.test?.parallel, ["verify"]);
+    assert.deepStrictEqual(config.parallel?.test?.parallel, ["exercise"]);
   });
 
   it("validates workflow include/exclude refs", () => {
@@ -88,12 +88,12 @@ describe("loadProjectConfig", () => {
     fs.writeFileSync(
       path.join(tmp, PROJECT_CONFIG_FILE),
       JSON.stringify({
-        workflow: { include: ["review/security", "bogus/step"], exclude: ["test/e2e"] },
+        workflow: { include: ["wrap-up/knowledge", "bogus/step"], exclude: ["plan/audit"] },
       }),
     );
     const config = loadProjectConfig(tmp);
-    assert.deepStrictEqual(config.workflow?.include, ["review/security"]);
-    assert.deepStrictEqual(config.workflow?.exclude, ["test/e2e"]);
+    assert.deepStrictEqual(config.workflow?.include, ["wrap-up/knowledge"]);
+    assert.deepStrictEqual(config.workflow?.exclude, ["plan/audit"]);
   });
 
   it("survives invalid JSON", () => {
@@ -116,12 +116,13 @@ describe("resolveParallelGroups", () => {
     fs.writeFileSync(
       path.join(tmp, PROJECT_CONFIG_FILE),
       JSON.stringify({
-        parallel: { test: { parallel: ["verify"], thenSequential: "validate" } },
+        parallel: { test: { parallel: ["exercise"], thenSequential: "validate" } },
       }),
     );
     const groups = resolveParallelGroups(tmp);
-    assert.deepStrictEqual(groups.test, { parallel: ["verify"], thenSequential: "validate" });
-    // review (not overridden) keeps default
-    assert.deepStrictEqual(groups.review, DEFAULT_PARALLEL_GROUPS.review);
+    assert.deepStrictEqual(groups.test, { parallel: ["exercise"], thenSequential: "validate" });
+    // No default groups remain (test/review fan out internally now), so merging
+    // a single override yields exactly that one group.
+    assert.deepStrictEqual(Object.keys(groups), ["test"]);
   });
 });

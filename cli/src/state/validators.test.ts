@@ -77,25 +77,25 @@ describe("validatePhasePrerequisites", () => {
     assert.equal(result.valid, true);
   });
 
-  it("deploy with review complete but handoff not approved — invalid", () => {
+  it("deploy with review complete but resolve not approved — invalid", () => {
     const state = makeState();
     completePhase(state, "plan");
     completePhase(state, "build");
     completePhase(state, "test");
     completePhase(state, "review");
-    // handoff completed but without "approved" outcome
-    state.phases.review.steps.handoff.outcome = "blocked";
+    // resolve completed but without "approved" outcome
+    state.phases.review.steps.resolve.outcome = "blocked";
     const result = validatePhasePrerequisites(state, "deploy");
     assert.equal(result.valid, false);
   });
 
-  it("deploy with review complete and handoff approved — valid", () => {
+  it("deploy with review complete and resolve approved — valid", () => {
     const state = makeState();
     completePhase(state, "plan");
     completePhase(state, "build");
     completePhase(state, "test");
     completePhase(state, "review");
-    state.phases.review.steps.handoff.outcome = "approved";
+    state.phases.review.steps.resolve.outcome = "approved";
     const result = validatePhasePrerequisites(state, "deploy");
     assert.equal(result.valid, true);
   });

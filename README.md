@@ -1,6 +1,6 @@
 # work-kit
 
-Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 23 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files. **DDD-disciplined** end-to-end (Plan models the domain; Build implements it).
+Structured development workflow for [Claude Code](https://claude.com/claude-code). Two modes, 7 phases, 13 steps, plus auto-debug recovery — orchestrated by a TypeScript CLI with reusable skill files. **DDD-disciplined** end-to-end (Plan models the domain; Build implements it).
 
 ## What's new
 
@@ -10,7 +10,7 @@ Structured development workflow for [Claude Code](https://claude.com/claude-code
 - **Build collapsed to 3 steps** — Setup (branch + deps + migrations), Implement (full TDD cycle internally: Red → Core → UI → Refactor → Integration), Commit.
 - **Plan collapsed to 3 steps** — Understand (refine + spec for features, then criteria + investigation), Design, Audit.
 - **wk-debug** triage skill auto-fires when any step reports `needs_debug`, then the originating step retries (max 2 iterations). Not user-invocable.
-- **`test/browser`** drives the running app via Chrome DevTools MCP. Skips gracefully if the MCP isn't installed.
+- **Test collapsed to 2 steps** — Exercise (fans out 3 parallel lens sub-agents internally: Verify, E2E, Browser) and Validate (criteria mapping + verdict). Browser lens drives the running app via Chrome DevTools MCP and skips gracefully if the MCP isn't installed.
 - **Decisions** matching `**<context>**: chose X over Y — <why>` auto-graduate into `.work-kit-knowledge/decisions.md` at wrap-up.
 
 ## Installation
@@ -87,9 +87,9 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 | **Triage** | Classify | Single (always — picks the work class) |
 | **Plan** | Understand (refine + spec + criteria + investigate), Design, Audit | Single (DDD-disciplined) |
 | **Build** | Setup, Implement, Commit | Single (Implement runs the full TDD cycle internally, DDD-disciplined) |
-| **Test** | Verify, E2E, Browser (parallel) → Validate | Verify + E2E + Browser parallel, then Validate |
-| **Review** | Scope, Self-Review, Security, Performance, Compliance, Fix, Handoff | Scope → parallel reviewers → Fix → Handoff |
-| **Deploy** | Merge, Monitor, Remediate | Single (optional) |
+| **Test** | Exercise, Validate | Exercise (fans out 3 parallel lens sub-agents internally: Verify, E2E, Browser) → Validate (criteria mapping + verdict) |
+| **Review** | Scope, Review, Resolve | Scope → Review (fans out 4 parallel reviewer sub-agents internally: Quality, Efficiency, Security, Compliance) → Resolve (fix + ship decision) |
+| **Deploy** | Ship | Single (optional — runs pre-flight, merge, monitor, remediate as one autonomous flow) |
 | **Wrap-up** | Summary, Knowledge | Single |
 
 ## Architecture
@@ -111,8 +111,8 @@ All writes are atomic to prevent state corruption.
 
 ### Parallel agents
 
-- **Test phase**: Verify, E2E, and Browser run in parallel, then Validate runs sequentially
-- **Review phase**: Triage classifies the diff and selects reviewers, then selected reviewers run in parallel, then Fix aggressively resolves findings, then Handoff makes the ship decision
+- **Test phase**: Exercise fans out 3 parallel lens sub-agents (Verify, E2E, Browser) using the Agent tool, then Validate runs sequentially to map criteria and produce the verdict
+- **Review phase**: Scope classifies the diff, then Review fans out 4 parallel reviewer sub-agents (Quality, Efficiency, Security, Compliance) using the Agent tool, then Resolve aggregates findings, fixes aggressively, and makes the ship decision
 
 ### Loop-back routing
 
@@ -159,11 +159,11 @@ work-kit/
     wk-build/SKILL.md       # Build phase runner
     wk-build/steps/         # 3 step files: setup, implement, commit
     wk-test/SKILL.md        # Test phase runner
-    wk-test/steps/          # 4 step files: verify, e2e, browser, validate
+    wk-test/steps/          # 2 step files: exercise (3 parallel lens sub-agents internally), validate
     wk-review/SKILL.md      # Review phase runner
-    wk-review/steps/        # 7 step files
+    wk-review/steps/        # 3 step files: scope, review (4 parallel lens sub-agents internally), resolve
     wk-deploy/SKILL.md      # Deploy phase runner
-    wk-deploy/steps/        # 3 step files: merge, monitor, remediate
+    wk-deploy/steps/        # 1 step file: ship (pre-flight + merge + monitor + remediate)
     wk-wrap-up/SKILL.md     # Wrap-up: summary + knowledge harvest
     wk-wrap-up/steps/       # 2 step files: summary, knowledge
     wk-debug/SKILL.md       # Auto-debug triage (not user-invocable)

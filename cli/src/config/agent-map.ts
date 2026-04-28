@@ -40,31 +40,34 @@ export const STEP_CONTEXT: Record<string, AgentContext> = {
   // Triage steps
   "triage/classify": { sections: ["## Description"] },
 
-  // Test steps
-  "test/verify": { sections: ["### Build: Final", "## Criteria"] },
-  "test/browser": { sections: ["### Build: Final", "## Criteria", "### Plan: UX Flow"] },
-  "test/e2e": { sections: ["### Build: Final", "### Plan: Final"] },
-  "test/validate": { sections: ["### Test: Verify", "### Test: Browser", "### Test: E2E", "## Criteria"] },
+  // Test steps — test/exercise is the Conductor: it reads Build/Plan context
+  // and uses the Agent tool to fan out 3 parallel lens sub-agents (Verify,
+  // E2E, Browser). Validate aggregates the lens outputs against criteria and
+  // produces the Test: Final verdict.
+  "test/exercise": {
+    sections: ["### Build: Final", "### Plan: Final", "### Plan: UX Flow", "## Criteria"],
+  },
+  "test/validate": {
+    sections: ["### Test: Verify", "### Test: E2E", "### Test: Browser", "## Criteria"],
+  },
 
-  // Review steps
+  // Review steps — review/review is the Conductor: it reads scope + all
+  // upstream context and uses Agent tool to fan out 4 parallel reviewer
+  // sub-agents (Quality, Efficiency, Security, Compliance). Resolve reads
+  // every lens output plus test status to fix and decide ship/no-ship.
   "review/scope": { sections: ["### Plan: Final", "### Build: Final"], needsGitDiff: true },
-  "review/self-review": { sections: ["### Build: Final", "### Review: Scope"], needsGitDiff: true },
-  "review/security": { sections: ["### Build: Final", "### Review: Scope"], needsGitDiff: true },
-  "review/performance": { sections: ["### Build: Final", "### Review: Scope"], needsGitDiff: true },
-  "review/compliance": { sections: ["### Plan: Final", "### Build: Final", "### Review: Scope"], needsGitDiff: true },
-  "review/fix": {
-    sections: [
-      "### Review: Self-Review", "### Review: Security",
-      "### Review: Performance", "### Review: Compliance",
-    ],
+  "review/review": {
+    sections: ["### Plan: Final", "### Build: Final", "### Review: Scope", "## Criteria"],
     needsGitDiff: true,
   },
-  "review/handoff": {
+  "review/resolve": {
     sections: [
-      "### Review: Self-Review", "### Review: Security",
-      "### Review: Performance", "### Review: Compliance",
-      "### Review: Fix", "### Test: Final", "## Criteria",
+      "### Review: Scope", "### Review: Roundup",
+      "### Review: Quality", "### Review: Efficiency",
+      "### Review: Security", "### Review: Compliance",
+      "### Test: Final", "## Criteria",
     ],
+    needsGitDiff: true,
   },
 };
 

@@ -34,9 +34,9 @@ You are resuming a work-kit session. The user typically runs Claude Code from th
 2. **Show the list to the user.** Format it as a numbered list with: slug, status, current phase/step, **last updated time** (humanized from `lastUpdatedAgoMs`), and branch. The last-updated column is critical — it lets the user spot a session that was "closed by mistake" (high age + `in-progress` = likely a crashed terminal). Example:
    ```
    Found 3 resumable sessions (most recent first):
-     1. fix-csv-export        in-progress  (test/e2e,        updated 30s ago)   ← still running elsewhere?
-     2. item-count-badge      paused       (build/implement, updated 2h ago)    feat/item-count-badge
-     3. dark-mode-toggle      in-progress  (plan/clarify,    updated 3d ago)    ← likely abandoned
+     1. fix-csv-export        in-progress  (test/exercise,    updated 30s ago)   ← still running elsewhere?
+     2. item-count-badge      paused       (build/implement,  updated 2h ago)    feat/item-count-badge
+     3. dark-mode-toggle      in-progress  (plan/understand,  updated 3d ago)    ← likely abandoned
    Which one do you want to resume? (number or slug)
    ```
    When you see an `in-progress` session with a recent `lastUpdatedAgoMs` (< a few minutes), warn the user that another Claude instance may still be working on it. When you see one with a large age, hint that it was probably closed without pausing.

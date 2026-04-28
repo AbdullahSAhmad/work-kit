@@ -40,7 +40,8 @@ describe("resolveModel — defaults", () => {
     const state = fakeState({ worktreeRoot: tmp });
     assert.equal(resolveModel(state, "plan", "understand"), "opus");
     assert.equal(resolveModel(state, "build", "commit"), "haiku");
-    assert.equal(resolveModel(state, "review", "security"), "opus");
+    assert.equal(resolveModel(state, "review", "scope"), "haiku");
+    assert.equal(resolveModel(state, "review", "review"), "sonnet");
   });
 
   it("falls back to phase default for unknown step", () => {
@@ -58,7 +59,7 @@ describe("resolveModel — session policy", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "opus" });
     assert.equal(resolveModel(state, "build", "commit"), "opus");
-    assert.equal(resolveModel(state, "deploy", "monitor"), "opus");
+    assert.equal(resolveModel(state, "deploy", "ship"), "opus");
     assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 
@@ -66,7 +67,7 @@ describe("resolveModel — session policy", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "haiku" });
     assert.equal(resolveModel(state, "plan", "understand"), "haiku");
-    assert.equal(resolveModel(state, "review", "security"), "haiku");
+    assert.equal(resolveModel(state, "review", "review"), "haiku");
   });
 
   it("policy=inherit returns undefined so no model is passed", () => {
@@ -74,7 +75,7 @@ describe("resolveModel — session policy", () => {
     const state = fakeState({ worktreeRoot: tmp, policy: "inherit" });
     assert.equal(resolveModel(state, "plan", "understand"), undefined);
     assert.equal(resolveModel(state, "build", "core"), undefined);
-    assert.equal(resolveModel(state, "deploy", "merge"), undefined);
+    assert.equal(resolveModel(state, "deploy", "ship"), undefined);
   });
 
   it("policy=auto is equivalent to omitting it", () => {
@@ -110,14 +111,16 @@ describe("resolveModel — classification", () => {
     assert.equal(resolveModel(state, "plan", "design"), "sonnet");
   });
 
-  it("refactor promotes review/performance to opus", () => {
+  it("refactor uses default review tiers (no classification override)", () => {
     const tmp = makeTmpDir(); tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "refactor",
       mode: "auto-kit",
     });
-    assert.equal(resolveModel(state, "review", "performance"), "opus");
+    // No classification override exists for refactor; review/review falls back to its step default.
+    assert.equal(resolveModel(state, "review", "review"), "sonnet");
+    assert.equal(resolveModel(state, "review", "scope"), "haiku");
   });
 
   it("classification overrides are ignored in full-kit mode", () => {

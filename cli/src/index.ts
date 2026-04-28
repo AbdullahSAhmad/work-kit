@@ -160,7 +160,7 @@ program
 program
   .command("loopback")
   .description("Register a loop-back transition")
-  .requiredOption("--from <source>", "Source phase/step (e.g., review/handoff)")
+  .requiredOption("--from <source>", "Source phase/step (e.g., review/resolve)")
   .requiredOption("--to <target>", "Target phase/step (e.g., build/implement)")
   .requiredOption("--reason <text>", "Reason for loop-back")
   .option("--worktree-root <path>", "Override worktree root")
@@ -184,8 +184,8 @@ program
 program
   .command("workflow")
   .description("Manage auto-kit dynamic workflow")
-  .option("--add <step>", "Add a step (e.g., review/security)")
-  .option("--remove <step>", "Remove a step (e.g., test/e2e)")
+  .option("--add <step>", "Add a step (e.g., wrap-up/knowledge)")
+  .option("--remove <step>", "Remove a step (e.g., test/validate)")
   .option("--worktree-root <path>", "Override worktree root")
   .action((opts) => {
     try {

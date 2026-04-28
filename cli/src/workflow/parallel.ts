@@ -14,19 +14,10 @@ export interface ParallelGroup {
  * these — the defaults reflect the canonical work-kit pipeline.
  */
 export const DEFAULT_PARALLEL_GROUPS: Record<string, ParallelGroup> = {
-  test: {
-    // verify (test suite), e2e (Playwright/etc), and browser (Chrome DevTools
-    // MCP) all run as independent observations. validate consolidates them.
-    // browser is auto-skipped on non-UI classifications, so the parallel set
-    // shrinks naturally. browser.md is responsible for graceful behavior if
-    // the dev server is shared with e2e.
-    parallel: ["verify", "e2e", "browser"],
-    thenSequential: "validate",
-  },
-  review: {
-    parallel: ["self-review", "security", "performance", "compliance"],
-    thenSequential: "fix",
-  },
+  // Both Test and Review fan out *inside* a single step, not at the framework
+  // level. The Conductor (test/exercise, review/review) uses the Agent tool
+  // to spawn lens sub-agents in a single message — mirrors the simplify
+  // skill. No framework parallel group needed for either phase.
 };
 
 /**

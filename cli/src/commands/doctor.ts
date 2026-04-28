@@ -50,8 +50,8 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
     checks.push({ name: "skill:phases", status: "fail", message: `${phasesMissing} phase skill(s) missing from ${skillsDir}` });
   }
 
-  // 3b. Chrome DevTools MCP availability (used by test/browser).
-  // Warn-only: if missing, the browser step skips itself but the rest of the
+  // 3b. Chrome DevTools MCP availability (used by the browser lens of test/exercise).
+  // Warn-only: if missing, the browser lens skips itself but the rest of the
   // pipeline runs unaffected.
   const cdpMcpAvailable = detectChromeDevtoolsMcp();
   if (cdpMcpAvailable === "yes") {
@@ -60,13 +60,13 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
     checks.push({
       name: "mcp:chrome-devtools",
       status: "warn",
-      message: "Chrome DevTools MCP could not be detected. The test/browser step will be skipped if invoked.",
+      message: "Chrome DevTools MCP could not be detected. The browser lens of test/exercise will be skipped if invoked.",
     });
   } else {
     checks.push({
       name: "mcp:chrome-devtools",
       status: "warn",
-      message: "Chrome DevTools MCP not configured. test/browser will skip — install the MCP server to enable live browser verification.",
+      message: "Chrome DevTools MCP not configured. test/exercise's browser lens will skip — install the MCP server to enable live browser verification.",
     });
   }
 

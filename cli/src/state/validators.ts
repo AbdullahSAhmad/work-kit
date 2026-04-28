@@ -48,18 +48,18 @@ export function validatePhasePrerequisites(state: WorkKitState, phase: PhaseName
         missingPrerequisite: "review",
       };
     }
-    const handoff = reviewState.steps["handoff"];
-    if (!handoff) {
+    const resolve = reviewState.steps["resolve"];
+    if (!resolve) {
       return {
         valid: false,
-        message: `deploy requires review/handoff to exist and be approved. Handoff step not found.`,
+        message: `deploy requires review/resolve to exist and be approved. Resolve step not found.`,
         missingPrerequisite: "review",
       };
     }
-    if (handoff.outcome !== "approved") {
+    if (resolve.outcome !== "approved") {
       return {
         valid: false,
-        message: `deploy requires review/handoff outcome to be "approved". Current: ${handoff.outcome || "none"}`,
+        message: `deploy requires review/resolve outcome to be "approved". Current: ${resolve.outcome || "none"}`,
         missingPrerequisite: "review",
       };
     }

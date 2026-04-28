@@ -27,12 +27,12 @@ Do not proceed until `doctor` reports all checks passed.
 1. **Triage** (1 step) — Classify the request (bug-fix / small-change / refactor / feature / large-feature)
 2. **Plan** (3 steps) — Understand (refine + spec for features, then criteria + investigation) → Design → Audit
 3. **Build** (3 steps) — Setup → Implement → Commit
-4. **Test** (4 steps) — Verify, E2E, Browser (parallel) → Validate
-5. **Review** (7 steps) — Scope (classify diff) → Self-Review, Security, Performance, Compliance (parallel) → Fix → Handoff
+4. **Test** (2 steps) — Exercise (fans out 3 parallel lens sub-agents internally: Verify, E2E, Browser) → Validate (criteria mapping + verdict)
+5. **Review** (3 steps) — Scope (classify diff, select lenses) → Review (4 parallel reviewer sub-agents: Quality, Efficiency, Security, Compliance) → Resolve (fix + ship decision)
 6. **Deploy** (3 steps) — Merge → Monitor → Remediate
 7. **Wrap-up** — Synthesize work-kit summary, clean up worktree
 
-**Browser test step** uses the Chrome DevTools MCP server. If it isn't installed, `work-kit doctor` warns but does not block — the browser step is skipped gracefully.
+**Browser lens of `test/exercise`** uses the Chrome DevTools MCP server. If it isn't installed, `work-kit doctor` warns but does not block — the browser lens skips itself gracefully and the rest of Exercise still runs.
 
 **Debug recovery:** any step can report outcome `needs_debug` when it hits an error it can't resolve. The CLI will automatically spawn the **wk-debug** skill (5-step triage), then the originating step retries. Max 2 debug attempts per step before surfacing to you.
 
@@ -129,22 +129,26 @@ Orchestrator (main agent — you)
 │   ├── runs: Setup → Implement → Commit
 │   └── writes: ### Build: Final (PR, files changed, test status, deviations)
 │
-├── Agent: Test (orchestrates 2 parallel + 1 sequential)
-│   ├── reads: ### Build: Final, ### Plan: Final, ## Criteria
-│   ├── Sub-agent: Verify  ──┐ (parallel)
-│   ├── Sub-agent: E2E     ──┘
-│   ├── then: Validate (after both complete)
+├── Agent: Test (Exercise → Validate)
+│   ├── reads: ### Build: Final, ### Plan: Final, ### Triage: Final, ## Criteria
+│   ├── Exercise (sequential step that fans out up to 3 parallel lens sub-agents
+│   │   via Agent tool, mirroring `simplify`'s pattern):
+│   │     Sub-agent: Verify   ──┐ (always)
+│   │     Sub-agent: E2E*     ──┤ (* if Playwright installed + classification opts in)
+│   │     Sub-agent: Browser* ──┘ (* if Chrome DevTools MCP available + UI surface)
+│   ├── then: Validate (aggregates lens outputs, maps criteria to evidence, writes verdict)
 │   └── writes: ### Test: Final (results, criteria status, confidence)
 │
-├── Agent: Review (Scope → parallel reviewers → Fix → Handoff)
+├── Agent: Review (Scope → Review → Resolve)
 │   ├── reads: ### Plan: Final, ### Build: Final, ### Test: Final, ## Criteria
-│   ├── Scope (sequential — classifies diff, selects reviewers, extracts scope boundaries)
-│   ├── Sub-agent: Self-Review  ──┐
-│   ├── Sub-agent: Security*    ──┤ (parallel, * = if Scope selected)
-│   ├── Sub-agent: Performance* ──┤
-│   ├── Sub-agent: Compliance*  ──┘
-│   ├── then: Fix (reads all findings, aggressively fixes everything fixable)
-│   ├── then: Handoff (reads post-fix state → ship decision)
+│   ├── Scope (sequential — classifies diff, selects lenses, extracts scope boundaries)
+│   ├── Review (sequential step that fans out 4 parallel reviewer sub-agents
+│   │   via Agent tool, mirroring `simplify`'s pattern):
+│   │     Sub-agent: Quality     ──┐ (always)
+│   │     Sub-agent: Efficiency*  ──┤ (* = if Scope selected)
+│   │     Sub-agent: Security*    ──┤
+│   │     Sub-agent: Compliance*  ──┘
+│   ├── then: Resolve (aggregates findings, fixes aggressively, makes ship/no-ship decision)
 │   └── writes: ### Review: Final (decision, issues, concerns)
 │
 ├── Agent: Deploy (single agent, all 3 steps)
@@ -164,16 +168,11 @@ Orchestrator (main agent — you)
 | Triage | Single agent | `haiku` | `## Description` |
 | Plan | Single agent | `auto` | `## Description`, `### Triage: Final`, `## Criteria`, codebase |
 | Build | Single agent | `auto` | `### Plan: Final`, `## Criteria` |
-| Test: Verify | Sub-agent | `auto` | `### Build: Final`, `## Criteria` |
-| Test: E2E | Sub-agent | `auto` | `### Build: Final`, `### Plan: Final` |
-| Test: Validate | Single agent | `auto` | `### Test: Verify`, `### Test: E2E`, `## Criteria` |
-| Review: Scope | Sequential | `auto` | `### Plan: Final`, `### Build: Final`, git diff --stat |
-| Review: Self-Review | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Security | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Performance | Sub-agent (parallel) | `auto` | `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Compliance | Sub-agent (parallel) | `auto` | `### Plan: Final`, `### Build: Final`, `### Review: Scope`, git diff |
-| Review: Fix | Sequential | `auto` | All `### Review:` sections, git diff |
-| Review: Handoff | Sequential | `auto` | All `### Review:` sections, `### Review: Fix`, `### Test: Final`, `## Criteria` |
+| Test: Exercise | Sequential (fans out up to 3 parallel sub-agents internally) | `auto` | `### Build: Final`, `### Plan: Final`, `### Plan: UX Flow`, `## Criteria` |
+| Test: Validate | Sequential | `auto` | `### Test: Roundup`, all lens outputs (`Verify`, `E2E`, `Browser`), `## Criteria` |
+| Review: Scope | Sequential | `haiku` | `### Plan: Final`, `### Build: Final`, git diff --stat |
+| Review: Review | Sequential (fans out 4 parallel sub-agents internally) | `auto` | `### Plan: Final`, `### Build: Final`, `### Review: Scope`, `## Criteria`, git diff |
+| Review: Resolve | Sequential | `auto` | `### Review: Scope`, `### Review: Roundup`, all lens outputs (`Quality`, `Efficiency`, `Security`, `Compliance`), `### Test: Final`, `## Criteria`, git diff |
 | Deploy | Single agent | `auto` | `### Review: Final`, `### Build: Final` |
 | Wrap-up | Single agent | `auto` | Full state.md |
 
@@ -192,8 +191,11 @@ state.md grows like this:
   ### Build: Core          ← working notes (inside Implement step)
   ...
   ### Build: Final         ← ★ Test agent reads this
-  ### Test: Verify         ← working notes
-  ### Test: E2E            ← working notes
+  ### Test: Verify         ← working notes (Exercise lens)
+  ### Test: E2E            ← working notes (Exercise lens)
+  ### Test: Browser        ← working notes (Exercise lens)
+  ### Test: Roundup        ← Exercise summary
+  ### Test: Validate       ← working notes
   ### Test: Final          ← ★ Review agent reads this
   ...
 ```

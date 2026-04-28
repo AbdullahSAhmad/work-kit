@@ -6,9 +6,9 @@ export type PhaseName = (typeof PHASE_NAMES)[number];
 export const TRIAGE_STEPS = ["classify"] as const;
 export const PLAN_STEPS = ["understand", "design", "audit"] as const;
 export const BUILD_STEPS = ["setup", "implement", "commit"] as const;
-export const TEST_STEPS = ["verify", "e2e", "browser", "validate"] as const;
-export const REVIEW_STEPS = ["scope", "self-review", "security", "performance", "compliance", "fix", "handoff"] as const;
-export const DEPLOY_STEPS = ["merge", "monitor", "remediate"] as const;
+export const TEST_STEPS = ["exercise", "validate"] as const;
+export const REVIEW_STEPS = ["scope", "review", "resolve"] as const;
+export const DEPLOY_STEPS = ["ship"] as const;
 export const WRAPUP_STEPS = ["summary", "knowledge"] as const;
 
 export type TriageStep = (typeof TRIAGE_STEPS)[number];
@@ -84,12 +84,11 @@ export const STEP_OUTCOMES = [
   "done",                // generic success
   "ok",                  // alias for done
   "proceed",             // explicit "no loopback, advance"
-  "approved",            // review/handoff cleared for deploy
+  "approved",            // review/resolve cleared for deploy
   "revise",              // audit / review found gaps; loop back to fix
   "broken",              // refactor or change broke something downstream
-  "changes_requested",   // review handoff requested changes
-  "fix_needed",          // deploy merge blocked, fix required
-  "fix_and_redeploy",    // remediation requires another deploy cycle
+  "changes_requested",   // review resolve requested changes
+  "fix_needed",          // deploy/ship blocked or fix-forward needed; loop back to build/implement
   "needs_debug",         // step hit an error it can't resolve — invoke wk-debug, then return
   "blocked",             // step cannot proceed without external input
   "skipped",             // step intentionally skipped at runtime
