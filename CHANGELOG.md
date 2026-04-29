@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 (2026-04-30)
+
+### Changed
+
+- Collapse Review + Test + Deploy phases and bake simplify-style review discipline into the workflow.
+- Collapse Plan + Build phases, add a Triage phase, and bake DDD discipline into the orchestrator.
+- Update README to reflect the v0.5 phase/step/skill layout.
+
+### Added
+
+- Triage and Fix steps in Review with scope-aware reviewers.
+- Tighter UI build rules covering interaction states and design-token discipline.
+
+(Rolls up unreleased v0.6 work — structured receipts and the `work-kit run` driver — see the 0.6.0 section below.)
+
 ## 0.6.0 (2026-04-29)
 
 ### Added
