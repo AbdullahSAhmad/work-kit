@@ -6,6 +6,7 @@ import { buildFullWorkflow, buildDefaultWorkflow, skillFilePath } from "../confi
 import { BRANCH_PREFIX, CLI_BINARY } from "../config/constants.js";
 import { loadProjectConfig } from "../config/project-config.js";
 import { resolveModel } from "../config/model-routing.js";
+import { ensureReceiptsDir, receiptPathIfApplicable } from "../receipts/store.js";
 import type { Action } from "../state/schema.js";
 
 function toSlug(description: string): string {
@@ -203,7 +204,7 @@ export function initCommand(options: {
 
   // Build state
   const state: WorkKitState = {
-    version: 3,
+    version: 4,
     slug,
     branch,
     started: new Date().toISOString(),
@@ -229,8 +230,10 @@ export function initCommand(options: {
   // Write state files
   writeState(worktreeRoot, state);
   writeStateMd(worktreeRoot, generateStateMd(slug, branch, modeLabel, description, firstPhase, firstStep, classification, workflow));
+  ensureReceiptsDir(worktreeRoot);
 
   const model = resolveModel(state, firstPhase, firstStep);
+  const receiptPath = receiptPathIfApplicable(firstPhase, firstStep);
 
   return {
     action: "spawn_agent",
@@ -240,5 +243,6 @@ export function initCommand(options: {
     agentPrompt: `You are starting the ${firstPhase} phase. Begin with the ${firstStep} step. Read the skill file and follow its instructions. Write outputs to .work-kit/state.md.`,
     onComplete: `${CLI_BINARY} complete ${firstPhase}/${firstStep}`,
     ...(model && { model }),
+    ...(receiptPath && { receiptPath }),
   };
 }

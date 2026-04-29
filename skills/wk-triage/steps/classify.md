@@ -22,11 +22,7 @@ description: "Triage step: Classify the request and emit the workflow plan."
 
 3. If the description is genuinely ambiguous between two classes, ask the user **once** which class fits better. Do not pick silently for ambiguous cases.
 
-4. Call the CLI to record the classification:
-   ```bash
-   work-kit complete triage/classify --classification <class>
-   ```
-   This writes `state.classification` into `tracker.json` and (for auto-kit) builds the workflow matrix.
+4. Write the **Receipt** (see below). The CLI reads the receipt's `classification` field, writes it into `tracker.json`, and (for auto-kit) builds the workflow matrix.
 
 5. Show the resolved workflow to the user:
    ```bash
@@ -58,6 +54,28 @@ Also append to `## Decisions` if the call was non-obvious:
 ```markdown
 - **Classification**: chose <class> over <other> — <why>
 ```
+
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/triage-classify.json`). The CLI validates this and derives the step outcome — do not pass `--outcome` yourself.
+
+```json
+{
+  "version": 1,
+  "step": "triage/classify",
+  "timestamp": "<ISO 8601, e.g. 2026-04-29T12:34:56Z>",
+  "classification": "bug-fix | small-change | refactor | feature | large-feature",
+  "signals": {
+    "ui": true,
+    "db": false,
+    "public_api": false,
+    "risk_level": "low | medium | high"
+  },
+  "rationale": "<one sentence on why this class fits>"
+}
+```
+
+`signals` is required (object) but every nested key is optional — fill in what's relevant. Add an `"error": { "kind": "...", "message": "..." }` field only if you can't classify; that maps to `needs_debug`.
 
 ## Rules
 

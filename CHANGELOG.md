@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.0 (2026-04-29)
+
+### Added
+
+- **Structured receipts.** Every step now writes a JSON receipt to `.work-kit/receipts/<phase>-<step>.json` with a versioned schema. The CLI validates the receipt and **derives** the step outcome from it — agents no longer pass `--outcome` flags. Routing-relevant steps (triage/classify, plan/audit, build/implement, test/validate, review/resolve, deploy/ship) gate the workflow on receipt fields like `gaps[]`, `tests_passing`, `verdict`, and `ship_decision`. New module: `cli/src/receipts/{schemas,validate,derive,store}.ts` with full test coverage.
+- **`work-kit run` command.** Skinny driver that wraps `next` + `complete` and emits one concrete imperative at a time, augmented with an `after` field telling the orchestrator the exact bash command to run when the spawned agent returns. The orchestrator skill loop collapses to: run `work-kit run`, follow the action, run `after`, repeat. Phase boundaries auto-collapse for non-gated sessions; gated sessions still pause for user approval.
+- New `## Receipt` section in every step .md file documenting the schema and an example.
+
+### Changed
+
+- **`WorkKitState.version` bumped from 3 to 4.** No backwards-compatibility shim — v0.6 is a clean break. Cancel or complete in-flight v3 sessions before upgrading.
+- **`work-kit complete` is no longer agent-facing.** The orchestrator runs `work-kit run --finished <phase>/<step>` instead, which reads the receipt, derives the outcome, and advances. `complete` remains a low-level command for tests and debugging; passing `--outcome` is ignored when a receipt exists for the step.
+- `init` creates `.work-kit/receipts/` alongside `tracker.json` and `state.md`.
+- `next` augments `spawn_agent` actions with a `receiptPath` field pointing at the agent's expected output.
+- Prompt builder appends a "Required receipt" instruction with the path so agents know where to write before reporting done.
+- `full-kit/SKILL.md` and `auto-kit/SKILL.md` execution loops shrunk: a single `work-kit run` call, an action table, no more `--outcome` parsing or hand-rolled `next`/`complete` chaining.
+- `triage/classify`'s `--classification` flag is no longer authoritative — the receipt's `classification` field is. (The flag still works for `complete` callers without a receipt.)
+
+### Why
+
+The state machine was deterministic in TypeScript, but the *inputs* to it (outcomes, classifications, ship decisions) were free-form agent calls. A wobbly Audit could say `done` instead of `revise` and silently skip a needed loopback. With receipts, the agent fills out a structured form; the CLI computes the route. Same inputs → same control flow, every time.
+
 ## 0.5.0 (2026-04-08)
 
 ### Added

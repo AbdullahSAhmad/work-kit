@@ -18,7 +18,7 @@ It also appends a row to `.work-kit-tracker/index.md`.
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through Deploy.
 2. **Synthesize the summary** — not a copy-paste; a distillation a future developer can use.
 3. **Write `.work-kit/summary.md`** with the format below.
-4. **Run** `work-kit complete wrap-up/summary --outcome done`.
+4. **Write the receipt** (see below). The orchestrator handles `work-kit complete` after.
 5. **Ask the user** if they want the worktree and feature branch removed (use `work-kit cancel` only if no merge happened; otherwise prefer `git worktree remove`).
 
 ## Summary File Format
@@ -75,9 +75,24 @@ status: <completed | partial | rolled-back>
 - Copy-paste full phase outputs into the summary
 - Skip the criteria checklist
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/wrap-up-summary.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "wrap-up/summary",
+  "timestamp": "<ISO 8601>",
+  "summary_path": ".work-kit/summary.md"
+}
+```
+
+`summary_path` is optional. `"error": { ... }` maps to `needs_debug`.
+
 ## After Completion
 
-When you call `work-kit complete wrap-up/summary --outcome done`, the CLI:
+When the orchestrator runs `work-kit complete wrap-up/summary` (after reading your receipt), the CLI:
 
 1. Creates `.work-kit-tracker/archive/<slug>-<date>/`
 2. Copies `state.md`, `tracker.json`, and `summary.md` into it

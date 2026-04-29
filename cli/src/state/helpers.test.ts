@@ -14,7 +14,7 @@ function makeState(): WorkKitState {
     phases[phase] = { status: "pending", steps };
   }
   return {
-    version: 3,
+    version: 4,
     slug: "test",
     branch: "feature/test",
     started: "2026-01-01",

@@ -38,10 +38,7 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
 
    Each call appends one entry to the appropriate `.md` file under a lockfile, with secret redaction applied automatically.
 
-3. **Mark the step complete:**
-   ```bash
-   work-kit complete wrap-up/knowledge --outcome done
-   ```
+3. **Write the receipt** (see below). The orchestrator runs `work-kit complete` after.
 
 ## What goes where
 
@@ -67,7 +64,28 @@ After `wrap-up/summary`. By now you've just re-read the full `state.md` and dist
 - Skip extraction. Even if you have nothing to add manually, `work-kit extract` still routes loopbacks and deviations.
 
 ### Failure mode
-- Non-fatal. If extract or learn fails, the summary step has already succeeded — the session isn't lost. Report the error to the user; they can retry manually or run `work-kit complete wrap-up/knowledge --outcome done` anyway.
+- Non-fatal. If extract or learn fails, the summary step has already succeeded — the session isn't lost. Report the error to the user; they can retry manually by writing the receipt with `extracted` zeroed out — the orchestrator will still close the step.
+
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/wrap-up-knowledge.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "wrap-up/knowledge",
+  "timestamp": "<ISO 8601>",
+  "extracted": {
+    "lessons": 2,
+    "conventions": 1,
+    "risks": 0,
+    "decisions": 1,
+    "workflow": 1
+  }
+}
+```
+
+`extracted` is optional but recommended (zeros are fine if nothing landed). `"error": { ... }` maps to `needs_debug`.
 
 ## Output
 

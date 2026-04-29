@@ -42,7 +42,7 @@ describe("initCommand", () => {
     assert.equal(state.status, "in-progress");
     assert.equal(state.currentPhase, "triage");
     assert.equal(state.currentStep, "classify");
-    assert.equal(state.version, 3);
+    assert.equal(state.version, 4);
   });
 
   it("returns spawn_agent action", () => {

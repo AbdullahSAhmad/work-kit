@@ -120,6 +120,21 @@ N. Component test — <what to assert>
 - "<criterion>" → satisfied by steps <N, M>
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/plan-design.json`). The CLI validates this and derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "plan/design",
+  "timestamp": "<ISO 8601>",
+  "blueprint_section": "### Plan: Final"
+}
+```
+
+`blueprint_section` points at the section in state.md that contains the final blueprint Build will execute. Add `"error": { ... }` to map to `needs_debug`.
+
 ## Rules
 
 - **Direction first** — don't write SQL or function signatures in Direction.

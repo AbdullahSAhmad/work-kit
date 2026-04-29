@@ -20,7 +20,7 @@ Run `work-kit bootstrap` to detect work-kit state.
   - Read each of these silently into your working context — they're prior knowledge you should respect when planning and building. Briefly mention to the user that prior knowledge was loaded (one line; do not dump the full text into the chat).
   - `workflow.md` is intentionally NOT loaded — it's a write-only artifact for human curators.
 - If recovery is suggested: follow the recovery instruction
-- Otherwise: run `work-kit next` to continue the workflow
+- Otherwise: run `work-kit run` to continue the workflow
 
 ## If no active work
 
@@ -40,5 +40,5 @@ Run `work-kit bootstrap` to detect work-kit state.
 
 - Report the staleness warning to the user
 - Run `work-kit status` to get full diagnostics
-- If the state is recoverable, run `work-kit next` to resume
+- If the state is recoverable, run `work-kit run` to resume
 - If the state is corrupted, suggest starting fresh

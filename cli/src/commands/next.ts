@@ -6,6 +6,7 @@ import { getParallelGroup } from "../workflow/parallel.js";
 import { skillFilePath } from "../config/workflow.js";
 import { resolveModel } from "../config/model-routing.js";
 import { CLI_BINARY } from "../config/constants.js";
+import { receiptPathIfApplicable } from "../receipts/store.js";
 
 import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
 
@@ -110,19 +111,23 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
         const sState = state.phases[phase].steps[s];
         return sState && sState.status !== "skipped" && sState.status !== "completed";
       })
-      .map((s) => withModel({
-        phase,
-        step: s,
-        skillFile: skillFilePath(phase, s),
-        agentPrompt: buildAgentPrompt(root, state, phase, s, stateMd),
-        outputFile: `.work-kit/${phase}-${s}.md`,
-      }, state));
+      .map((s) => {
+        const rp = receiptPathIfApplicable(phase, s);
+        return withModel({
+          phase,
+          step: s,
+          skillFile: skillFilePath(phase, s),
+          agentPrompt: buildAgentPrompt(root, state, phase, s, stateMd),
+          ...(rp && { receiptPath: rp }),
+        }, state);
+      });
 
     // If all parallel members were filtered out, fall through to single agent
     if (agents.length === 0) {
       // Skip to thenSequential if it exists, otherwise nothing to do
       if (parallelGroup.thenSequential) {
         const seqStep = parallelGroup.thenSequential;
+        const rp = receiptPathIfApplicable(phase, seqStep);
         return withModelAction({
           action: "spawn_agent",
           phase,
@@ -130,6 +135,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
           skillFile: skillFilePath(phase, seqStep),
           agentPrompt: buildAgentPrompt(root, state, phase, seqStep, stateMd),
           onComplete: `${CLI_BINARY} complete ${phase}/${seqStep}`,
+          ...(rp && { receiptPath: rp }),
         }, state);
       }
       return { action: "error", message: `No active steps in parallel group for ${phase}` };
@@ -138,6 +144,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     // If only 1 agent remains, run as single agent (no need for parallel)
     if (agents.length === 1 && !parallelGroup.thenSequential) {
       const agent = agents[0];
+      const rp = receiptPathIfApplicable(agent.phase, agent.step);
       return withModelAction({
         action: "spawn_agent",
         phase: agent.phase,
@@ -145,6 +152,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
         skillFile: agent.skillFile,
         agentPrompt: agent.agentPrompt,
         onComplete: `${CLI_BINARY} complete ${agent.phase}/${agent.step}`,
+        ...(rp && { receiptPath: rp }),
       }, state);
     }
 
@@ -154,12 +162,17 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     }
 
     const thenSequential = parallelGroup.thenSequential
-      ? withModel({
-          phase,
-          step: parallelGroup.thenSequential,
-          skillFile: skillFilePath(phase, parallelGroup.thenSequential),
-          agentPrompt: buildAgentPrompt(root, state, phase, parallelGroup.thenSequential, stateMd),
-        }, state)
+      ? (() => {
+          const seq = parallelGroup.thenSequential!;
+          const rp = receiptPathIfApplicable(phase, seq);
+          return withModel({
+            phase,
+            step: seq,
+            skillFile: skillFilePath(phase, seq),
+            agentPrompt: buildAgentPrompt(root, state, phase, seq, stateMd),
+            ...(rp && { receiptPath: rp }),
+          }, state);
+        })()
       : undefined;
 
     writeState(root, state);
@@ -174,6 +187,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
 
   const skill = skillFilePath(phase, step);
   const prompt = buildAgentPrompt(root, state, phase, step, stateMd);
+  const rp = receiptPathIfApplicable(phase, step);
 
   return withModelAction({
     action: "spawn_agent",
@@ -182,6 +196,7 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     skillFile: skill,
     agentPrompt: prompt,
     onComplete: `${CLI_BINARY} complete ${phase}/${step}`,
+    ...(rp && { receiptPath: rp }),
   }, state);
 }
 

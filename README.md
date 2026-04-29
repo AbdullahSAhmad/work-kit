@@ -4,6 +4,7 @@ Structured development workflow for [Claude Code](https://claude.com/claude-code
 
 ## What's new
 
+- **Structured receipts + `work-kit run`** — every step now writes a JSON receipt that the CLI validates and derives the step outcome from. Agents no longer pick `--outcome` flags. The orchestrator loop collapses to a single `work-kit run` driver: it tells you what agent to spawn and what bash to run after it. Routing decisions are pure functions of receipt fields, not free-form model calls.
 - **Triage phase** replaces Define as the first phase. One step (Classify) — picks the work class (bug-fix / small-change / refactor / feature / large-feature), and the CLI builds the workflow. Refine and Spec moved into Plan/Understand.
 - **Review/Triage step renamed to Review/Scope** to disambiguate from the new front Triage.
 - **DDD discipline** baked into Plan and Build — bounded contexts, aggregates, value objects, repository contracts in Plan; TDD-implemented cleanly inside `build/implement`.
@@ -59,8 +60,10 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 | Command | Description |
 |---------|-------------|
 | `init <description>` | Initialize a new workflow with a task description |
-| `next` | Advance to the next step |
-| `complete` | Mark the current step as complete |
+| `run` | Skinny orchestrator driver — returns the next imperative action with the bash to run after it. The orchestrator skill loops on this. |
+| `run --finished <phase>/<step>` | Mark a step finished (reads its receipt, derives the outcome) and return the next action |
+| `next` | Advance to the next step (low-level — `run` wraps this) |
+| `complete` | Mark a step complete (low-level — `run` wraps this) |
 | `status` | Show current workflow state (phase, step, progress) |
 | `context` | Generate context summary for the current phase |
 | `validate` | Validate state integrity and phase prerequisites |

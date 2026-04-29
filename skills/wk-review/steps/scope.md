@@ -45,6 +45,28 @@ description: "Review step: Classify diff complexity, decide which reviewer lense
 - <items explicitly out of scope from Blueprint — or "None noted">
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/review-scope.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "review/scope",
+  "timestamp": "<ISO 8601>",
+  "diff_classification": {
+    "ui": true,
+    "backend": false,
+    "security_surface": false,
+    "compliance_surface": false
+  },
+  "lenses_to_run": ["quality", "efficiency"],
+  "files_in_scope": 8
+}
+```
+
+`diff_classification` and `lenses_to_run[]` (subset of `["quality", "efficiency", "security", "compliance"]`) are required. `files_in_scope` is optional. `"error": { ... }` maps to `needs_debug`.
+
 ## Rules
 
 - This is a 2-minute classification, not a review — don't start fixing things

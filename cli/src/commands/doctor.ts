@@ -83,7 +83,7 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
   if (root && stateExists(root)) {
     try {
       const state = readState(root);
-      if (state.version === 3 && state.slug && state.status) {
+      if (state.version === 4 && state.slug && state.status) {
         checks.push({ name: "state", status: "pass", message: `Active work-kit: "${state.slug}" (${state.status})` });
       } else {
         checks.push({ name: "state", status: "warn", message: "tracker.json exists but has unexpected structure" });

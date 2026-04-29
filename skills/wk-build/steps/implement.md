@@ -151,6 +151,27 @@ Emit each subsection as you complete it. They preserve backward-compat with down
 **Full Test Suite:** passing | failing (<details>)
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/build-implement.json`). The CLI derives the outcome: `tests_passing: false` → `needs_debug` (auto-spawns wk-debug, retries Implement); `true` → `done`.
+
+```json
+{
+  "version": 1,
+  "step": "build/implement",
+  "timestamp": "<ISO 8601>",
+  "tests_passing": true,
+  "test_command": "npm test",
+  "test_output_summary": "127 passing, 0 failing in 4.2s",
+  "criteria_implemented": ["C1", "C2"],
+  "deviations": [
+    { "description": "stored avatar_url instead of avatar_id — see ## Deviations" }
+  ]
+}
+```
+
+`tests_passing` and `test_command` are required. Other fields are optional. If you cannot run the test suite at all, set `"error": { "kind": "test_runner_missing", "message": "..." }` — that maps to `needs_debug`.
+
 ## Rules
 
 - Write tests **first** — Red before Core, every time

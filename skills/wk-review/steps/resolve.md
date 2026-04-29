@@ -99,6 +99,24 @@ When unsure between **approved** and **changes_requested**: ask the user. Memory
 
 After this section, the phase agent writes the `### Review: Final` section per `SKILL.md`.
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/review-resolve.json`). The CLI derives the outcome from `ship_decision`: `"approved"` → `approved` (advances to Deploy); `"changes_requested"` → `changes_requested` (loops back to `build/implement`).
+
+```json
+{
+  "version": 1,
+  "step": "review/resolve",
+  "timestamp": "<ISO 8601>",
+  "ship_decision": "approved",
+  "blocking_issues_resolved": 2,
+  "blocking_issues_remaining": 0,
+  "fixes_applied": ["a1b2c3d", "e4f5g6h"]
+}
+```
+
+`ship_decision` is required (`"approved"` or `"changes_requested"`). The other fields are optional. `"error": { ... }` maps to `needs_debug`.
+
 ## Outcome routing
 
 - **approved** → Deploy phase (or complete if deploy is skipped)

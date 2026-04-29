@@ -52,9 +52,9 @@ You are resuming a work-kit session. The user typically runs Claude Code from th
 
 5. Continue the orchestrator loop (same as `/full-kit` / `/auto-kit`):
    ```bash
-   work-kit next
+   work-kit run
    ```
-   Then follow the action returned (`spawn_agent`, `spawn_parallel_agents`, `wait_for_user`, etc.) using the Agent tool. Keep looping `work-kit next` until you hit `wait_for_user`, `complete`, or `error`.
+   Then follow the action returned (`spawn_agent`, `spawn_parallel_agents`, `wait_for_user`, etc.) using the Agent tool, and run the bash in the `after` field when the agent returns. Keep looping until you hit `wait_for_user`, `complete`, or `error`.
 
 ## Notes
 

@@ -61,6 +61,23 @@ Append both sections (the second only if migrations ran):
 - App connection: <pass/fail>
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/build-setup.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "build/setup",
+  "timestamp": "<ISO 8601>",
+  "branch": "feature/<slug>",
+  "deps_installed": true,
+  "migrations_applied": ["20260429_add_avatar_url.sql"]
+}
+```
+
+All step-specific fields are optional — fill in what applies. `"error": { ... }` maps to `needs_debug`.
+
 ## Rules
 
 - Do NOT write implementation code — just scaffolds and schema

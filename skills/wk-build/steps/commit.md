@@ -34,6 +34,22 @@ description: "Build step: Create clean commits, push branch, create PR."
 **PR URL:** <url>
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/build-commit.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "build/commit",
+  "timestamp": "<ISO 8601>",
+  "commits": ["a1b2c3d", "e4f5g6h"],
+  "diff_summary": "+342 -28 across 8 files"
+}
+```
+
+`commits[]` (array of SHA strings) is required. `diff_summary` is optional. `"error": { ... }` maps to `needs_debug`.
+
 ## Rules
 
 - Don't include `.work-kit/` state files in the PR commits — commit those separately

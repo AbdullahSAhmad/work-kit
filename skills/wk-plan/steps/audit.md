@@ -58,6 +58,26 @@ description: "Plan step: Audit the Blueprint for gaps, contradictions, and cover
   ```
   Max 2 revision loops, then proceed with noted caveats.
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/plan-audit.json`). The CLI derives the outcome: `gaps[].length > 0` → `revise` (loops back to Design); empty `gaps` → `done`.
+
+```json
+{
+  "version": 1,
+  "step": "plan/audit",
+  "timestamp": "<ISO 8601>",
+  "gaps": [
+    { "id": "G1", "where": "blueprint", "description": "missing race-condition handling in cache layer" }
+  ],
+  "deviations": [
+    { "description": "auth.ts uses jose instead of jsonwebtoken — Plan assumed the latter" }
+  ]
+}
+```
+
+`gaps[]` is required (use `[]` when none). `deviations[]` is optional. Setting `"error": { ... }` maps to `needs_debug` regardless of gaps.
+
 ## Rules
 
 - Be genuinely critical — a bad plan caught here saves hours of rework.

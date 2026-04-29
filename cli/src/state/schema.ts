@@ -149,7 +149,7 @@ export type WorkStatus = "in-progress" | "paused" | "completed" | "failed";
 // ── Main State ──────────────────────────────────────────────────────
 
 export interface WorkKitState {
-  version: 3;
+  version: 4;
   slug: string;
   branch: string;
   started: string;
@@ -179,13 +179,14 @@ export interface AgentSpec {
   step: string;
   skillFile: string;
   agentPrompt: string;
-  outputFile?: string;
   /** Resolved model tier for this agent. Omitted when policy is "inherit". */
   model?: ModelTier;
+  /** Path the agent must write its structured receipt JSON to before reporting done. */
+  receiptPath?: string;
 }
 
 export type Action =
-  | { action: "spawn_agent"; phase: PhaseName; step: string; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier }
+  | { action: "spawn_agent"; phase: PhaseName; step: string; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier; receiptPath?: string }
   | { action: "spawn_parallel_agents"; agents: AgentSpec[]; thenSequential?: AgentSpec; onComplete: string }
   | { action: "spawn_debug_agent"; origin: Location; iteration: number; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier }
   | { action: "wait_for_user"; message: string }

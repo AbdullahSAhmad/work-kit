@@ -62,8 +62,7 @@ Do not proceed until `doctor` reports all checks passed.
    /full-kit --gated --inherit fix login  → work-kit init --mode full --description "fix login" --gated --model-policy inherit
    ```
 
-3. Parse the JSON response and follow the action
-4. Continue with the execution loop below
+3. Continue with the execution loop below.
 
 ## Continuing Work (`/full-kit` with no args)
 
@@ -73,25 +72,29 @@ Do not proceed until `doctor` reports all checks passed.
    - If `recovery` is set — report the recovery suggestion to the user before continuing
    - If `active: true` — report current state (slug, phase, step) to the user
 3. `cd` into the worktree directory
-4. Run `work-kit next` to get the next action
-5. Follow the execution loop below
+4. Follow the execution loop below
 
 ## Execution Loop
 
-The CLI manages all state transitions, prerequisites, and loopbacks. Follow this loop:
+The CLI is the source of truth for what runs next. You don't pick outcomes, parse classifications, or compute loopbacks — the CLI does. You just spawn the agent it asks for and run the bash it tells you to run.
 
-1. Run `work-kit next` to get the next action
-2. Parse the JSON response
-3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. **If the action includes a `model` field, pass it as the Agent tool's `model` parameter; if the field is absent, do not set `model` (let Claude Code's default pick).** After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
-   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. **For each agent, pass its `model` field as the Agent tool's `model` parameter when present; omit when absent.** Wait for all to complete. Then spawn `thenSequential` if provided (same rule for its `model` field). After all complete: `work-kit complete <onComplete target>`
-   - **`spawn_debug_agent`**: A previous step reported `needs_debug`. Spawn the **wk-debug** skill via the Agent tool with the provided `agentPrompt` and `skillFile`. Use the `model` field if present. Do **not** call `work-kit complete` for the debug agent — when it finishes writing its `.work-kit/debug-*.md` file, simply run `work-kit next` and the originating step will retry automatically.
-   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again. (Only appears in `--gated` mode.)
-   - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
-   - **`complete`**: Done — run wrap-up if not already done.
-   - **`error`**: Report the error and suggestion to the user. Stop.
-4. After each agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
-5. Then `work-kit next` again to continue
+```bash
+work-kit run
+```
+
+Inspect the `action` field of the JSON response:
+
+| `action`                | What you do |
+|-------------------------|-------------|
+| `spawn_agent`           | Use the Agent tool with `skillFile`, `agentPrompt`, and (if present) `model`. The agent writes a structured receipt to `receiptPath`. When the agent returns, run the bash in `after`. |
+| `spawn_parallel_agents` | Spawn every agent in `agents[]` in a single message (so they run in parallel). Wait for all to finish. If `thenSequential` is present, spawn it next. Run `after`. |
+| `spawn_debug_agent`     | A previous step reported `needs_debug`. Use the Agent tool with the wk-debug skill from `skillFile`. When it returns, run `after` — the originating step retries automatically. |
+| `wait_for_user`         | Report `message` and stop. When the user says proceed, run `after`. (Gated mode only — non-gated sessions auto-proceed past phase boundaries.) |
+| `loopback`              | Report `message` to the user. The CLI already routed; the next `work-kit run` will start at the loopback target. |
+| `complete`              | Done. Spawn the wrap-up skill if it hasn't run yet. |
+| `error`                 | Report `message` and `suggestion`. Stop. |
+
+You never call `work-kit complete --outcome <X>`. The agent writes a structured receipt JSON; the CLI validates it and derives the outcome. You also never call `work-kit next` — `work-kit run` wraps both.
 
 ## Phase Prerequisites
 

@@ -15,7 +15,7 @@ This phase has **two steps** (in order):
 1. **`wrap-up/summary`** — distill state.md into a useful summary for future developers. See `.claude/skills/wk-wrap-up/steps/summary.md`.
 2. **`wrap-up/knowledge`** — harvest learnings from this session into the project's `.work-kit-knowledge/` files so the next session benefits. See `.claude/skills/wk-wrap-up/steps/knowledge.md`.
 
-The summary you write goes into `.work-kit/summary.md`; the CLI archives it into `.work-kit-tracker/archive/<slug>-<date>/` when you call `work-kit complete wrap-up/summary --outcome done`. After summary completes, the `knowledge` step runs `work-kit extract` and (optionally) one or more `work-kit learn` calls.
+The summary you write goes into `.work-kit/summary.md`; the CLI archives it into `.work-kit-tracker/archive/<slug>-<date>/` when the orchestrator runs `work-kit run --finished wrap-up/summary` (after you write the receipt at `.work-kit/receipts/wrap-up-summary.json`). After summary completes, the `knowledge` step runs `work-kit extract` and (optionally) one or more `work-kit learn` calls.
 
 ## Instructions
 
@@ -23,12 +23,12 @@ The summary you write goes into `.work-kit/summary.md`; the CLI archives it into
 1. **Read the full `.work-kit/state.md`** — every phase output from Plan through the last completed phase
 2. **Synthesize the summary** — not a copy-paste of state, but a distilled record that a future developer (or agent) would find useful
 3. **Write `.work-kit/summary.md`** in the format described in the step file
-4. **Run** `work-kit complete wrap-up/summary --outcome done`
+4. **Write the receipt** at `.work-kit/receipts/wrap-up-summary.json` (the orchestrator runs `work-kit run --finished wrap-up/summary` after).
 
 ### Step 2: knowledge
 5. **Run `work-kit extract`** — routes typed `## Observations` bullets and tracker loopbacks/skipped/failed steps into `.work-kit-knowledge/` files. `## Decisions` and `## Deviations` are not auto-harvested (they're scratch space).
 6. **Review the summary you just wrote** for subjective additions the parser would miss. For each, call `work-kit learn --type <lesson|convention|risk|workflow> --text "..."`.
-7. **Run** `work-kit complete wrap-up/knowledge --outcome done`
+7. **Write the receipt** at `.work-kit/receipts/wrap-up-knowledge.json` (the orchestrator runs `work-kit run --finished wrap-up/knowledge` after).
 
 ### Cleanup
 8. **Ask the user** if they want the worktree and branch removed

@@ -5,6 +5,7 @@ import { readStateMd } from "../state/store.js";
 import { skillFilePath } from "../config/workflow.js";
 import { redactIgnoredBlocks } from "./redactor.js";
 import { CLI_BINARY } from "../config/constants.js";
+import { receiptPathIfApplicable } from "../receipts/store.js";
 
 /**
  * Build a complete agent prompt for a given phase/step.
@@ -60,9 +61,15 @@ export function buildAgentPrompt(
   }
 
   parts.push(`## Output`);
-  parts.push(`Write your outputs to \`.work-kit/state.md\` under a section for this step.`);
+  parts.push(`Write your prose working notes to \`.work-kit/state.md\` under a section for this step.`);
 
-  if (step === "wrap-up") {
+  const rp = receiptPathIfApplicable(phase, step);
+  if (rp) {
+    parts.push("");
+    parts.push(`**Required receipt:** Before the step is considered done, write a structured JSON receipt to \`${rp}\`. The skill file's "## Receipt" section declares the schema. The CLI validates the receipt and derives the step outcome from it — do not pass an \`--outcome\` flag.`);
+    parts.push("");
+    parts.push(`When the receipt is on disk, the orchestrator will run: \`${CLI_BINARY} complete ${phase}/${step}\``);
+  } else if (step === "wrap-up") {
     parts.push(`Follow the wrap-up skill file instructions for archiving and cleanup.`);
   } else {
     parts.push(`When done, report your outcome so the orchestrator can run: \`${CLI_BINARY} complete ${phase}/${step} --outcome <outcome>\``);

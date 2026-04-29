@@ -236,6 +236,25 @@ After all sub-agents complete, the Conductor (this step's main agent) appends a 
 **Reviewers run:** <list — e.g. Quality, Efficiency, Security, Compliance>
 **Reviewers skipped:** <list with reason — or "None">
 
+## Receipt
+
+After the Roundup is written, the Conductor (this step) writes JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/review-review.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "review/review",
+  "timestamp": "<ISO 8601>",
+  "lenses_run": ["quality", "efficiency"],
+  "findings_by_lens": {
+    "quality": { "blocking": 0, "non_blocking": 3 },
+    "efficiency": { "blocking": 0, "non_blocking": 1 }
+  }
+}
+```
+
+`lenses_run[]` is required. `findings_by_lens` is optional but recommended — Resolve uses it to plan fixes. `"error": { ... }` maps to `needs_debug`.
+
 **Findings by lens:**
 - Quality: <N> (critical: <n>, high: <n>, medium: <n>, low: <n>)
 - Efficiency: <N> (...)

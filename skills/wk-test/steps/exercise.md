@@ -240,3 +240,25 @@ After all sub-agents complete, the Conductor (this step's main agent) appends a 
 ```
 
 The Conductor does not write `### Test: Final` — Validate owns the criteria mapping and the phase verdict.
+
+## Receipt
+
+After the Roundup is written, the Conductor (this step) writes JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/test-exercise.json`). The CLI derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "test/exercise",
+  "timestamp": "<ISO 8601>",
+  "lenses_run": ["verify", "browser"],
+  "lenses_skipped": [
+    { "lens": "e2e", "reason": "Playwright not installed" }
+  ],
+  "per_lens": {
+    "verify": { "passed": true, "notes": "127 passing" },
+    "browser": { "passed": true, "notes": "all 4 flows green" }
+  }
+}
+```
+
+`lenses_run[]` must be a subset of `["verify", "e2e", "browser"]`. `lenses_skipped` and `per_lens` are optional. Setting `"error": { ... }` maps to `needs_debug`.

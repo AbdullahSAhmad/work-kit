@@ -9,6 +9,8 @@ import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_R
 import { isStepOutcome, STEP_OUTCOMES, isClassification, type Action, type Classification, type Location, type PhaseName, type StepOutcome, type StepState, type WorkKitState } from "../state/schema.js";
 import { stateMdPath } from "../state/store.js";
 import { resolveModel } from "../config/model-routing.js";
+import { isReceiptStepKey } from "../receipts/schemas.js";
+import { resolveReceiptOutcome } from "../receipts/resolve.js";
 
 const DEBUG_SKILL_FILE = `.claude/skills/${SKILL_DIR_PREFIX}debug/SKILL.md`;
 
@@ -53,29 +55,43 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
     return { action: "error", message: `${phase}/${step} is skipped and cannot be completed. Add it to the workflow first.` };
   }
 
-  if (typedOutcome === "needs_debug") {
+  // ── Receipts: if this step has a schema, the receipt is the source of truth. ──
+  // The agent's --outcome / --classification flags become fallbacks for steps
+  // without a schema, and a hard error when the receipt is missing or invalid.
+  let effectiveOutcome: StepOutcome | undefined = typedOutcome;
+  let effectiveClassification: Classification | undefined =
+    classification && isClassification(classification) ? classification : undefined;
+
+  if (isReceiptStepKey(`${phase}/${step}`)) {
+    const resolved = resolveReceiptOutcome(root, phase, step);
+    if (!resolved.ok) return resolved.action;
+    effectiveOutcome = resolved.outcome;
+    if (resolved.classification) effectiveClassification = resolved.classification;
+  }
+
+  if (effectiveOutcome === "needs_debug") {
     return handleNeedsDebug(root, state, stepState, { phase, step });
   }
 
   // Triage/classify writes classification into state and (for auto-kit) builds the workflow.
-  if (phase === "triage" && step === "classify" && classification) {
-    if (!isClassification(classification)) {
+  if (phase === "triage" && step === "classify" && effectiveClassification) {
+    if (!isClassification(effectiveClassification)) {
       return {
         action: "error",
-        message: `Invalid classification "${classification}".`,
+        message: `Invalid classification "${effectiveClassification}".`,
         suggestion: `Valid: bug-fix, small-change, refactor, feature, large-feature`,
       };
     }
-    applyClassification(state, classification);
+    applyClassification(state, effectiveClassification);
   }
 
   stepState.status = "completed";
   stepState.completedAt = new Date().toISOString();
-  if (typedOutcome) {
-    stepState.outcome = typedOutcome;
+  if (effectiveOutcome) {
+    stepState.outcome = effectiveOutcome;
   }
 
-  const loopback = checkLoopback(phase, step, typedOutcome);
+  const loopback = checkLoopback(phase, step, effectiveOutcome);
   if (loopback) {
     const from = { phase, step };
     const sameRouteCount = countLoopbacksForRoute(state.loopbacks, from, loopback.to);
@@ -84,7 +100,7 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
       writeState(root, state);
       return {
         action: "wait_for_user",
-        message: `${phase}/${step} triggered loopback (outcome: ${typedOutcome}) but max loopback count (${MAX_LOOPBACKS_PER_ROUTE}) reached for this route. Proceeding with noted caveats.`,
+        message: `${phase}/${step} triggered loopback (outcome: ${effectiveOutcome}) but max loopback count (${MAX_LOOPBACKS_PER_ROUTE}) reached for this route. Proceeding with noted caveats.`,
       };
     }
 
@@ -156,7 +172,7 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
 
   return {
     action: "wait_for_user",
-    message: `${phase}/${step} complete${typedOutcome ? ` (outcome: ${typedOutcome})` : ""}. Run \`${CLI_BINARY} next\` to continue.`,
+    message: `${phase}/${step} complete${effectiveOutcome ? ` (outcome: ${effectiveOutcome})` : ""}. Run \`${CLI_BINARY} next\` to continue.`,
   };
 }
 
@@ -247,7 +263,7 @@ function handleNeedsDebug(
     `Read \`.work-kit/state.md\` and the originating agent's working notes for that step.`,
     ``,
     `Run the 5-step triage methodology. Write your full report to \`.work-kit/debug-<ISO-timestamp>.md\`.`,
-    `Do NOT call \`work-kit complete\` for the originating step — when you finish, the orchestrator will re-run \`work-kit next\` and the originating step will retry automatically.`,
+    `Do NOT call \`work-kit complete\` for the originating step — when you finish, the orchestrator will re-run \`work-kit run\` and the originating step will retry automatically.`,
   ].join("\n");
 
   const debugModel = resolveModel(state, origin.phase, origin.step);

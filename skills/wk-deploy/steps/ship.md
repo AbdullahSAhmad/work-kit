@@ -148,13 +148,25 @@ Emit each subsection as you complete it.
 - Impact: <user-visible scope of the failed deploy>
 ```
 
-## Outcome routing
+## Receipt
 
-Report the step outcome that matches your final state:
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/deploy-ship.json`). The CLI derives the outcome: `merged && monitor_status: "green"` → `done`; otherwise → `fix_needed` (loops back to `build/implement`).
 
-- **`done`** — shipped successfully (Final Status: success)
-- **`fix_needed`** — pre-merge issue (CI failed, conflicts) OR post-deploy fix-forward (small issue, loops to `build/implement`)
-- **`blocked`** — rolled back; work stops, surface to user
+```json
+{
+  "version": 1,
+  "step": "deploy/ship",
+  "timestamp": "<ISO 8601>",
+  "merged": true,
+  "pr_url": "https://github.com/org/repo/pull/123",
+  "monitor_status": "green",
+  "issues_observed": [
+    { "description": "p99 latency briefly spiked to 800ms during rollout, recovered in 2 min" }
+  ]
+}
+```
+
+`merged` and `monitor_status` (one of `"green" | "yellow" | "red" | "skipped"`) are required. `issues_observed` is optional. To force the `blocked` outcome (rolled back; work stops), set `"error": { "kind": "rolled_back", "message": "..." }` — the engine treats that as `needs_debug` and surfaces.
 
 ## Rules
 

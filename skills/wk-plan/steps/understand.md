@@ -152,6 +152,24 @@ Also append to `## Decisions` if Refine produced one:
 - **Framing**: chose <A> over <B/C> — <why, in user's words if they explained>
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/plan-understand.json`). The CLI validates this and derives `done`.
+
+```json
+{
+  "version": 1,
+  "step": "plan/understand",
+  "timestamp": "<ISO 8601>",
+  "criteria": [
+    { "id": "C1", "description": "User can upload an avatar image" },
+    { "id": "C2", "description": "Fallback to initials when no avatar" }
+  ]
+}
+```
+
+`criteria[]` is required and must mirror what you wrote into `## Criteria` in state.md. Add `"error": { "kind": "...", "message": "..." }` only if you cannot proceed; that maps to `needs_debug`.
+
 ## Loopback
 
 If C (Spec) uncovers ambiguity that Refine missed: report `revise` and re-run Refine, then Spec. Max 2 iterations.

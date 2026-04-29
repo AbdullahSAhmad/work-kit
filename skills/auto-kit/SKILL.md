@@ -61,11 +61,11 @@ The orchestrator no longer classifies the request. The **Triage agent** does tha
 
    Notice: no `--classification` flag. Triage decides.
 
-3. Run `work-kit next` — the CLI returns `spawn_agent` for `triage/classify`.
+3. Run `work-kit run` — the CLI returns `spawn_agent` for `triage/classify`.
 
 ### Step 2: Triage classifies
 
-4. Spawn the Triage agent with the skill file `.claude/skills/wk-triage/SKILL.md`. It reads the description, picks a class, and calls `work-kit complete triage/classify --classification <X>`. The CLI then builds the dynamic workflow.
+4. Spawn the Triage agent with the skill file `.claude/skills/wk-triage/SKILL.md`. It reads the description, picks a class, and writes a structured receipt at `.work-kit/receipts/triage-classify.json`. The orchestrator then runs the bash in `after` (which is `work-kit run --finished triage/classify`) — the CLI reads the receipt, stamps the classification, and builds the dynamic workflow.
 
 ### Step 3: User reviews the workflow
 
@@ -121,12 +121,11 @@ The table is a guide. The user can adjust after Triage:
    - If `recovery` is set — report the recovery suggestion to the user before continuing
    - If `active: true` — report current state (slug, phase, step) to the user
 3. `cd` into the worktree directory
-4. Run `work-kit next` to get the next action
-5. Follow the execution loop below
+4. Follow the execution loop below.
 
 ## Step Validation
 
-All validation is handled by the CLI. The `next` command enforces order, phase boundaries, and prerequisites automatically.
+All validation is handled by the CLI. `work-kit run` enforces order, phase boundaries, prerequisites, receipt schemas, and outcome derivation automatically.
 
 To add/remove steps mid-work: `work-kit workflow --add <phase/step>` or `--remove <phase/step>`. Completed steps cannot be removed.
 
@@ -193,20 +192,25 @@ If a phase has fewer steps in the workflow, the Final section still covers the s
 
 ## Execution Loop
 
-The CLI manages all state transitions, prerequisites, and loopbacks. Follow this loop:
+The CLI is the source of truth for what runs next. You don't pick outcomes, parse classifications, or compute loopbacks — the CLI does.
 
-1. Run `work-kit next` to get the next action
-2. Parse the JSON response
-3. Follow the action type:
-   - **`spawn_agent`**: Use the Agent tool with the provided `agentPrompt`. Pass `skillFile` path for reference. **If the action includes a `model` field, pass it as the Agent tool's `model` parameter; if the field is absent, do not set `model` (let Claude Code's default pick).** After the agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
-   - **`spawn_parallel_agents`**: Spawn all agents in the `agents` array in parallel using the Agent tool. **For each agent, pass its `model` field as the Agent tool's `model` parameter when present; omit when absent.** Wait for all to complete. Then spawn `thenSequential` if provided (same rule for its `model` field). After all complete: `work-kit complete <onComplete target>`
-   - **`spawn_debug_agent`**: A previous step reported `needs_debug`. Spawn the **wk-debug** skill via the Agent tool with the provided `agentPrompt` and `skillFile`. Use the `model` field if present. Do **not** call `work-kit complete` for the debug agent — when it finishes, simply run `work-kit next` and the originating step will retry automatically.
-   - **`wait_for_user`**: Report the message to the user and stop. Wait for them to say "proceed" before running `work-kit next` again.
-   - **`loopback`**: Report the loopback to the user, then run `work-kit next` to continue from the target.
-   - **`complete`**: Done — run wrap-up if not already done.
-   - **`error`**: Report the error and suggestion to the user. Stop.
-4. After each agent completes: `work-kit complete <phase>/<step> --outcome <outcome>`
-5. Then `work-kit next` again to continue
+```bash
+work-kit run
+```
+
+Inspect the `action` field of the JSON response:
+
+| `action`                | What you do |
+|-------------------------|-------------|
+| `spawn_agent`           | Use the Agent tool with `skillFile`, `agentPrompt`, and (if present) `model`. The agent writes a structured receipt to `receiptPath`. When the agent returns, run the bash in `after`. |
+| `spawn_parallel_agents` | Spawn every agent in `agents[]` in a single message (so they run in parallel). Wait for all to finish. If `thenSequential` is present, spawn it next. Run `after`. |
+| `spawn_debug_agent`     | A previous step reported `needs_debug`. Use the Agent tool with the wk-debug skill from `skillFile`. When it returns, run `after` — the originating step retries automatically. |
+| `wait_for_user`         | Report `message` and stop. When the user says proceed, run `after`. (Gated mode only.) |
+| `loopback`              | Report `message` to the user. The CLI already routed; the next `work-kit run` will start at the loopback target. |
+| `complete`              | Done. Spawn the wrap-up skill if it hasn't run yet. |
+| `error`                 | Report `message` and `suggestion`. Stop. |
+
+You never call `work-kit complete --outcome <X>`. The agent writes a structured receipt JSON; the CLI validates it and derives the outcome. You also never call `work-kit next` — `work-kit run` wraps both.
 
 ## Loop-Back Rules
 

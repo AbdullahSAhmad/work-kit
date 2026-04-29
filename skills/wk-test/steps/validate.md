@@ -100,6 +100,26 @@ Append `### Test: Final` to state.md. **This is what the Review phase reads** �
 - <any caveats Review should know — or "None">
 ```
 
+## Receipt
+
+Write JSON to the `receiptPath` the orchestrator gave you (`.work-kit/receipts/test-validate.json`). The CLI derives the outcome from `verdict`: `"pass"` → `done`; `"fail"` or `"partial"` → `revise` (surfaces the failure to the user — there is no auto-loopback to Build for this step today, so the user reviews and decides).
+
+```json
+{
+  "version": 1,
+  "step": "test/validate",
+  "timestamp": "<ISO 8601>",
+  "criteria": [
+    { "id": "C1", "status": "pass", "evidence": "tests/avatar.test.ts:42" },
+    { "id": "C2", "status": "fail", "evidence": "browser: error on /profile" }
+  ],
+  "verdict": "fail",
+  "confidence": "high"
+}
+```
+
+`criteria[]` and `verdict` are required. `confidence` is optional. If a lens hit an actual error (not just an unmet criterion), set `"error": { ... }` instead — that maps to `needs_debug`.
+
 ## Outcome routing
 
 - **pass** → Review phase

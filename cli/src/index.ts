@@ -22,6 +22,7 @@ import { resumeCommand } from "./commands/resume.js";
 import { reportCommand } from "./commands/report.js";
 import { learnCommand } from "./commands/learn.js";
 import { extractCommand } from "./commands/extract.js";
+import { runCommand } from "./commands/run.js";
 import { bold, green, yellow, red } from "./utils/colors.js";
 import type { Classification, ModelPolicy, PhaseName } from "./state/schema.js";
 import { isModelPolicy } from "./state/schema.js";
@@ -67,6 +68,24 @@ program
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));
+    } catch (e: any) {
+      console.error(JSON.stringify({ action: "error", message: e.message }));
+      process.exit(1);
+    }
+  });
+
+// ── run ──────────────────────────────────────────────────────────────
+
+program
+  .command("run")
+  .description("Skinny orchestrator driver: returns the next imperative action with the bash to run after it")
+  .option("--finished <target>", "Mark a phase/step as finished and advance (e.g., plan/understand)")
+  .option("--worktree-root <path>", "Override worktree root")
+  .action((opts) => {
+    try {
+      const result = runCommand({ finished: opts.finished, worktreeRoot: opts.worktreeRoot });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.action === "error") process.exit(1);
     } catch (e: any) {
       console.error(JSON.stringify({ action: "error", message: e.message }));
       process.exit(1);

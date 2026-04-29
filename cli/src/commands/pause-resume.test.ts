@@ -10,6 +10,7 @@ import { resumeCommand } from "./resume.js";
 import { nextCommand } from "./next.js";
 import { bootstrapCommand } from "./bootstrap.js";
 import { completeCommand } from "./complete.js";
+import { writeReceipt } from "../receipts/store.js";
 
 function makeTmpDir(): string {
   const dir = path.join(os.tmpdir(), `work-kit-pause-${randomUUID()}`);
@@ -122,21 +123,51 @@ describe("complete outcome validation", () => {
     }
   });
 
-  it("accepts known outcomes", () => {
+  it("requires a receipt before completing a schema-bearing step", () => {
     const tmp = makeTmpDir();
     tmpDirs.push(tmp);
-    initCommand({ mode: "full", description: "Outcome ok", worktreeRoot: tmp });
+    initCommand({ mode: "full", description: "No receipt", worktreeRoot: tmp });
 
-    const result = completeCommand("plan/understand", "done", tmp);
-    assert.notEqual(result.action, "error");
+    // No receipt on disk yet — completion must error.
+    const result = completeCommand("plan/understand", undefined, tmp);
+    assert.equal(result.action, "error");
+    if (result.action === "error") {
+      assert.ok(result.message.includes("requires a receipt"));
+    }
   });
 
-  it("accepts undefined outcome", () => {
+  it("completes when a valid receipt is on disk (outcome derived, not flagged)", () => {
     const tmp = makeTmpDir();
     tmpDirs.push(tmp);
-    initCommand({ mode: "full", description: "No outcome", worktreeRoot: tmp });
+    initCommand({ mode: "full", description: "Receipt ok", worktreeRoot: tmp });
+
+    writeReceipt(tmp, "plan", "understand", {
+      version: 1,
+      step: "plan/understand",
+      timestamp: new Date().toISOString(),
+      criteria: [{ id: "C1", description: "test criterion" }],
+    });
 
     const result = completeCommand("plan/understand", undefined, tmp);
     assert.notEqual(result.action, "error");
+  });
+
+  it("rejects an invalid receipt with a structured error", () => {
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+    initCommand({ mode: "full", description: "Bad receipt", worktreeRoot: tmp });
+
+    writeReceipt(tmp, "plan", "understand", {
+      // Missing required `criteria` field
+      version: 1,
+      step: "plan/understand",
+      timestamp: new Date().toISOString(),
+    } as any);
+
+    const result = completeCommand("plan/understand", undefined, tmp);
+    assert.equal(result.action, "error");
+    if (result.action === "error") {
+      assert.ok(result.message.includes("failed validation"));
+    }
   });
 });

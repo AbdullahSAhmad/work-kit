@@ -16,7 +16,7 @@ You are the **Intake Classifier**. One step: read the request and decide what ki
 1. Read the step file `.claude/skills/wk-triage/steps/classify.md`
 2. Follow its instructions
 3. Write outputs to `.work-kit/state.md`
-4. Call `work-kit complete triage/classify --classification <X>` so the CLI writes the classification into `tracker.json` and builds the workflow
+4. Write the receipt at `.work-kit/receipts/triage-classify.json` (see `steps/classify.md` for the schema). Its `classification` field is authoritative — the orchestrator runs `work-kit run --finished triage/classify`, which reads the receipt, writes the classification into `tracker.json`, and builds the workflow.
 
 ## When this phase runs
 
@@ -50,7 +50,7 @@ Then:
 
 ### Always
 - Pick exactly one classification — multi-class is not a thing
-- Call `work-kit complete triage/classify --classification <X>` so the CLI can build the workflow
+- Write the receipt with the chosen `classification` so the CLI can build the workflow
 
 ### Never
 - Tighten the ask, propose framings, or write a spec — that's Plan/Understand's job now
