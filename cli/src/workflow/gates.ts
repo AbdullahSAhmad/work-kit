@@ -5,10 +5,10 @@ import { PhaseName } from "../state/schema.js";
 // confirmation before proceeding to the next phase.
 
 export const WAIT_AFTER_PHASE: Set<PhaseName> = new Set([
-  "plan",    // User reviews the design + blueprint before build
-  "build",   // User reviews the PR before test
-  "test",    // User reviews test results before review
-  "review",  // User reviews the ship decision before deploy
+  "plan", // User reviews the design + blueprint before build
+  "build", // User reviews the PR before test
+  "test", // User reviews test results before review
+  "review", // User reviews the ship decision before deploy
 ]);
 
 // ── Phase Display Names ──────────────────────────────────────────────

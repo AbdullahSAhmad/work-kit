@@ -1,13 +1,7 @@
 import * as fs from "node:fs";
-import * as path from "node:path";
 import * as os from "node:os";
-import {
-  ModelTier,
-  PhaseName,
-  WorkKitState,
-  Classification,
-  isModelTier,
-} from "../state/schema.js";
+import * as path from "node:path";
+import { Classification, isModelTier, ModelTier, PhaseName, WorkKitState } from "../state/schema.js";
 import { STATE_DIR } from "../state/store.js";
 
 /**
@@ -75,8 +69,8 @@ export const BY_STEP: Record<string, ModelTier> = {
   // with internal recovery; needs sonnet for the rollback/fix-forward judgment.
   "deploy/ship": "sonnet",
 
-  // Wrap-up — synthesis
-  "wrap-up/summary": "sonnet",
+  // Wrap-up — synthesis + knowledge extraction
+  "wrap-up/finalize": "sonnet",
 };
 
 // ── Classification overrides (auto-kit only) ────────────────────────
@@ -153,7 +147,7 @@ function readJsonMap(filePath: string): OverrideMap {
 export function resolveModel(
   state: Pick<WorkKitState, "modelPolicy" | "classification" | "mode"> & { metadata: { worktreeRoot: string } },
   phase: PhaseName,
-  step: string
+  step: string,
 ): ModelTier | undefined {
   const key = `${phase}/${step}`;
   const policy = state.modelPolicy ?? "auto";

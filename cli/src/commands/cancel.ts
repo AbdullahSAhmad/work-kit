@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { readState, findWorktreeRoot, stateDir, resolveMainRepoRoot } from "../state/store.js";
+import { findWorktreeRoot, readState, resolveMainRepoRoot, stateDir } from "../state/store.js";
 
 export interface CancelResult {
   action: "cancelled" | "error";

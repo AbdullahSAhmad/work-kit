@@ -1,11 +1,5 @@
 import * as path from "node:path";
-import {
-  PHASE_NAMES,
-  STEPS_BY_PHASE,
-  isClassification,
-  type PhaseName,
-  type Classification,
-} from "../state/schema.js";
+import { type Classification, isClassification, PHASE_NAMES, type PhaseName, STEPS_BY_PHASE } from "../state/schema.js";
 import { readJsonFile } from "../utils/json.js";
 import { PROJECT_CONFIG_FILE } from "./constants.js";
 
@@ -16,7 +10,7 @@ import { PROJECT_CONFIG_FILE } from "./constants.js";
  *   {
  *     "defaults": { "mode": "auto", "classification": "feature", "gated": false },
  *     "workflow": {
- *       "include": ["wrap-up/knowledge"],
+ *       "include": ["wrap-up/finalize"],
  *       "exclude": ["deploy/monitor"]
  *     }
  *   }

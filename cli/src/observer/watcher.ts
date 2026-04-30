@@ -7,10 +7,7 @@ export interface WatcherHandle {
   getWorktrees: () => WorktreeEntry[];
 }
 
-export function startWatching(
-  mainRepoRoots: string[],
-  onUpdate: () => void
-): WatcherHandle {
+export function startWatching(mainRepoRoots: string[], onUpdate: () => void): WatcherHandle {
   const watchers = new Map<string, fs.FSWatcher>();
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -73,9 +70,9 @@ export function startWatching(
     // Only trigger update if the entry list actually changed. Compare
     // both fields so a worktree path reused under a different root is
     // detected as a real change.
-    const changed = current.length !== cachedEntries.length
-      || current.some((e, i) =>
-        e.worktree !== cachedEntries[i].worktree || e.root !== cachedEntries[i].root);
+    const changed =
+      current.length !== cachedEntries.length ||
+      current.some((e, i) => e.worktree !== cachedEntries[i].worktree || e.root !== cachedEntries[i].root);
 
     for (const e of current) {
       watchStateFile(e.worktree);

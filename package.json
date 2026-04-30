@@ -21,7 +21,12 @@
     "setup": "tsx cli/src/index.ts setup",
     "build": "tsc --project cli/tsconfig.json",
     "typecheck": "tsc --project cli/tsconfig.json --noEmit",
-    "test": "tsx --test cli/src/**/*.test.ts"
+    "test": "tsx --test cli/src/**/*.test.ts",
+    "lint": "biome lint",
+    "format": "biome format --write",
+    "check": "biome check",
+    "fix": "biome check --write",
+    "prepare": "lefthook install || true"
   },
   "repository": {
     "type": "git",
@@ -40,7 +45,9 @@
     "tsx": "^4.19.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.13",
     "@types/node": "^22.15.2",
+    "lefthook": "2.1.6",
     "typescript": "^5.8.3"
   },
   "bugs": {

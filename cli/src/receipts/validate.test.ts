@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { validateReceipt } from "./validate.js";
 
 describe("validateReceipt", () => {
@@ -17,31 +17,19 @@ describe("validateReceipt", () => {
     });
 
     it("rejects wrong version", () => {
-      const res = validateReceipt(
-        { version: 99, step: "plan/audit", timestamp: "x", gaps: [] },
-        "plan",
-        "audit"
-      );
+      const res = validateReceipt({ version: 99, step: "plan/audit", timestamp: "x", gaps: [] }, "plan", "audit");
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("version must be 1")));
     });
 
     it("rejects mismatched step", () => {
-      const res = validateReceipt(
-        { version: 1, step: "plan/design", timestamp: "x", gaps: [] },
-        "plan",
-        "audit"
-      );
+      const res = validateReceipt({ version: 1, step: "plan/design", timestamp: "x", gaps: [] }, "plan", "audit");
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes('step must be "plan/audit"')));
     });
 
     it("rejects missing timestamp", () => {
-      const res = validateReceipt(
-        { version: 1, step: "plan/audit", gaps: [] },
-        "plan",
-        "audit"
-      );
+      const res = validateReceipt({ version: 1, step: "plan/audit", gaps: [] }, "plan", "audit");
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("timestamp must be a string")));
     });
@@ -50,7 +38,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "build/setup", timestamp: "x", error: { kind: 123, message: "x" } },
         "build",
-        "setup"
+        "setup",
       );
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("error.kind must be a string")));
@@ -69,7 +57,7 @@ describe("validateReceipt", () => {
           rationale: "user-facing",
         },
         "triage",
-        "classify"
+        "classify",
       );
       assert.equal(res.ok, true);
     });
@@ -84,7 +72,7 @@ describe("validateReceipt", () => {
           signals: {},
         },
         "triage",
-        "classify"
+        "classify",
       );
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("classification")));
@@ -94,7 +82,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "triage/classify", timestamp: "x", classification: "feature" },
         "triage",
-        "classify"
+        "classify",
       );
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("signals")));
@@ -103,11 +91,7 @@ describe("validateReceipt", () => {
 
   describe("plan/audit", () => {
     it("accepts a clean audit", () => {
-      const res = validateReceipt(
-        { version: 1, step: "plan/audit", timestamp: "x", gaps: [] },
-        "plan",
-        "audit"
-      );
+      const res = validateReceipt({ version: 1, step: "plan/audit", timestamp: "x", gaps: [] }, "plan", "audit");
       assert.equal(res.ok, true);
     });
 
@@ -120,7 +104,7 @@ describe("validateReceipt", () => {
           gaps: [{ id: "G1", where: "blueprint" /* description missing */ }],
         },
         "plan",
-        "audit"
+        "audit",
       );
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("gaps[0].description")));
@@ -138,7 +122,7 @@ describe("validateReceipt", () => {
           test_command: "npm test",
         },
         "build",
-        "implement"
+        "implement",
       );
       assert.equal(res.ok, true);
     });
@@ -147,7 +131,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "build/implement", timestamp: "x", test_command: "npm test" },
         "build",
-        "implement"
+        "implement",
       );
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("tests_passing")));
@@ -165,7 +149,7 @@ describe("validateReceipt", () => {
           verdict: "pass",
         },
         "test",
-        "validate"
+        "validate",
       );
       assert.equal(res.ok, true);
     });
@@ -180,7 +164,7 @@ describe("validateReceipt", () => {
           verdict: "pass",
         },
         "test",
-        "validate"
+        "validate",
       );
       assert.equal(res.ok, false);
       if (!res.ok) assert.ok(res.errors.some((e) => e.includes("criteria[0].status")));
@@ -192,7 +176,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "review/resolve", timestamp: "x", ship_decision: "approved" },
         "review",
-        "resolve"
+        "resolve",
       );
       assert.equal(res.ok, true);
     });
@@ -201,7 +185,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "review/resolve", timestamp: "x", ship_decision: "maybe" },
         "review",
-        "resolve"
+        "resolve",
       );
       assert.equal(res.ok, false);
     });
@@ -212,7 +196,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "deploy/ship", timestamp: "x", merged: true, monitor_status: "green" },
         "deploy",
-        "ship"
+        "ship",
       );
       assert.equal(res.ok, true);
     });
@@ -221,7 +205,7 @@ describe("validateReceipt", () => {
       const res = validateReceipt(
         { version: 1, step: "deploy/ship", timestamp: "x", merged: true, monitor_status: "purple" },
         "deploy",
-        "ship"
+        "ship",
       );
       assert.equal(res.ok, false);
     });
@@ -230,12 +214,11 @@ describe("validateReceipt", () => {
   describe("evidence-only steps accept minimal receipts", () => {
     const minimal: { phase: any; step: string; payload: Record<string, unknown> }[] = [
       { phase: "build", step: "setup", payload: {} },
-      { phase: "wrap-up", step: "summary", payload: {} },
       {
         phase: "wrap-up",
-        step: "knowledge",
+        step: "finalize",
         payload: {
-          extracted: { lessons: 0, conventions: 0, risks: 0, decisions: 0, workflow: 0 },
+          extracted: { findings: 0, workflow: 0 },
         },
       },
     ];
@@ -245,7 +228,7 @@ describe("validateReceipt", () => {
         const res = validateReceipt(
           { version: 1, step: `${m.phase}/${m.step}`, timestamp: "x", ...m.payload },
           m.phase,
-          m.step
+          m.step,
         );
         assert.equal(res.ok, true);
       });

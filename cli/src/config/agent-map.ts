@@ -6,8 +6,8 @@ import { PhaseName } from "../state/schema.js";
  */
 
 export interface AgentContext {
-  sections: string[];         // sections to extract from state.md
-  needsGitDiff?: boolean;     // whether the agent needs `git diff main...HEAD`
+  sections: string[]; // sections to extract from state.md
+  needsGitDiff?: boolean; // whether the agent needs `git diff main...HEAD`
 }
 
 // Phase-level context (what the phase runner agent reads)
@@ -62,10 +62,14 @@ export const STEP_CONTEXT: Record<string, AgentContext> = {
   },
   "review/resolve": {
     sections: [
-      "### Review: Scope", "### Review: Roundup",
-      "### Review: Quality", "### Review: Efficiency",
-      "### Review: Security", "### Review: Compliance",
-      "### Test: Final", "## Criteria",
+      "### Review: Scope",
+      "### Review: Roundup",
+      "### Review: Quality",
+      "### Review: Efficiency",
+      "### Review: Security",
+      "### Review: Compliance",
+      "### Test: Final",
+      "## Criteria",
     ],
     needsGitDiff: true,
   },

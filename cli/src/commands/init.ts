@@ -1,13 +1,25 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { WorkKitState, PhaseState, PhaseName, PHASE_NAMES, STEPS_BY_PHASE, WorkflowStep, Classification, MODE_FULL, MODE_AUTO, ModelPolicy, isModelPolicy } from "../state/schema.js";
-import { writeState, writeStateMd, stateExists, STATE_DIR, resolveMainRepoRoot } from "../state/store.js";
-import { buildFullWorkflow, buildDefaultWorkflow, skillFilePath } from "../config/workflow.js";
 import { BRANCH_PREFIX, CLI_BINARY } from "../config/constants.js";
-import { loadProjectConfig } from "../config/project-config.js";
 import { resolveModel } from "../config/model-routing.js";
+import { loadProjectConfig } from "../config/project-config.js";
+import { buildDefaultWorkflow, buildFullWorkflow, skillFilePath } from "../config/workflow.js";
 import { ensureReceiptsDir, receiptPathIfApplicable } from "../receipts/store.js";
 import type { Action } from "../state/schema.js";
+import {
+  Classification,
+  isModelPolicy,
+  MODE_AUTO,
+  MODE_FULL,
+  ModelPolicy,
+  PHASE_NAMES,
+  PhaseName,
+  PhaseState,
+  STEPS_BY_PHASE,
+  WorkflowStep,
+  WorkKitState,
+} from "../state/schema.js";
+import { resolveMainRepoRoot, STATE_DIR, stateExists, writeState, writeStateMd } from "../state/store.js";
 
 function toSlug(description: string): string {
   return description
@@ -53,7 +65,7 @@ function generateStateMd(
   firstPhase: string,
   firstStep: string,
   classification?: string,
-  workflow?: WorkflowStep[]
+  workflow?: WorkflowStep[],
 ): string {
   const title = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const date = new Date().toISOString().split("T")[0];
@@ -98,11 +110,13 @@ ${description}
 
 ## Observations
 <!-- Append typed bullets as you notice things worth preserving across sessions. -->
-<!-- wrap-up/knowledge routes these to .work-kit-knowledge/. -->
-<!-- Grammar: - [lesson|convention|risk|workflow] text  (workflow tag may include :phase/step) -->
+<!-- wrap-up/finalize routes these to .work-kit-knowledge/. -->
+<!-- Grammar: - [lesson|convention|risk|decision] text → findings.md  |  - [workflow] text → workflow.md -->
+<!-- Workflow tag may include :phase/step — e.g. [workflow:test/exercise] -->
 <!-- Examples: -->
 <!--   - [risk] auth.middleware.ts breaks if SESSION_SECRET is unset. -->
 <!--   - [convention] All API errors must use createApiError() helper. -->
+<!--   - [decision] **Auth driver**: chose JWT over sessions — stateless, easier to scale. -->
 <!--   - [workflow:test/exercise] The E2E lens doesn't tell agents to start the dev server first. -->
 
 ## Deviations
@@ -229,7 +243,10 @@ export function initCommand(options: {
 
   // Write state files
   writeState(worktreeRoot, state);
-  writeStateMd(worktreeRoot, generateStateMd(slug, branch, modeLabel, description, firstPhase, firstStep, classification, workflow));
+  writeStateMd(
+    worktreeRoot,
+    generateStateMd(slug, branch, modeLabel, description, firstPhase, firstStep, classification, workflow),
+  );
   ensureReceiptsDir(worktreeRoot);
 
   const model = resolveModel(state, firstPhase, firstStep);

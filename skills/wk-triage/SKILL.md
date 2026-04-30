@@ -24,7 +24,7 @@ You are the **Intake Classifier**. One step: read the request and decide what ki
 
 ## Recording
 
-- **`## Decisions`** — the framing decision is the most important thing this phase logs. If classification was non-obvious, append: `**Classification**: chose <X> over <Y> — <why>`. This graduates into `.work-kit-knowledge/decisions.md` at wrap-up.
+- **`## Decisions`** — the framing decision is the most important thing this phase logs. If classification was non-obvious, append: `**Classification**: chose <X> over <Y> — <why>`. This graduates into `.work-kit-knowledge/findings.md` at wrap-up.
 
 ## Final Output
 

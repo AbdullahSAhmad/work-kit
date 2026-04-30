@@ -1,12 +1,12 @@
-import type { PhaseName, WorkKitState } from "../state/schema.js";
 import { loadProjectConfig } from "../config/project-config.js";
+import type { PhaseName, WorkKitState } from "../state/schema.js";
 
 /**
  * Defines which steps run in parallel and which runs sequentially after.
  */
 export interface ParallelGroup {
-  parallel: string[];          // steps that run concurrently
-  thenSequential?: string;     // step that runs after all parallel complete
+  parallel: string[]; // steps that run concurrently
+  thenSequential?: string; // step that runs after all parallel complete
 }
 
 /**
@@ -57,4 +57,3 @@ export function getParallelGroup(phase: PhaseName, step: string, state?: WorkKit
 
   return group;
 }
-

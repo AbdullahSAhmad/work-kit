@@ -70,7 +70,7 @@ The orchestrator no longer classifies the request. The **Triage agent** does tha
 ### Step 3: User reviews the workflow
 
 5. Show `work-kit workflow` — output now includes the resolved model per step and the active policy.
-6. The user can adjust: `work-kit workflow --add wrap-up/knowledge` or `--remove plan/audit`. Completed steps cannot be removed.
+6. The user can adjust: `work-kit workflow --add wrap-up/finalize` or `--remove plan/audit`. Completed steps cannot be removed.
 7. **Wait for approval** — once the user approves, run the execution loop.
 
 ### Workflow skip matrix (informational — Triage applies this automatically)

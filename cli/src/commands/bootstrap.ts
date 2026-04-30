@@ -1,14 +1,11 @@
 import fs from "node:fs";
-import { findWorktreeRoot, readState, writeState, statePath } from "../state/store.js";
-import { unpause } from "../state/helpers.js";
 import { CLI_BINARY, STALE_THRESHOLD_MS } from "../config/constants.js";
-import { fileForType, readKnowledgeFile, KNOWLEDGE_TYPES, type KnowledgeType } from "../utils/knowledge.js";
+import { unpause } from "../state/helpers.js";
+import { findWorktreeRoot, readState, statePath, writeState } from "../state/store.js";
+import { readKnowledgeFile } from "../utils/knowledge.js";
 
 export interface BootstrapKnowledge {
-  lessons?: string;
-  conventions?: string;
-  risks?: string;
-  decisions?: string;
+  findings?: string;
 }
 
 export interface BootstrapResult {
@@ -25,10 +22,9 @@ export interface BootstrapResult {
   nextAction?: string;
   recovery?: string | null;
   /**
-   * Project-level knowledge files (lessons/conventions/risks/decisions) read
-   * from <mainRepoRoot>/.work-kit-knowledge/. Capped at 200 lines per file.
-   * workflow.md is intentionally excluded — it's a write-only artifact for
-   * human curators, not session context.
+   * Project-level knowledge read from <mainRepoRoot>/.work-kit-knowledge/findings.md.
+   * Capped at 200 lines. workflow.md is intentionally excluded — it's a
+   * write-only artifact for human curators, not session context.
    */
   knowledge?: BootstrapKnowledge;
 }
@@ -43,8 +39,7 @@ export function bootstrapCommand(startDir?: string, options: BootstrapOptions = 
   if (!root) {
     return {
       active: false,
-      nextAction:
-        "No active work-kit session. Start one with /full-kit <description> or /auto-kit <description>.",
+      nextAction: "No active work-kit session. Start one with /full-kit <description> or /auto-kit <description>.",
     };
   }
 
@@ -90,31 +85,13 @@ export function bootstrapCommand(startDir?: string, options: BootstrapOptions = 
     nextAction = `Continue ${state.currentPhase ?? "next phase"}${state.currentStep ? "/" + state.currentStep : ""}. Run \`${CLI_BINARY} next\` to get the agent prompt.`;
   }
 
-  // workflow.md is intentionally excluded — it's a write-only artifact for
-  // human curators, not session context.
-  const INJECTED_TYPES: KnowledgeType[] = KNOWLEDGE_TYPES.filter(
-    (t) => t !== "workflow"
-  ) as KnowledgeType[];
-  // Map each knowledge type to its plural field name on BootstrapKnowledge.
-  const TYPE_TO_FIELD: Record<Exclude<KnowledgeType, "workflow">, keyof BootstrapKnowledge> = {
-    lesson: "lessons",
-    convention: "conventions",
-    risk: "risks",
-    decision: "decisions",
-  };
-
   let knowledge: BootstrapKnowledge | undefined;
   try {
     const mainRepoRoot = state.metadata?.mainRepoRoot;
     if (mainRepoRoot) {
-      const collected: BootstrapKnowledge = {};
-      for (const type of INJECTED_TYPES) {
-        const content = readKnowledgeFile(mainRepoRoot, fileForType(type));
-        if (content) {
-          collected[TYPE_TO_FIELD[type as Exclude<KnowledgeType, "workflow">]] = content;
-        }
-      }
-      if (Object.keys(collected).length > 0) knowledge = collected;
+      // findings.md is injected; workflow.md is write-only for human curators.
+      const findings = readKnowledgeFile(mainRepoRoot, "findings.md");
+      if (findings) knowledge = { findings };
     }
   } catch (err: any) {
     process.stderr.write(`work-kit: failed to load knowledge files: ${err.message}\n`);

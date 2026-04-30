@@ -1,18 +1,18 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { findWorktreeRoot, resolveMainRepoRoot } from "../state/store.js";
-import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE } from "../config/constants.js";
+import { ARCHIVE_DIR, INDEX_FILE, TRACKER_DIR } from "../config/constants.js";
 import {
-  PHASE_NAMES,
-  MODE_FULL,
-  MODE_AUTO,
-  type PhaseName,
   type Classification,
+  MODE_AUTO,
+  MODE_FULL,
+  PHASE_NAMES,
+  type PhaseName,
   type WorkKitState,
 } from "../state/schema.js";
+import { findWorktreeRoot, resolveMainRepoRoot } from "../state/store.js";
+import { bold, cyan, dim, green, yellow } from "../utils/colors.js";
 import { readJsonFile } from "../utils/json.js";
 import { durationMs, formatDurationMs } from "../utils/time.js";
-import { bold, cyan, dim, green, yellow } from "../utils/colors.js";
 
 const RECENT_LIMIT = 10;
 
@@ -57,19 +57,23 @@ export function collectReport(mainRepoRoot: string): ReportData {
     avgDurationMs: 0,
     totalLoopbacks: 0,
     loopbackRate: 0,
-    perPhase: PHASE_NAMES.reduce((acc, p) => {
-      acc[p] = emptyPhaseStats();
-      return acc;
-    }, {} as Record<PhaseName, PhaseStats>),
+    perPhase: PHASE_NAMES.reduce(
+      (acc, p) => {
+        acc[p] = emptyPhaseStats();
+        return acc;
+      },
+      {} as Record<PhaseName, PhaseStats>,
+    ),
     recent: [],
     source: { mainRepoRoot, trackerDir },
   };
 
   let folders: string[];
   try {
-    folders = fs.readdirSync(archiveDir, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name);
+    folders = fs
+      .readdirSync(archiveDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
   } catch {
     return data;
   }
@@ -164,7 +168,9 @@ export function reportCommand(options: ReportOptions = {}): ReportData {
 
   out.push(`  ${cyan("Completed")}    ${bold(String(data.totalCompleted))}`);
   out.push(`  ${cyan("Avg run")}      ${formatDurationMs(data.avgDurationMs)}`);
-  out.push(`  ${cyan("Loopbacks")}    ${data.totalLoopbacks} ${dim(`(${(data.loopbackRate * 100).toFixed(0)}% rate)`)}`);
+  out.push(
+    `  ${cyan("Loopbacks")}    ${data.totalLoopbacks} ${dim(`(${(data.loopbackRate * 100).toFixed(0)}% rate)`)}`,
+  );
   out.push("");
 
   const byClassEntries = Object.entries(data.byClassification);

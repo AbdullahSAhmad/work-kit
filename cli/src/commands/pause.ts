@@ -1,5 +1,5 @@
-import { readState, writeState, findWorktreeRoot } from "../state/store.js";
 import type { Action } from "../state/schema.js";
+import { findWorktreeRoot, readState, writeState } from "../state/store.js";
 
 export function pauseCommand(reason?: string, worktreeRoot?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();

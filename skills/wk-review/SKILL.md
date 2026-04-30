@@ -44,7 +44,7 @@ Throughout every step, update the shared state.md sections:
 
 - **`## Decisions`** — Judgment calls during review (e.g., "accepted this deviation because..."): `- **<context>**: chose <X> over <Y> — <one-sentence why>`. Skip obvious choices.
 - **`## Deviations`** — Compliance reviewer audits these. If you fix a deviation during Resolve, note that it was resolved.
-- **`## Observations`** — Whenever you spot a fragile area, a missing convention, or feedback about the review phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these route to `.work-kit-knowledge/`.
+- **`## Observations`** — Whenever you spot a fragile area, a missing convention, or feedback about the review phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/finalize` these route to `.work-kit-knowledge/`.
 
 Review findings feed directly into the Resolve decision and the final work-kit log.
 

@@ -1,10 +1,4 @@
-import {
-  PhaseName,
-  PHASE_NAMES,
-  STEPS_BY_PHASE,
-  Classification,
-  WorkflowStep,
-} from "../state/schema.js";
+import { Classification, PHASE_NAMES, PhaseName, STEPS_BY_PHASE, WorkflowStep } from "../state/schema.js";
 import { SKILL_DIR_PREFIX } from "./constants.js";
 
 // ── Phase Order ─────────────────────────────────────────────────────
@@ -38,54 +32,89 @@ type InclusionRule = "YES" | "skip" | "if UI" | "if DB" | "optional";
 const WORKFLOW_MATRIX: Record<Classification, Record<string, InclusionRule>> = {
   "bug-fix": {
     "triage/classify": "YES",
-    "plan/understand": "YES", "plan/design": "skip", "plan/audit": "skip",
-    "build/setup": "skip", "build/implement": "YES", "build/commit": "YES",
-    "test/exercise": "YES", "test/validate": "YES",
-    "review/scope": "YES", "review/review": "YES", "review/resolve": "YES",
+    "plan/understand": "YES",
+    "plan/design": "skip",
+    "plan/audit": "skip",
+    "build/setup": "skip",
+    "build/implement": "YES",
+    "build/commit": "YES",
+    "test/exercise": "YES",
+    "test/validate": "YES",
+    "review/scope": "YES",
+    "review/review": "YES",
+    "review/resolve": "YES",
     "deploy/ship": "YES",
-    "wrap-up/summary": "YES", "wrap-up/knowledge": "skip",
+    "wrap-up/finalize": "YES",
   },
   "small-change": {
     "triage/classify": "YES",
-    "plan/understand": "YES", "plan/design": "skip", "plan/audit": "skip",
-    "build/setup": "skip", "build/implement": "YES", "build/commit": "YES",
-    "test/exercise": "YES", "test/validate": "skip",
-    "review/scope": "YES", "review/review": "YES", "review/resolve": "YES",
+    "plan/understand": "YES",
+    "plan/design": "skip",
+    "plan/audit": "skip",
+    "build/setup": "skip",
+    "build/implement": "YES",
+    "build/commit": "YES",
+    "test/exercise": "YES",
+    "test/validate": "skip",
+    "review/scope": "YES",
+    "review/review": "YES",
+    "review/resolve": "YES",
     "deploy/ship": "YES",
-    "wrap-up/summary": "YES", "wrap-up/knowledge": "skip",
+    "wrap-up/finalize": "YES",
   },
   refactor: {
     "triage/classify": "YES",
-    "plan/understand": "YES", "plan/design": "skip", "plan/audit": "skip",
-    "build/setup": "skip", "build/implement": "YES", "build/commit": "YES",
-    "test/exercise": "YES", "test/validate": "skip",
-    "review/scope": "YES", "review/review": "YES", "review/resolve": "YES",
+    "plan/understand": "YES",
+    "plan/design": "skip",
+    "plan/audit": "skip",
+    "build/setup": "skip",
+    "build/implement": "YES",
+    "build/commit": "YES",
+    "test/exercise": "YES",
+    "test/validate": "skip",
+    "review/scope": "YES",
+    "review/review": "YES",
+    "review/resolve": "YES",
     "deploy/ship": "YES",
-    "wrap-up/summary": "YES", "wrap-up/knowledge": "YES",
+    "wrap-up/finalize": "YES",
   },
   feature: {
     "triage/classify": "YES",
-    "plan/understand": "YES", "plan/design": "YES", "plan/audit": "skip",
-    "build/setup": "YES", "build/implement": "YES", "build/commit": "YES",
-    "test/exercise": "YES", "test/validate": "YES",
-    "review/scope": "YES", "review/review": "YES", "review/resolve": "YES",
+    "plan/understand": "YES",
+    "plan/design": "YES",
+    "plan/audit": "skip",
+    "build/setup": "YES",
+    "build/implement": "YES",
+    "build/commit": "YES",
+    "test/exercise": "YES",
+    "test/validate": "YES",
+    "review/scope": "YES",
+    "review/review": "YES",
+    "review/resolve": "YES",
     "deploy/ship": "YES",
-    "wrap-up/summary": "YES", "wrap-up/knowledge": "YES",
+    "wrap-up/finalize": "YES",
   },
   "large-feature": {
     "triage/classify": "YES",
-    "plan/understand": "YES", "plan/design": "YES", "plan/audit": "YES",
-    "build/setup": "YES", "build/implement": "YES", "build/commit": "YES",
-    "test/exercise": "YES", "test/validate": "YES",
-    "review/scope": "YES", "review/review": "YES", "review/resolve": "YES",
+    "plan/understand": "YES",
+    "plan/design": "YES",
+    "plan/audit": "YES",
+    "build/setup": "YES",
+    "build/implement": "YES",
+    "build/commit": "YES",
+    "test/exercise": "YES",
+    "test/validate": "YES",
+    "review/scope": "YES",
+    "review/review": "YES",
+    "review/resolve": "YES",
     "deploy/ship": "YES",
-    "wrap-up/summary": "YES", "wrap-up/knowledge": "YES",
+    "wrap-up/finalize": "YES",
   },
 };
 
 export function buildDefaultWorkflow(
   classification: Classification,
-  overrides?: { include?: string[]; exclude?: string[] }
+  overrides?: { include?: string[]; exclude?: string[] },
 ): WorkflowStep[] {
   const matrix = WORKFLOW_MATRIX[classification];
   const steps: WorkflowStep[] = [];
@@ -106,7 +135,7 @@ export function buildDefaultWorkflow(
   // Add any force-included steps not in the matrix
   for (const ref of forceInclude) {
     const [phase, step] = ref.split("/") as [PhaseName, string];
-    if (!steps.some(s => s.phase === phase && s.step === step)) {
+    if (!steps.some((s) => s.phase === phase && s.step === step)) {
       steps.push({ phase, step, included: true });
     }
   }

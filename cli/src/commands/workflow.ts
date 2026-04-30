@@ -1,8 +1,8 @@
-import { readState, writeState, findWorktreeRoot } from "../state/store.js";
-import { STEPS_BY_PHASE, PHASE_NAMES, MODE_AUTO, PhaseName } from "../state/schema.js";
-import { parseLocation } from "../state/helpers.js";
 import { resolveModel } from "../config/model-routing.js";
+import { parseLocation } from "../state/helpers.js";
 import type { Action } from "../state/schema.js";
+import { MODE_AUTO, PHASE_NAMES, PhaseName, STEPS_BY_PHASE } from "../state/schema.js";
+import { findWorktreeRoot, readState, writeState } from "../state/store.js";
 
 interface WorkflowStatus {
   action: "workflow_status";
@@ -12,11 +12,7 @@ interface WorkflowStatus {
 
 export type WorkflowResult = Action | WorkflowStatus;
 
-export function workflowCommand(opts: {
-  add?: string;
-  remove?: string;
-  worktreeRoot?: string;
-}): WorkflowResult {
+export function workflowCommand(opts: { add?: string; remove?: string; worktreeRoot?: string }): WorkflowResult {
   const root = opts.worktreeRoot || findWorktreeRoot();
   if (!root) {
     return { action: "error", message: "No work-kit state found." };
@@ -104,9 +100,7 @@ export function workflowCommand(opts: {
       stepState.status = "skipped";
     }
 
-    const allSkipped = Object.values(state.phases[phase].steps).every(
-      (s) => s.status === "skipped"
-    );
+    const allSkipped = Object.values(state.phases[phase].steps).every((s) => s.status === "skipped");
     if (allSkipped) {
       state.phases[phase].status = "skipped";
     }

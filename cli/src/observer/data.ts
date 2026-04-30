@@ -1,11 +1,18 @@
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { execFileSync } from "node:child_process";
-import type { WorkKitState, PhaseName } from "../state/schema.js";
-import { PHASE_NAMES, STEPS_BY_PHASE, MODE_AUTO } from "../state/schema.js";
-import { readState, stateExists, STATE_DIR, AWAITING_INPUT_MARKER_FILE, IDLE_MARKER_FILE, gitMainRepoRoot } from "../state/store.js";
-import { TRACKER_DIR, INDEX_FILE } from "../config/constants.js";
+import { INDEX_FILE, TRACKER_DIR } from "../config/constants.js";
+import type { PhaseName, WorkKitState } from "../state/schema.js";
+import { MODE_AUTO, PHASE_NAMES, STEPS_BY_PHASE } from "../state/schema.js";
+import {
+  AWAITING_INPUT_MARKER_FILE,
+  gitMainRepoRoot,
+  IDLE_MARKER_FILE,
+  readState,
+  STATE_DIR,
+  stateExists,
+} from "../state/store.js";
 
 const AWAITING_INPUT_MARKER = path.join(STATE_DIR, AWAITING_INPUT_MARKER_FILE);
 const IDLE_MARKER = path.join(STATE_DIR, IDLE_MARKER_FILE);
@@ -13,7 +20,7 @@ const IDLE_MARKER = path.join(STATE_DIR, IDLE_MARKER_FILE);
 // ── View Types ─────────────────────────────────────────────────────
 
 export interface WorktreeEntry {
-  root: string;     // main repo root that owns this worktree
+  root: string; // main repo root that owns this worktree
   worktree: string; // worktree path (may equal root)
 }
 
@@ -118,7 +125,11 @@ function extractCwdFromJsonl(filePath: string): string | null {
     return null;
   } finally {
     if (fd !== null) {
-      try { fs.closeSync(fd); } catch { /* ignore */ }
+      try {
+        fs.closeSync(fd);
+      } catch {
+        /* ignore */
+      }
     }
   }
 }
@@ -136,7 +147,7 @@ export function discoverWorkKitProjects(): string[] {
     const projDir = path.join(CLAUDE_PROJECTS_DIR, entry);
     let files: string[];
     try {
-      files = fs.readdirSync(projDir).filter(f => f.endsWith(".jsonl"));
+      files = fs.readdirSync(projDir).filter((f) => f.endsWith(".jsonl"));
     } catch {
       continue;
     }
@@ -153,7 +164,9 @@ export function discoverWorkKitProjects(): string[] {
           newestMtime = m;
           newestFile = f;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     if (!newestFile) continue;
 
@@ -193,9 +206,8 @@ export function collectWorkItem(worktreeRoot: string, mainRepoRoot?: string): Wo
   let total = 0;
   const phaseViews: { name: string; status: string; startedAt?: string; completedAt?: string }[] = [];
 
-  const phaseList: PhaseName[] = state.mode === MODE_AUTO && state.workflow
-    ? getAutoKitPhases(state)
-    : [...PHASE_NAMES];
+  const phaseList: PhaseName[] =
+    state.mode === MODE_AUTO && state.workflow ? getAutoKitPhases(state) : [...PHASE_NAMES];
 
   // Track current phase step position
   let currentPhaseStartedAt: string | undefined;
@@ -215,7 +227,7 @@ export function collectWorkItem(worktreeRoot: string, mainRepoRoot?: string): Wo
     }
 
     // If any step is "waiting", show the phase as waiting in the view
-    const hasWaiting = Object.values(phase.steps).some(s => s.status === "waiting");
+    const hasWaiting = Object.values(phase.steps).some((s) => s.status === "waiting");
     phaseViews.push({
       name: phaseName,
       status: hasWaiting ? "waiting" : phase.status,
@@ -230,7 +242,7 @@ export function collectWorkItem(worktreeRoot: string, mainRepoRoot?: string): Wo
       total += defaults.length;
       if (phase.status === "completed") completed += defaults.length;
     } else {
-      const activeKeys = stepKeys.filter(k => phase.steps[k].status !== "skipped");
+      const activeKeys = stepKeys.filter((k) => phase.steps[k].status !== "skipped");
       for (const key of activeKeys) {
         const s = phase.steps[key];
         total++;
@@ -249,7 +261,7 @@ export function collectWorkItem(worktreeRoot: string, mainRepoRoot?: string): Wo
           currentStepStatus = s?.status;
           currentStepStartedAt = s?.startedAt;
         }
-        phaseSteps = activeKeys.map(key => {
+        phaseSteps = activeKeys.map((key) => {
           const s = phase.steps[key];
           return {
             name: key,
@@ -270,12 +282,14 @@ export function collectWorkItem(worktreeRoot: string, mainRepoRoot?: string): Wo
   const loopbackView = {
     count: loopbacks.length,
     lastReason: loopbacks.length > 0 ? loopbacks[loopbacks.length - 1].reason : undefined,
-    lastFrom: loopbacks.length > 0
-      ? `${loopbacks[loopbacks.length - 1].from.phase}/${loopbacks[loopbacks.length - 1].from.step}`
-      : undefined,
-    lastTo: loopbacks.length > 0
-      ? `${loopbacks[loopbacks.length - 1].to.phase}/${loopbacks[loopbacks.length - 1].to.step}`
-      : undefined,
+    lastFrom:
+      loopbacks.length > 0
+        ? `${loopbacks[loopbacks.length - 1].from.phase}/${loopbacks[loopbacks.length - 1].from.step}`
+        : undefined,
+    lastTo:
+      loopbacks.length > 0
+        ? `${loopbacks[loopbacks.length - 1].to.phase}/${loopbacks[loopbacks.length - 1].to.step}`
+        : undefined,
   };
 
   const repoRoot = mainRepoRoot ?? worktreeRoot;
@@ -318,7 +332,7 @@ function getAutoKitPhases(state: WorkKitState): PhaseName[] {
     if (ws.included) phases.add(ws.phase);
   }
   // Maintain canonical order
-  return PHASE_NAMES.filter(p => phases.has(p));
+  return PHASE_NAMES.filter((p) => phases.has(p));
 }
 
 // ── Collect Completed Items ────────────────────────────────────────
@@ -355,10 +369,7 @@ export function collectCompletedItems(mainRepoRoot: string): CompletedItemView[]
 
 // ── Collect All Dashboard Data ─────────────────────────────────────
 
-export function collectDashboardData(
-  mainRepoRoots: string[],
-  cachedEntries?: WorktreeEntry[]
-): DashboardData {
+export function collectDashboardData(mainRepoRoots: string[], cachedEntries?: WorktreeEntry[]): DashboardData {
   let entries: WorktreeEntry[];
   if (cachedEntries) {
     entries = cachedEntries;
@@ -381,13 +392,14 @@ export function collectDashboardData(
     if (!item) continue;
     if (item.status === "completed") {
       const phaseNames = item.phases
-        .filter(p => p.status === "completed")
-        .map(p => p.name)
+        .filter((p) => p.status === "completed")
+        .map((p) => p.name)
         .join("→");
+      const lastCompletedPhase = item.phases.filter((p) => p.status === "completed").pop();
       completedFromWorktrees.push({
         slug: item.slug,
         repoName: item.repoName,
-        completedAt: item.startedAt,
+        completedAt: lastCompletedPhase?.completedAt ?? item.startedAt,
         phases: phaseNames,
       });
     } else {
@@ -397,7 +409,7 @@ export function collectDashboardData(
 
   // Sort: in-progress first, then paused, then by start time
   activeItems.sort((a, b) => {
-    const statusOrder: Record<string, number> = { "in-progress": 0, "paused": 1, "failed": 2 };
+    const statusOrder: Record<string, number> = { "in-progress": 0, paused: 1, failed: 2 };
     const aOrder = statusOrder[a.status] ?? 3;
     const bOrder = statusOrder[b.status] ?? 3;
     if (aOrder !== bOrder) return aOrder - bOrder;
@@ -405,15 +417,15 @@ export function collectDashboardData(
   });
 
   // Merge completed items from worktrees and index files, dedup by slug
-  const activeSlugs = new Set(activeItems.map(i => i.slug));
+  const activeSlugs = new Set(activeItems.map((i) => i.slug));
   const indexItems: CompletedItemView[] = [];
   for (const root of mainRepoRoots) {
     indexItems.push(...collectCompletedItems(root));
   }
-  const seen = new Set(completedFromWorktrees.map(i => i.slug));
+  const seen = new Set(completedFromWorktrees.map((i) => i.slug));
   const completedItems = [
-    ...completedFromWorktrees.filter(i => !activeSlugs.has(i.slug)),
-    ...indexItems.filter(i => {
+    ...completedFromWorktrees.filter((i) => !activeSlugs.has(i.slug)),
+    ...indexItems.filter((i) => {
       if (activeSlugs.has(i.slug) || seen.has(i.slug)) return false;
       seen.add(i.slug);
       return true;

@@ -1,6 +1,6 @@
-import { readState, findWorktreeRoot } from "../state/store.js";
-import { validatePhasePrerequisites } from "../state/validators.js";
 import type { PhaseName } from "../state/schema.js";
+import { findWorktreeRoot, readState } from "../state/store.js";
+import { validatePhasePrerequisites } from "../state/validators.js";
 
 interface ValidateResult {
   phase: PhaseName;

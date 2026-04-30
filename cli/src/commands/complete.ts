@@ -1,20 +1,55 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { readState, writeState, findWorktreeRoot, readStateMd, statePath, resolveMainRepoRoot, clearBlockingMarkers, STATE_MD_FILE, STATE_FILE } from "../state/store.js";
-import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
-import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
-import { PHASE_ORDER, buildDefaultWorkflow } from "../config/workflow.js";
-import { parseLocation, resetToLocation } from "../state/helpers.js";
-import { TRACKER_DIR, ARCHIVE_DIR, INDEX_FILE, SUMMARY_FILE, MAX_LOOPBACKS_PER_ROUTE, MAX_DEBUG_ITERATIONS, SKILL_DIR_PREFIX, CLI_BINARY } from "../config/constants.js";
-import { isStepOutcome, STEP_OUTCOMES, isClassification, type Action, type Classification, type Location, type PhaseName, type StepOutcome, type StepState, type WorkKitState } from "../state/schema.js";
-import { stateMdPath } from "../state/store.js";
+import {
+  ARCHIVE_DIR,
+  CLI_BINARY,
+  INDEX_FILE,
+  MAX_DEBUG_ITERATIONS,
+  MAX_LOOPBACKS_PER_ROUTE,
+  SKILL_DIR_PREFIX,
+  SUMMARY_FILE,
+  TRACKER_DIR,
+} from "../config/constants.js";
 import { resolveModel } from "../config/model-routing.js";
-import { isReceiptStepKey } from "../receipts/schemas.js";
+import { buildDefaultWorkflow, PHASE_ORDER } from "../config/workflow.js";
 import { resolveReceiptOutcome } from "../receipts/resolve.js";
+import { isReceiptStepKey } from "../receipts/schemas.js";
+import { parseLocation, resetToLocation } from "../state/helpers.js";
+import {
+  type Action,
+  type Classification,
+  isClassification,
+  isStepOutcome,
+  type Location,
+  type PhaseName,
+  STEP_OUTCOMES,
+  type StepOutcome,
+  type StepState,
+  type WorkKitState,
+} from "../state/schema.js";
+import {
+  clearBlockingMarkers,
+  findWorktreeRoot,
+  readState,
+  readStateMd,
+  resolveMainRepoRoot,
+  STATE_FILE,
+  STATE_MD_FILE,
+  stateMdPath,
+  statePath,
+  writeState,
+} from "../state/store.js";
+import { checkLoopback, countLoopbacksForRoute } from "../workflow/loopbacks.js";
+import { isPhaseComplete, nextStepInPhase } from "../workflow/transitions.js";
 
 const DEBUG_SKILL_FILE = `.claude/skills/${SKILL_DIR_PREFIX}debug/SKILL.md`;
 
-export function completeCommand(target: string, outcome?: string, worktreeRoot?: string, classification?: string): Action {
+export function completeCommand(
+  target: string,
+  outcome?: string,
+  worktreeRoot?: string,
+  classification?: string,
+): Action {
   const root = worktreeRoot || findWorktreeRoot();
   if (!root) {
     return { action: "error", message: "No work-kit state found. Run `work-kit init` first." };
@@ -52,7 +87,10 @@ export function completeCommand(target: string, outcome?: string, worktreeRoot?:
     return { action: "error", message: `${phase}/${step} is already completed.` };
   }
   if (stepState.status === "skipped") {
-    return { action: "error", message: `${phase}/${step} is skipped and cannot be completed. Add it to the workflow first.` };
+    return {
+      action: "error",
+      message: `${phase}/${step} is skipped and cannot be completed. Add it to the workflow first.`,
+    };
   }
 
   // ── Receipts: if this step has a schema, the receipt is the source of truth. ──
@@ -218,14 +256,9 @@ function applyClassification(state: WorkKitState, classification: Classification
  * after the debug agent finishes. Bails to `wait_for_user` once the per-step
  * iteration cap is reached.
  */
-function handleNeedsDebug(
-  root: string,
-  state: WorkKitState,
-  stepState: StepState,
-  origin: Location
-): Action {
+function handleNeedsDebug(root: string, state: WorkKitState, stepState: StepState, origin: Location): Action {
   const debugCount = state.loopbacks.filter(
-    (lb) => lb.kind === "debug" && lb.from.phase === origin.phase && lb.from.step === origin.step
+    (lb) => lb.kind === "debug" && lb.from.phase === origin.phase && lb.from.step === origin.step,
   ).length;
 
   if (debugCount >= MAX_DEBUG_ITERATIONS) {
@@ -307,15 +340,11 @@ function archiveOnComplete(worktreeRoot: string, state: WorkKitState): void {
   }
 
   const trackerSrc = statePath(worktreeRoot);
-  if (fs.existsSync(trackerSrc)) {
-    fs.copyFileSync(trackerSrc, path.join(archiveDir, STATE_FILE));
-  }
+  fs.copyFileSync(trackerSrc, path.join(archiveDir, STATE_FILE));
 
   const summarySrc = path.join(path.dirname(stateMdPath(worktreeRoot)), SUMMARY_FILE);
   const summaryDest = path.join(archiveDir, SUMMARY_FILE);
-  const completedPhases = PHASE_ORDER
-    .filter(p => state.phases[p].status === "completed")
-    .join("→");
+  const completedPhases = PHASE_ORDER.filter((p) => state.phases[p].status === "completed").join("→");
 
   if (fs.existsSync(summarySrc)) {
     fs.copyFileSync(summarySrc, summaryDest);
@@ -324,7 +353,7 @@ function archiveOnComplete(worktreeRoot: string, state: WorkKitState): void {
     fs.writeFileSync(
       summaryDest,
       `---\nslug: ${slug}\nbranch: ${state.branch}\nstarted: ${state.started.split("T")[0]}\ncompleted: ${date}\nstatus: completed\n---\n\n## Summary\n\nPhases: ${completedPhases}\n\n_Pending wrap-up summary._\n`,
-      "utf-8"
+      "utf-8",
     );
   }
 
@@ -334,7 +363,8 @@ function archiveOnComplete(worktreeRoot: string, state: WorkKitState): void {
     indexContent = fs.readFileSync(indexPath, "utf-8");
   }
   if (!indexContent.includes("| Date ")) {
-    indexContent = "| Date | Slug | PR | Status | Phases | Summary | Archive |\n| --- | --- | --- | --- | --- | --- | --- |\n";
+    indexContent =
+      "| Date | Slug | PR | Status | Phases | Summary | Archive |\n| --- | --- | --- | --- | --- | --- | --- |\n";
   }
   const summaryLink = `[summary](${ARCHIVE_DIR}/${folderName}/${SUMMARY_FILE})`;
   const archiveLink = `[archive](${ARCHIVE_DIR}/${folderName}/)`;

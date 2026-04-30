@@ -1,14 +1,13 @@
-import { readState, writeState, findWorktreeRoot, readStateMd, clearBlockingMarkers } from "../state/store.js";
-import { determineNextStep } from "../workflow/transitions.js";
-import { validatePhasePrerequisites } from "../state/validators.js";
-import { buildAgentPrompt } from "../context/prompt-builder.js";
-import { getParallelGroup } from "../workflow/parallel.js";
-import { skillFilePath } from "../config/workflow.js";
-import { resolveModel } from "../config/model-routing.js";
 import { CLI_BINARY } from "../config/constants.js";
+import { resolveModel } from "../config/model-routing.js";
+import { skillFilePath } from "../config/workflow.js";
+import { buildAgentPrompt } from "../context/prompt-builder.js";
 import { receiptPathIfApplicable } from "../receipts/store.js";
-
 import type { Action, PhaseName, WorkKitState } from "../state/schema.js";
+import { clearBlockingMarkers, findWorktreeRoot, readState, readStateMd, writeState } from "../state/store.js";
+import { validatePhasePrerequisites } from "../state/validators.js";
+import { getParallelGroup } from "../workflow/parallel.js";
+import { determineNextStep } from "../workflow/transitions.js";
 
 export function nextCommand(worktreeRoot?: string): Action {
   const root = worktreeRoot || findWorktreeRoot();
@@ -113,47 +112,29 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
       })
       .map((s) => {
         const rp = receiptPathIfApplicable(phase, s);
-        return withModel({
-          phase,
-          step: s,
-          skillFile: skillFilePath(phase, s),
-          agentPrompt: buildAgentPrompt(root, state, phase, s, stateMd),
-          ...(rp && { receiptPath: rp }),
-        }, state);
+        return withModel(
+          {
+            phase,
+            step: s,
+            skillFile: skillFilePath(phase, s),
+            agentPrompt: buildAgentPrompt(root, state, phase, s, stateMd),
+            ...(rp && { receiptPath: rp }),
+          },
+          state,
+        );
       });
 
-    // If all parallel members were filtered out, fall through to single agent
+    // If all parallel members were filtered out, skip to thenSequential or error
     if (agents.length === 0) {
-      // Skip to thenSequential if it exists, otherwise nothing to do
       if (parallelGroup.thenSequential) {
-        const seqStep = parallelGroup.thenSequential;
-        const rp = receiptPathIfApplicable(phase, seqStep);
-        return withModelAction({
-          action: "spawn_agent",
-          phase,
-          step: seqStep,
-          skillFile: skillFilePath(phase, seqStep),
-          agentPrompt: buildAgentPrompt(root, state, phase, seqStep, stateMd),
-          onComplete: `${CLI_BINARY} complete ${phase}/${seqStep}`,
-          ...(rp && { receiptPath: rp }),
-        }, state);
+        return spawnSingleAgent(root, state, phase, parallelGroup.thenSequential, stateMd);
       }
       return { action: "error", message: `No active steps in parallel group for ${phase}` };
     }
 
-    // If only 1 agent remains, run as single agent (no need for parallel)
+    // If only 1 agent remains, run as single agent (no need for parallel overhead)
     if (agents.length === 1 && !parallelGroup.thenSequential) {
-      const agent = agents[0];
-      const rp = receiptPathIfApplicable(agent.phase, agent.step);
-      return withModelAction({
-        action: "spawn_agent",
-        phase: agent.phase,
-        step: agent.step,
-        skillFile: agent.skillFile,
-        agentPrompt: agent.agentPrompt,
-        onComplete: `${CLI_BINARY} complete ${agent.phase}/${agent.step}`,
-        ...(rp && { receiptPath: rp }),
-      }, state);
+      return spawnSingleAgent(root, state, agents[0].phase, agents[0].step, stateMd);
     }
 
     for (const agent of agents) {
@@ -165,13 +146,16 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
       ? (() => {
           const seq = parallelGroup.thenSequential!;
           const rp = receiptPathIfApplicable(phase, seq);
-          return withModel({
-            phase,
-            step: seq,
-            skillFile: skillFilePath(phase, seq),
-            agentPrompt: buildAgentPrompt(root, state, phase, seq, stateMd),
-            ...(rp && { receiptPath: rp }),
-          }, state);
+          return withModel(
+            {
+              phase,
+              step: seq,
+              skillFile: skillFilePath(phase, seq),
+              agentPrompt: buildAgentPrompt(root, state, phase, seq, stateMd),
+              ...(rp && { receiptPath: rp }),
+            },
+            state,
+          );
         })()
       : undefined;
 
@@ -185,19 +169,29 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
     };
   }
 
-  const skill = skillFilePath(phase, step);
-  const prompt = buildAgentPrompt(root, state, phase, step, stateMd);
-  const rp = receiptPathIfApplicable(phase, step);
+  return spawnSingleAgent(root, state, phase, step, stateMd);
+}
 
-  return withModelAction({
-    action: "spawn_agent",
-    phase,
-    step,
-    skillFile: skill,
-    agentPrompt: prompt,
-    onComplete: `${CLI_BINARY} complete ${phase}/${step}`,
-    ...(rp && { receiptPath: rp }),
-  }, state);
+function spawnSingleAgent(
+  root: string,
+  state: WorkKitState,
+  phase: PhaseName,
+  step: string,
+  stateMd: string | null,
+): Extract<Action, { action: "spawn_agent" }> {
+  const rp = receiptPathIfApplicable(phase, step);
+  return withModelAction(
+    {
+      action: "spawn_agent",
+      phase,
+      step,
+      skillFile: skillFilePath(phase, step),
+      agentPrompt: buildAgentPrompt(root, state, phase, step, stateMd),
+      onComplete: `${CLI_BINARY} complete ${phase}/${step}`,
+      ...(rp && { receiptPath: rp }),
+    },
+    state,
+  );
 }
 
 /**
@@ -206,14 +200,17 @@ function buildSpawnAction(root: string, state: WorkKitState, phase: PhaseName, s
  * keeping the action JSON compatible with skills that haven't yet been updated
  * to forward a model parameter.
  */
-function withModel<T extends { phase: PhaseName; step: string }>(spec: T, state: WorkKitState): T & { model?: ReturnType<typeof resolveModel> } {
+function withModel<T extends { phase: PhaseName; step: string }>(
+  spec: T,
+  state: WorkKitState,
+): T & { model?: ReturnType<typeof resolveModel> } {
   const model = resolveModel(state, spec.phase, spec.step);
   return model ? { ...spec, model } : spec;
 }
 
 function withModelAction(
   action: Extract<Action, { action: "spawn_agent" }>,
-  state: WorkKitState
+  state: WorkKitState,
 ): Extract<Action, { action: "spawn_agent" }> {
   const model = resolveModel(state, action.phase, action.step);
   return model ? { ...action, model } : action;

@@ -1,16 +1,15 @@
-import { findWorktreeRoot, readState, readStateMd, resolveMainRepoRoot, gitHeadSha } from "../state/store.js";
+import { skillFilePath } from "../config/workflow.js";
+import type { PhaseName, WorkKitState } from "../state/schema.js";
+import { findWorktreeRoot, gitHeadSha, readState, readStateMd, resolveMainRepoRoot } from "../state/store.js";
 import {
   appendAutoEntries,
   ensureKnowledgeDir,
   fileForType,
   isKnowledgeType,
-  KNOWLEDGE_TYPES,
-  redact,
   type KnowledgeEntry,
   type KnowledgeType,
+  redact,
 } from "../utils/knowledge.js";
-import { skillFilePath } from "../config/workflow.js";
-import type { PhaseName, WorkKitState } from "../state/schema.js";
 
 export interface ExtractOptions {
   worktreeRoot?: string;
@@ -20,7 +19,7 @@ export interface ExtractResult {
   action: "extracted" | "error";
   written: number;
   duplicates: number;
-  byType: Record<KnowledgeType, number>;
+  byFile: { findings: number; workflow: number };
   message?: string;
 }
 
@@ -32,10 +31,8 @@ interface RawEntry {
   source: string;
 }
 
-function emptyByType(): Record<KnowledgeType, number> {
-  const out = {} as Record<KnowledgeType, number>;
-  for (const t of KNOWLEDGE_TYPES) out[t] = 0;
-  return out;
+function emptyByFile(): { findings: number; workflow: number } {
+  return { findings: 0, workflow: 0 };
 }
 
 // ── Single-pass state.md parser ─────────────────────────────────────
@@ -159,7 +156,7 @@ export function extractCommand(opts: ExtractOptions = {}): ExtractResult {
       action: "error",
       written: 0,
       duplicates: 0,
-      byType: emptyByType(),
+      byFile: emptyByFile(),
       message: "No work-kit session found. Run from inside a worktree.",
     };
   }
@@ -167,13 +164,14 @@ export function extractCommand(opts: ExtractOptions = {}): ExtractResult {
   let state: WorkKitState;
   try {
     state = readState(root);
-  } catch (e: any) {
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
     return {
       action: "error",
       written: 0,
       duplicates: 0,
-      byType: emptyByType(),
-      message: `Could not read state: ${e.message}`,
+      byFile: emptyByFile(),
+      message: `Could not read state: ${message}`,
     };
   }
 
@@ -182,11 +180,7 @@ export function extractCommand(opts: ExtractOptions = {}): ExtractResult {
 
   const stateMd = readStateMd(root) ?? "";
 
-  const raw: RawEntry[] = [
-    ...parseStateMd(stateMd),
-    ...fromLoopbacks(state),
-    ...fromSkippedAndFailed(state),
-  ];
+  const raw: RawEntry[] = [...parseStateMd(stateMd), ...fromLoopbacks(state), ...fromSkippedAndFailed(state)];
 
   const ts = new Date().toISOString();
   const sha = gitHeadSha(mainRepoRoot);
@@ -218,12 +212,10 @@ export function extractCommand(opts: ExtractOptions = {}): ExtractResult {
 
   const result = appendAutoEntries(mainRepoRoot, grouped);
 
-  // Map per-file write counts back to per-type counts. Each KnowledgeType
-  // routes to exactly one file, so the lookup is unambiguous.
-  const byType = emptyByType();
-  for (const t of KNOWLEDGE_TYPES) {
-    byType[t] = result.perFile.get(fileForType(t))?.written ?? 0;
-  }
+  const byFile = {
+    findings: result.perFile.get("findings.md")?.written ?? 0,
+    workflow: result.perFile.get("workflow.md")?.written ?? 0,
+  };
 
-  return { action: "extracted", written: result.written, duplicates: result.duplicates, byType };
+  return { action: "extracted", written: result.written, duplicates: result.duplicates, byFile };
 }

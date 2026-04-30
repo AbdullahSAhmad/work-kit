@@ -97,6 +97,8 @@ Best for: bug fixes, small changes, refactors, well-understood tasks.
 
 ## Architecture
 
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the canonical reference — state files, the action protocol, and the receipt schema. The summary below is a tour.
+
 ### Context management
 
 Each phase runs as a **fresh agent**. The Build agent doesn't carry Plan's investigation notes — no context bloat.

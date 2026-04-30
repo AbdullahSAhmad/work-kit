@@ -1,0 +1,19 @@
+# Pre-commit and pre-push hooks for work-kit.
+# Install on clone via `npm install` (the `prepare` script runs `lefthook install`).
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      glob: "cli/**/*.{ts,mjs}"
+      run: npx biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+    - name: typecheck
+      glob: "cli/**/*.ts"
+      run: npm run typecheck
+
+pre-push:
+  jobs:
+    - name: test
+      run: npm test

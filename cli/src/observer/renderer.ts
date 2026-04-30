@@ -1,12 +1,27 @@
 import * as path from "node:path";
+import { MODE_FULL } from "../state/schema.js";
 import {
-  bold, dim, green, yellow, red, cyan, magenta,
-  bgYellow, bgCyan, bgRed, bgMagenta, bgGreen, bgBlue, bgDim,
-  boldCyan, boldGreen, boldMagenta, boldRed,
+  bgBlue,
+  bgCyan,
+  bgDim,
+  bgGreen,
+  bgMagenta,
+  bgRed,
+  bgYellow,
+  bold,
+  boldCyan,
+  boldGreen,
+  boldMagenta,
+  boldRed,
+  cyan,
+  dim,
+  green,
+  magenta,
+  red,
+  yellow,
 } from "../utils/colors.js";
 import { formatDurationMs, formatDurationSince } from "../utils/time.js";
-import { MODE_FULL } from "../state/schema.js";
-import type { DashboardData, WorkItemView, CompletedItemView } from "./data.js";
+import type { CompletedItemView, DashboardData, WorkItemView } from "./data.js";
 
 // ── Spinners & Animation Frames ─────────────────────────────────────
 
@@ -85,6 +100,7 @@ function padRight(text: string, width: number): string {
 }
 
 function stripAnsi(s: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: ESC (\x1b) is the SGR introducer
   return s.replace(/\x1b\[[0-9;]*m/g, "");
 }
 
@@ -110,7 +126,7 @@ function renderProgressBar(
   total: number,
   percent: number,
   maxBarWidth: number,
-  tick: number
+  tick: number,
 ): string {
   const barWidth = Math.max(20, Math.min(40, maxBarWidth));
   const filled = total > 0 ? Math.round((completed / total) * barWidth) : 0;
@@ -138,25 +154,39 @@ function renderProgressBar(
 
 function phaseIndicator(status: string, tick: number = 0): string {
   switch (status) {
-    case "completed": return green("✓");
-    case "in-progress": return spinner(tick);
-    case "waiting": return tick % 2 === 0 ? yellow("◉") : dim("◉");
-    case "pending": return dim("·");
-    case "skipped": return dim("⊘");
-    case "failed": return red("✗");
-    default: return dim("·");
+    case "completed":
+      return green("✓");
+    case "in-progress":
+      return spinner(tick);
+    case "waiting":
+      return tick % 2 === 0 ? yellow("◉") : dim("◉");
+    case "pending":
+      return dim("·");
+    case "skipped":
+      return dim("⊘");
+    case "failed":
+      return red("✗");
+    default:
+      return dim("·");
   }
 }
 
 function stepIndicator(status: string, tick: number): string {
   switch (status) {
-    case "completed": return green("●");
-    case "in-progress": return cyan(pulse(tick));
-    case "waiting": return yellow("○");
-    case "pending": return dim("○");
-    case "skipped": return dim("⊘");
-    case "failed": return red("●");
-    default: return dim("○");
+    case "completed":
+      return green("●");
+    case "in-progress":
+      return cyan(pulse(tick));
+    case "waiting":
+      return yellow("○");
+    case "pending":
+      return dim("○");
+    case "skipped":
+      return dim("⊘");
+    case "failed":
+      return red("●");
+    default:
+      return dim("○");
   }
 }
 
@@ -169,21 +199,31 @@ function phaseDisplayName(name: string): string {
 function phaseName(name: string, status: string, tick: number): string {
   const display = phaseDisplayName(name);
   switch (status) {
-    case "completed": return boldGreen(display);
-    case "in-progress": return tick % 2 === 0 ? boldCyan(display) : bold(cyan(display));
-    case "waiting": return bold(yellow(display));
-    case "failed": return bold(red(display));
-    default: return dim(display);
+    case "completed":
+      return boldGreen(display);
+    case "in-progress":
+      return tick % 2 === 0 ? boldCyan(display) : bold(cyan(display));
+    case "waiting":
+      return bold(yellow(display));
+    case "failed":
+      return bold(red(display));
+    default:
+      return dim(display);
   }
 }
 
 function statusDot(status: string): string {
   switch (status) {
-    case "in-progress": return green("●");
-    case "paused": return yellow("○");
-    case "completed": return green("✓");
-    case "failed": return red("✗");
-    default: return dim("·");
+    case "in-progress":
+      return green("●");
+    case "paused":
+      return yellow("○");
+    case "completed":
+      return green("✓");
+    case "failed":
+      return red("✗");
+    default:
+      return dim("·");
   }
 }
 
@@ -200,12 +240,18 @@ function renderGatedBadge(): string {
 function renderClassificationBadge(classification: string): string {
   const label = ` ${classification.toUpperCase()} `;
   switch (classification) {
-    case "bug-fix": return bgRed(label);
-    case "small-change": return bgGreen(label);
-    case "refactor": return bgCyan(label);
-    case "feature": return bgBlue(label);
-    case "large-feature": return bgMagenta(label);
-    default: return bgYellow(label);
+    case "bug-fix":
+      return bgRed(label);
+    case "small-change":
+      return bgGreen(label);
+    case "refactor":
+      return bgCyan(label);
+    case "feature":
+      return bgBlue(label);
+    case "large-feature":
+      return bgMagenta(label);
+    default:
+      return bgYellow(label);
   }
 }
 
@@ -234,22 +280,19 @@ function renderPhasePipeline(
   // Build top line (icons + names) and bottom line (timing, aligned)
   const topParts: string[] = [];
   const bottomParts: string[] = [];
+  const durations = phases.map(phaseDuration);
 
   for (let i = 0; i < phases.length; i++) {
     const p = phases[i];
     const isBlockedHere = awaitingInput && p.name === currentPhase && p.status === "in-progress";
-    const icon = isBlockedHere
-      ? magenta(tick % 2 === 0 ? "▶" : "▷")
-      : phaseIndicator(p.status, tick);
-    const name = isBlockedHere
-      ? boldMagenta(phaseDisplayName(p.name))
-      : phaseName(p.name, p.status, tick);
+    const icon = isBlockedHere ? magenta(tick % 2 === 0 ? "▶" : "▷") : phaseIndicator(p.status, tick);
+    const name = isBlockedHere ? boldMagenta(phaseDisplayName(p.name)) : phaseName(p.name, p.status, tick);
     const segment = `${icon} ${name}`;
     topParts.push(segment);
 
     // Calculate plain width of this segment for alignment
     const segPlainLen = stripAnsi(segment).length;
-    const dur = phaseDuration(p);
+    const dur = durations[i];
 
     if (dur) {
       // Color the duration based on status
@@ -277,7 +320,7 @@ function renderPhasePipeline(
   const bottomLine = bottomParts.join("");
 
   // Only show bottom line if there's at least one duration
-  const hasAnyDuration = phases.some(p => phaseDuration(p) !== "");
+  const hasAnyDuration = durations.some((d) => d !== "");
   if (hasAnyDuration) {
     return [topLine, bottomLine];
   }
@@ -286,11 +329,7 @@ function renderPhasePipeline(
 
 // ── Step Detail Box ─────────────────────────────────────────────────
 
-function renderStepBox(
-  item: WorkItemView,
-  innerWidth: number,
-  tick: number
-): string[] {
+function renderStepBox(item: WorkItemView, innerWidth: number, tick: number): string[] {
   const subs = item.phaseSteps;
   if (!subs || subs.length === 0 || !item.currentPhase) return [];
 
@@ -308,8 +347,7 @@ function renderStepBox(
   for (const ss of subs) {
     // Highlight the current in-progress step in magenta if the agent is
     // blocked waiting for human input (permission prompt / AskUserQuestion).
-    const isBlockedHere =
-      item.awaitingInput && ss.status === "in-progress" && ss.name === item.currentStep;
+    const isBlockedHere = item.awaitingInput && ss.status === "in-progress" && ss.name === item.currentStep;
 
     let icon: string;
     let nameStr: string;
@@ -320,11 +358,20 @@ function renderStepBox(
     } else {
       icon = stepIndicator(ss.status, tick);
       switch (ss.status) {
-        case "completed": nameStr = green(ss.name); break;
-        case "in-progress": nameStr = boldCyan(ss.name); break;
-        case "waiting": nameStr = yellow(ss.name); break;
-        case "failed": nameStr = red(ss.name); break;
-        default: nameStr = dim(ss.name);
+        case "completed":
+          nameStr = green(ss.name);
+          break;
+        case "in-progress":
+          nameStr = boldCyan(ss.name);
+          break;
+        case "waiting":
+          nameStr = yellow(ss.name);
+          break;
+        case "failed":
+          nameStr = red(ss.name);
+          break;
+        default:
+          nameStr = dim(ss.name);
       }
     }
 
@@ -458,7 +505,10 @@ interface CompletedColumnWidths {
 }
 
 function computeCompletedWidths(items: CompletedItemView[]): CompletedColumnWidths {
-  let repo = 4, slug = 4, pr = 2, date = 4;
+  let repo = 4,
+    slug = 4,
+    pr = 2,
+    date = 4;
   for (const item of items) {
     repo = Math.max(repo, (item.repoName || "").length);
     slug = Math.max(slug, item.slug.length);
@@ -485,7 +535,7 @@ export function renderDashboard(
   width: number,
   height: number,
   scrollOffset: number = 0,
-  tick: number = 0
+  tick: number = 0,
 ): string {
   const maxWidth = Math.min(width, 120);
   const innerWidth = maxWidth - 4;
@@ -496,8 +546,12 @@ export function renderDashboard(
   allLines.push(`╔${horizontalLine(maxWidth)}╗`);
 
   // Header counts
-  let activeCount = 0, pausedCount = 0, failedCount = 0, waitingCount = 0;
-  let awaitingInputCount = 0, idleCount = 0;
+  let activeCount = 0,
+    pausedCount = 0,
+    failedCount = 0,
+    waitingCount = 0;
+  let awaitingInputCount = 0,
+    idleCount = 0;
   for (const item of data.activeItems) {
     if (item.status === "in-progress") activeCount++;
     else if (item.status === "paused") pausedCount++;
@@ -559,10 +613,7 @@ export function renderDashboard(
     // Completed section
     if (data.completedItems.length > 0) {
       allLines.push(`╠${horizontalLine(maxWidth)}╣`);
-      allLines.push(boxLine(
-        bold("  COMPLETED") + dim(` (${data.completedItems.length})`),
-        innerWidth
-      ));
+      allLines.push(boxLine(bold("  COMPLETED") + dim(` (${data.completedItems.length})`), innerWidth));
 
       const maxCompleted = 5;
       const displayed = data.completedItems.slice(0, maxCompleted);
@@ -572,10 +623,7 @@ export function renderDashboard(
         allLines.push(boxLine("  " + content, innerWidth));
       }
       if (data.completedItems.length > maxCompleted) {
-        allLines.push(boxLine(
-          dim(`  … and ${data.completedItems.length - maxCompleted} more`),
-          innerWidth
-        ));
+        allLines.push(boxLine(dim(`  … and ${data.completedItems.length - maxCompleted} more`), innerWidth));
       }
     }
   }

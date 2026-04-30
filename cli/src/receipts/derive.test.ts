@@ -1,14 +1,14 @@
-import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { deriveOutcome } from "./derive.js";
 import type {
   BuildImplementReceipt,
   DeployShipReceipt,
   PlanAuditReceipt,
+  PlanUnderstandReceipt,
   ReviewResolveReceipt,
   TestValidateReceipt,
   TriageClassifyReceipt,
-  PlanUnderstandReceipt,
 } from "./schemas.js";
 
 const STAMP = "2026-04-29T00:00:00Z";

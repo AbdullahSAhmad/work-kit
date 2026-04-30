@@ -1,11 +1,11 @@
-import { describe, it, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
 import { randomUUID } from "node:crypto";
-import { resolveModel, BY_PHASE, BY_STEP } from "./model-routing.js";
-import type { WorkKitState, ModelPolicy, Classification } from "../state/schema.js";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { afterEach, describe, it } from "node:test";
+import type { Classification, ModelPolicy, WorkKitState } from "../state/schema.js";
+import { BY_PHASE, BY_STEP, resolveModel } from "./model-routing.js";
 
 function makeTmpDir(): string {
   const dir = path.join(os.tmpdir(), `wk-model-routing-${randomUUID()}`);
@@ -36,7 +36,8 @@ function fakeState(opts: {
 
 describe("resolveModel — defaults", () => {
   it("uses step default when no policy or override", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp });
     assert.equal(resolveModel(state, "plan", "understand"), "opus");
     assert.equal(resolveModel(state, "build", "commit"), "haiku");
@@ -45,7 +46,8 @@ describe("resolveModel — defaults", () => {
   });
 
   it("falls back to phase default for unknown step", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp });
     // Pick a phase/step that isn't in BY_STEP
     const key = "plan/__nonexistent__";
@@ -56,7 +58,8 @@ describe("resolveModel — defaults", () => {
 
 describe("resolveModel — session policy", () => {
   it("policy=opus forces opus for every step, even mechanical ones", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "opus" });
     assert.equal(resolveModel(state, "build", "commit"), "opus");
     assert.equal(resolveModel(state, "deploy", "ship"), "opus");
@@ -64,14 +67,16 @@ describe("resolveModel — session policy", () => {
   });
 
   it("policy=haiku forces haiku everywhere", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "haiku" });
     assert.equal(resolveModel(state, "plan", "understand"), "haiku");
     assert.equal(resolveModel(state, "review", "review"), "haiku");
   });
 
   it("policy=inherit returns undefined so no model is passed", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({ worktreeRoot: tmp, policy: "inherit" });
     assert.equal(resolveModel(state, "plan", "understand"), undefined);
     assert.equal(resolveModel(state, "build", "core"), undefined);
@@ -79,19 +84,18 @@ describe("resolveModel — session policy", () => {
   });
 
   it("policy=auto is equivalent to omitting it", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const autoState = fakeState({ worktreeRoot: tmp, policy: "auto" });
     const unsetState = fakeState({ worktreeRoot: tmp });
-    assert.equal(
-      resolveModel(autoState, "plan", "understand"),
-      resolveModel(unsetState, "plan", "understand")
-    );
+    assert.equal(resolveModel(autoState, "plan", "understand"), resolveModel(unsetState, "plan", "understand"));
   });
 });
 
 describe("resolveModel — classification", () => {
   it("small-change knocks plan/understand down to haiku in auto-kit mode", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "small-change",
@@ -101,7 +105,8 @@ describe("resolveModel — classification", () => {
   });
 
   it("bug-fix keeps plan/understand on opus (not in its override map)", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "bug-fix",
@@ -112,7 +117,8 @@ describe("resolveModel — classification", () => {
   });
 
   it("refactor uses default review tiers (no classification override)", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "refactor",
@@ -124,7 +130,8 @@ describe("resolveModel — classification", () => {
   });
 
   it("classification overrides are ignored in full-kit mode", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "small-change",
@@ -134,7 +141,8 @@ describe("resolveModel — classification", () => {
   });
 
   it("session policy beats classification override", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     const state = fakeState({
       worktreeRoot: tmp,
       classification: "small-change",
@@ -147,11 +155,9 @@ describe("resolveModel — classification", () => {
 
 describe("resolveModel — workspace JSON override", () => {
   it("workspace model-config.json beats session policy", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
-    fs.writeFileSync(
-      path.join(tmp, ".work-kit", "model-config.json"),
-      JSON.stringify({ "build/commit": "sonnet" })
-    );
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+    fs.writeFileSync(path.join(tmp, ".work-kit", "model-config.json"), JSON.stringify({ "build/commit": "sonnet" }));
     const state = fakeState({ worktreeRoot: tmp, policy: "opus" });
     assert.equal(resolveModel(state, "build", "commit"), "sonnet");
     // Other steps still forced to opus by the policy
@@ -159,30 +165,27 @@ describe("resolveModel — workspace JSON override", () => {
   });
 
   it("workspace JSON beats step default", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
-    fs.writeFileSync(
-      path.join(tmp, ".work-kit", "model-config.json"),
-      JSON.stringify({ "plan/understand": "haiku" })
-    );
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+    fs.writeFileSync(path.join(tmp, ".work-kit", "model-config.json"), JSON.stringify({ "plan/understand": "haiku" }));
     const state = fakeState({ worktreeRoot: tmp });
     assert.equal(resolveModel(state, "plan", "understand"), "haiku");
   });
 
   it("malformed JSON falls back silently to defaults", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
-    fs.writeFileSync(
-      path.join(tmp, ".work-kit", "model-config.json"),
-      "{not json"
-    );
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
+    fs.writeFileSync(path.join(tmp, ".work-kit", "model-config.json"), "{not json");
     const state = fakeState({ worktreeRoot: tmp });
     assert.equal(resolveModel(state, "plan", "understand"), "opus");
   });
 
   it("invalid tier values in JSON are ignored", () => {
-    const tmp = makeTmpDir(); tmpDirs.push(tmp);
+    const tmp = makeTmpDir();
+    tmpDirs.push(tmp);
     fs.writeFileSync(
       path.join(tmp, ".work-kit", "model-config.json"),
-      JSON.stringify({ "plan/understand": "turbo", "build/implement": "opus" })
+      JSON.stringify({ "plan/understand": "turbo", "build/implement": "opus" }),
     );
     const state = fakeState({ worktreeRoot: tmp });
     // Bad value ignored → falls back to step default

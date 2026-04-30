@@ -13,11 +13,7 @@ Run `work-kit bootstrap` to detect work-kit state.
 
 - Report current state to the user: slug, phase, step, status
 - **If `knowledge` is present in the bootstrap output**, surface it to the agent and the user:
-  - `knowledge.lessons` — project-specific learnings from prior sessions
-  - `knowledge.conventions` — codified rules this project follows
-  - `knowledge.risks` — fragile or dangerous areas to handle with care
-  - `knowledge.decisions` — architectural choices made in past sessions (what was picked, what was rejected, why) — read this **before** proposing any choice that might re-litigate a settled one
-  - Read each of these silently into your working context — they're prior knowledge you should respect when planning and building. Briefly mention to the user that prior knowledge was loaded (one line; do not dump the full text into the chat).
+  - `knowledge.findings` — project-specific knowledge from prior sessions: lessons learned, conventions, known risks, and architectural decisions. Read this silently into your working context; respect these when planning and building. Briefly mention to the user that prior knowledge was loaded (one line; do not dump the full text into the chat).
   - `workflow.md` is intentionally NOT loaded — it's a write-only artifact for human curators.
 - If recovery is suggested: follow the recovery instruction
 - Otherwise: run `work-kit run` to continue the workflow
@@ -33,7 +29,7 @@ Run `work-kit bootstrap` to detect work-kit state.
 - **Triage phase** — first phase, always runs. Classifies the request (bug-fix / small-change / refactor / feature / large-feature) and the CLI builds the workflow accordingly. Refine and Spec (formerly the Define phase) are now sub-steps inside Plan/Understand.
 - **wk-debug** — auto-invoked when any step reports outcome `needs_debug`. You don't trigger it; the orchestrator does.
 - **test/exercise** — fans out 3 parallel lens sub-agents internally (Verify, E2E, Browser). The Browser lens uses Chrome DevTools MCP; if the MCP isn't installed (doctor will warn at session start), the lens skips itself and the rest of Exercise still runs.
-- **decisions in knowledge layer** — `## Decisions` bullets matching `**<context>**: chose X over Y — <why>` are auto-graduated to `.work-kit-knowledge/decisions.md` during wrap-up.
+- **decisions in knowledge layer** — `## Decisions` bullets matching `**<context>**: chose X over Y — <why>` are auto-graduated to `.work-kit-knowledge/findings.md` during wrap-up.
 - **DDD discipline** — Plan models the domain (bounded contexts, aggregates, value objects, repository contracts); Build implements it (TDD inside `build/implement`).
 
 ## If session is stale

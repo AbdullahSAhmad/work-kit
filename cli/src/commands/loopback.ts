@@ -1,15 +1,10 @@
-import { readState, writeState, findWorktreeRoot } from "../state/store.js";
-import { parseLocation, resetToLocation } from "../state/helpers.js";
-import { countLoopbacksForRoute } from "../workflow/loopbacks.js";
 import { MAX_LOOPBACKS_PER_ROUTE } from "../config/constants.js";
+import { parseLocation, resetToLocation } from "../state/helpers.js";
 import type { Action } from "../state/schema.js";
+import { findWorktreeRoot, readState, writeState } from "../state/store.js";
+import { countLoopbacksForRoute } from "../workflow/loopbacks.js";
 
-export function loopbackCommand(opts: {
-  from: string;
-  to: string;
-  reason: string;
-  worktreeRoot?: string;
-}): Action {
+export function loopbackCommand(opts: { from: string; to: string; reason: string; worktreeRoot?: string }): Action {
   const root = opts.worktreeRoot || findWorktreeRoot();
   if (!root) {
     return { action: "error", message: "No work-kit state found." };

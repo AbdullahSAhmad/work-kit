@@ -1,33 +1,33 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module";
 import { Command } from "commander";
-import { initCommand } from "./commands/init.js";
-import { statusCommand } from "./commands/status.js";
-import { nextCommand } from "./commands/next.js";
-import { completeCommand } from "./commands/complete.js";
-import { validateCommand } from "./commands/validate.js";
-import { contextCommand } from "./commands/context.js";
-import { loopbackCommand } from "./commands/loopback.js";
-import { workflowCommand } from "./commands/workflow.js";
-import { doctorCommand } from "./commands/doctor.js";
-import { setupCommand } from "./commands/setup.js";
-import { upgradeCommand } from "./commands/upgrade.js";
-import { completionsCommand } from "./commands/completions.js";
-import { observeCommand } from "./commands/observe.js";
-import { uninstallCommand } from "./commands/uninstall.js";
 import { bootstrapCommand } from "./commands/bootstrap.js";
 import { cancelCommand } from "./commands/cancel.js";
-import { pauseCommand } from "./commands/pause.js";
-import { resumeCommand } from "./commands/resume.js";
-import { reportCommand } from "./commands/report.js";
-import { learnCommand } from "./commands/learn.js";
+import { completeCommand } from "./commands/complete.js";
+import { completionsCommand } from "./commands/completions.js";
+import { contextCommand } from "./commands/context.js";
+import { doctorCommand } from "./commands/doctor.js";
 import { extractCommand } from "./commands/extract.js";
+import { initCommand } from "./commands/init.js";
+import { learnCommand } from "./commands/learn.js";
+import { loopbackCommand } from "./commands/loopback.js";
+import { nextCommand } from "./commands/next.js";
+import { observeCommand } from "./commands/observe.js";
+import { pauseCommand } from "./commands/pause.js";
+import { reportCommand } from "./commands/report.js";
+import { resumeCommand } from "./commands/resume.js";
 import { runCommand } from "./commands/run.js";
-import { bold, green, yellow, red } from "./utils/colors.js";
+import { setupCommand } from "./commands/setup.js";
+import { statusCommand } from "./commands/status.js";
+import { uninstallCommand } from "./commands/uninstall.js";
+import { upgradeCommand } from "./commands/upgrade.js";
+import { validateCommand } from "./commands/validate.js";
+import { workflowCommand } from "./commands/workflow.js";
 import type { Classification, ModelPolicy, PhaseName } from "./state/schema.js";
 import { isModelPolicy } from "./state/schema.js";
-
-import { createRequire } from "node:module";
+import { bold, green, red, yellow } from "./utils/colors.js";
+import { failJson } from "./utils/errors.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json");
@@ -46,17 +46,22 @@ program
   .description("Create worktree and initialize state")
   .option("--mode <mode>", "Workflow mode: full or auto (default: from project config or 'full')")
   .requiredOption("--description <text>", "Description of the work")
-  .option("--classification <type>", "Work classification (auto mode): bug-fix, small-change, refactor, feature, large-feature")
+  .option(
+    "--classification <type>",
+    "Work classification (auto mode): bug-fix, small-change, refactor, feature, large-feature",
+  )
   .option("--gated", "Wait for user approval between phases (default: auto-proceed)")
   .option("--model-policy <policy>", "Session model policy: auto, opus, sonnet, haiku, inherit (default: auto)")
   .option("--worktree-root <path>", "Override worktree root directory")
   .action((opts) => {
     try {
       if (opts.modelPolicy !== undefined && !isModelPolicy(opts.modelPolicy)) {
-        console.error(JSON.stringify({
-          action: "error",
-          message: `Invalid --model-policy "${opts.modelPolicy}". Use one of: auto, opus, sonnet, haiku, inherit.`,
-        }));
+        console.error(
+          JSON.stringify({
+            action: "error",
+            message: `Invalid --model-policy "${opts.modelPolicy}". Use one of: auto, opus, sonnet, haiku, inherit.`,
+          }),
+        );
         process.exit(1);
       }
       const result = initCommand({
@@ -68,9 +73,8 @@ program
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -86,9 +90,8 @@ program
       const result = runCommand({ finished: opts.finished, worktreeRoot: opts.worktreeRoot });
       console.log(JSON.stringify(result, null, 2));
       if (result.action === "error") process.exit(1);
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -102,9 +105,8 @@ program
     try {
       const result = nextCommand(opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -120,9 +122,8 @@ program
     try {
       const result = completeCommand(target, opts.outcome, opts.worktreeRoot, opts.classification);
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -136,9 +137,8 @@ program
     try {
       const result = statusCommand(opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -152,9 +152,8 @@ program
     try {
       const result = contextCommand(phase as PhaseName, opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -168,9 +167,8 @@ program
     try {
       const result = validateCommand(phase as PhaseName, opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -192,9 +190,8 @@ program
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -203,7 +200,7 @@ program
 program
   .command("workflow")
   .description("Manage auto-kit dynamic workflow")
-  .option("--add <step>", "Add a step (e.g., wrap-up/knowledge)")
+  .option("--add <step>", "Add a step (e.g., wrap-up/finalize)")
   .option("--remove <step>", "Remove a step (e.g., test/validate)")
   .option("--worktree-root <path>", "Override worktree root")
   .action((opts) => {
@@ -214,9 +211,8 @@ program
         worktreeRoot: opts.worktreeRoot,
       });
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -301,9 +297,8 @@ program
     try {
       const result = bootstrapCommand(undefined, { autoResume: opts.autoResume });
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -319,9 +314,8 @@ program
       const result = pauseCommand(opts.reason, opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.action === "error" ? 1 : 0);
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -337,9 +331,8 @@ program
       const result = resumeCommand({ worktreeRoot: opts.worktreeRoot, slug: opts.slug });
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.action === "error" ? 1 : 0);
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -354,9 +347,8 @@ program
   .action((opts) => {
     try {
       reportCommand({ json: opts.json, repo: opts.repo, worktreeRoot: opts.worktreeRoot });
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -371,9 +363,8 @@ program
       const result = cancelCommand(opts.worktreeRoot);
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.action === "error" ? 1 : 0);
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -381,8 +372,11 @@ program
 
 program
   .command("learn")
-  .description("Append a knowledge entry (lesson/convention/risk/workflow/decision) to .work-kit-knowledge/")
-  .requiredOption("--type <type>", "Entry type: lesson, convention, risk, workflow, decision")
+  .description("Append a knowledge entry to .work-kit-knowledge/ (findings.md or workflow.md)")
+  .requiredOption(
+    "--type <type>",
+    "Entry type: lesson, convention, risk, decision → findings.md; workflow → workflow.md",
+  )
   .requiredOption("--text <text>", "Free-form text. Secrets are auto-redacted at write time.")
   .option("--scope <glob>", "Optional path glob (stored, not yet used for filtering)")
   .option("--phase <phase>", "Override session phase auto-fill")
@@ -405,9 +399,8 @@ program
       if (result.redacted) {
         console.error(yellow(`! Redacted ${result.redactedKinds?.length ?? 0} secret(s) before writing.`));
       }
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 
@@ -422,9 +415,8 @@ program
       const result = extractCommand({ worktreeRoot: opts.worktreeRoot });
       console.log(JSON.stringify(result, null, 2));
       if (result.action === "error") process.exit(1);
-    } catch (e: any) {
-      console.error(JSON.stringify({ action: "error", message: e.message }));
-      process.exit(1);
+    } catch (e) {
+      failJson(e);
     }
   });
 

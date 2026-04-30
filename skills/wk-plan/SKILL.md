@@ -31,7 +31,7 @@ Each step builds on the previous. Reference prior outputs explicitly. Don't re-d
 Throughout every step, capture in shared state.md sections:
 
 - **`## Decisions`** — When you choose between real alternatives, append: `- **<context>**: chose <X> over <Y> — <one-sentence why>`. Skip obvious choices.
-- **`## Observations`** — When you notice a project convention, fragile area, learning, or workflow feedback, append `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these are routed to `.work-kit-knowledge/` so future sessions benefit.
+- **`## Observations`** — When you notice a project convention, fragile area, learning, or workflow feedback, append `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/finalize` these are routed to `.work-kit-knowledge/` so future sessions benefit.
 
 These feed the final work-kit log and project knowledge files. If you don't record them here, they're lost.
 

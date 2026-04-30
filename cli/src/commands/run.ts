@@ -15,12 +15,11 @@
  *   4. Goto 1.
  */
 
-import { findWorktreeRoot, readState } from "../state/store.js";
-import { nextCommand } from "./next.js";
-import { completeCommand } from "./complete.js";
 import { CLI_BINARY } from "../config/constants.js";
-
 import type { Action } from "../state/schema.js";
+import { findWorktreeRoot, readState } from "../state/store.js";
+import { completeCommand } from "./complete.js";
+import { nextCommand } from "./next.js";
 
 export type RunAction = Action & { after?: string };
 
@@ -81,9 +80,7 @@ function augmentWithAfter(action: Action): RunAction {
       // After every parallel agent + the optional thenSequential have run, the
       // orchestrator marks the last step as finished. Pick the right step to
       // signal completion of the whole group.
-      const last = action.thenSequential
-        ? action.thenSequential
-        : action.agents[action.agents.length - 1];
+      const last = action.thenSequential ? action.thenSequential : action.agents[action.agents.length - 1];
       return { ...action, after: `${CLI_BINARY} run --finished ${last.phase}/${last.step}` };
     }
 

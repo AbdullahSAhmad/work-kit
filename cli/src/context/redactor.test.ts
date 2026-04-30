@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { redactIgnoredBlocks } from "./redactor.js";
 
 describe("redactIgnoredBlocks", () => {
@@ -26,13 +26,7 @@ describe("redactIgnoredBlocks", () => {
   });
 
   it("redacts a block with # comment style", () => {
-    const input = [
-      "before",
-      "# @wk-ignore-start",
-      "hidden = true",
-      "# @wk-ignore-end",
-      "after",
-    ].join("\n");
+    const input = ["before", "# @wk-ignore-start", "hidden = true", "# @wk-ignore-end", "after"].join("\n");
 
     const result = redactIgnoredBlocks(input);
     assert.ok(!result.includes("hidden"));
@@ -40,13 +34,9 @@ describe("redactIgnoredBlocks", () => {
   });
 
   it("redacts a block with HTML comment style", () => {
-    const input = [
-      "before",
-      "<!-- @wk-ignore-start -->",
-      "<div>secret</div>",
-      "<!-- @wk-ignore-end -->",
-      "after",
-    ].join("\n");
+    const input = ["before", "<!-- @wk-ignore-start -->", "<div>secret</div>", "<!-- @wk-ignore-end -->", "after"].join(
+      "\n",
+    );
 
     const result = redactIgnoredBlocks(input);
     assert.ok(!result.includes("secret"));
@@ -54,13 +44,7 @@ describe("redactIgnoredBlocks", () => {
   });
 
   it("handles unclosed marker by redacting to EOF", () => {
-    const input = [
-      "before",
-      "// @wk-ignore-start",
-      "line 1",
-      "line 2",
-      "line 3",
-    ].join("\n");
+    const input = ["before", "// @wk-ignore-start", "line 1", "line 2", "line 3"].join("\n");
 
     const result = redactIgnoredBlocks(input);
     assert.ok(result.includes("before"));
@@ -94,12 +78,7 @@ describe("redactIgnoredBlocks", () => {
   });
 
   it("handles single-line block (start and end on same concept)", () => {
-    const input = [
-      "before",
-      "// @wk-ignore-start",
-      "// @wk-ignore-end",
-      "after",
-    ].join("\n");
+    const input = ["before", "// @wk-ignore-start", "// @wk-ignore-end", "after"].join("\n");
 
     const result = redactIgnoredBlocks(input);
     assert.ok(result.includes("[redacted: 2 lines — @wk-ignore]"));

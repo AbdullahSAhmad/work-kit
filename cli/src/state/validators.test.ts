@@ -1,8 +1,8 @@
-import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { validatePhasePrerequisites } from "./validators.js";
-import type { WorkKitState, PhaseName, PhaseState, StepState } from "./schema.js";
+import { describe, it } from "node:test";
+import type { PhaseName, PhaseState, StepState, WorkKitState } from "./schema.js";
 import { PHASE_NAMES, STEPS_BY_PHASE } from "./schema.js";
+import { validatePhasePrerequisites } from "./validators.js";
 
 function makeState(): WorkKitState {
   const phases = {} as Record<PhaseName, PhaseState>;

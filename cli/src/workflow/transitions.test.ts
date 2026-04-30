@@ -1,8 +1,8 @@
-import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { nextStepInPhase, isPhaseComplete, determineNextStep } from "./transitions.js";
-import type { WorkKitState, PhaseName, PhaseState, StepState } from "../state/schema.js";
+import { describe, it } from "node:test";
+import type { PhaseName, PhaseState, StepState, WorkKitState } from "../state/schema.js";
 import { PHASE_NAMES, STEPS_BY_PHASE } from "../state/schema.js";
+import { determineNextStep, isPhaseComplete, nextStepInPhase } from "./transitions.js";
 
 function makeState(): WorkKitState {
   const phases = {} as Record<PhaseName, PhaseState>;

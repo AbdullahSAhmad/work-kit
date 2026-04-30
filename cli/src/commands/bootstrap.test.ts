@@ -1,9 +1,9 @@
-import { describe, it, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
 import { randomUUID } from "node:crypto";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { afterEach, describe, it } from "node:test";
 import { bootstrapCommand } from "./bootstrap.js";
 import { initCommand } from "./init.js";
 import { learnCommand } from "./learn.js";
@@ -105,7 +105,7 @@ describe("bootstrapCommand", () => {
       worktreeRoot: tmp,
     });
 
-    // Write entries to lessons, conventions, risks, and workflow
+    // Write entries of different project types — all land in findings.md
     learnCommand({ type: "lesson", text: "A useful lesson", worktreeRoot: tmp });
     learnCommand({ type: "convention", text: "A coding convention", worktreeRoot: tmp });
     learnCommand({ type: "risk", text: "A fragile area", worktreeRoot: tmp });
@@ -113,9 +113,9 @@ describe("bootstrapCommand", () => {
 
     const result = bootstrapCommand(tmp);
     assert.ok(result.knowledge, "knowledge field should be present");
-    assert.ok(result.knowledge?.lessons?.includes("A useful lesson"));
-    assert.ok(result.knowledge?.conventions?.includes("A coding convention"));
-    assert.ok(result.knowledge?.risks?.includes("A fragile area"));
+    assert.ok(result.knowledge?.findings?.includes("A useful lesson"));
+    assert.ok(result.knowledge?.findings?.includes("A coding convention"));
+    assert.ok(result.knowledge?.findings?.includes("A fragile area"));
     // workflow.md is intentionally NOT injected
     assert.equal((result.knowledge as any).workflow, undefined);
   });

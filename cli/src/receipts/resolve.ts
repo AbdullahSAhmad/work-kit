@@ -8,29 +8,26 @@
  * shaped error they can return verbatim.
  */
 
+import { CLI_BINARY } from "../config/constants.js";
 import type { Action, Classification, PhaseName, StepOutcome } from "../state/schema.js";
+import { errorMessage } from "../utils/errors.js";
+import { deriveOutcome } from "./derive.js";
 import { readReceiptRaw, relativeReceiptPath } from "./store.js";
 import { validateReceipt } from "./validate.js";
-import { deriveOutcome } from "./derive.js";
-import { CLI_BINARY } from "../config/constants.js";
 
 export type ReceiptResolution =
   | { ok: true; outcome: StepOutcome; classification?: Classification }
   | { ok: false; action: Extract<Action, { action: "error" }> };
 
-export function resolveReceiptOutcome(
-  worktreeRoot: string,
-  phase: PhaseName,
-  step: string
-): ReceiptResolution {
+export function resolveReceiptOutcome(worktreeRoot: string, phase: PhaseName, step: string): ReceiptResolution {
   const rPath = relativeReceiptPath(phase, step);
   const stepKey = `${phase}/${step}`;
 
   let raw: unknown;
   try {
     raw = readReceiptRaw(worktreeRoot, phase, step);
-  } catch (e: any) {
-    return { ok: false, action: { action: "error", message: e.message } };
+  } catch (e) {
+    return { ok: false, action: { action: "error", message: errorMessage(e) } };
   }
 
   if (raw === null) {

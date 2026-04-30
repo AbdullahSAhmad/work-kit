@@ -1,8 +1,9 @@
+import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
-import { WorkKitState } from "./schema.js";
+import { readFileOrNull } from "../utils/fs.js";
+import { isClassification, isModelPolicy, MODE_AUTO, MODE_FULL, PHASE_NAMES, WorkKitState } from "./schema.js";
 
 export const STATE_DIR = ".work-kit";
 export const STATE_FILE = "tracker.json";
@@ -58,24 +59,90 @@ export function stateExists(worktreeRoot: string): boolean {
 
 export function readState(worktreeRoot: string): WorkKitState {
   const filePath = statePath(worktreeRoot);
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`No tracker.json found at ${filePath}`);
+  let raw: string;
+  try {
+    raw = fs.readFileSync(filePath, "utf-8");
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException)?.code === "ENOENT") {
+      throw new Error(`No tracker.json found at ${filePath}`);
+    }
+    throw e;
   }
-  const raw = fs.readFileSync(filePath, "utf-8");
-  let parsed: any;
+  let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
     throw new Error(`Corrupted tracker.json at ${filePath}. File contains invalid JSON.`);
   }
-  return migrateState(parsed, worktreeRoot);
+  const migrated = migrateState(parsed, worktreeRoot);
+  return validateStateShape(migrated, filePath);
+}
+
+/**
+ * Hand-rolled shape check for a tracker.json that has already been migrated to
+ * the current version. Catches truncated writes, hand-edits, and stray fields
+ * before the rest of the CLI assumes the shape is sound. Throws on any error
+ * with all problems listed at once so the user can fix in a single pass.
+ */
+function validateStateShape(raw: unknown, filePath: string): WorkKitState {
+  if (!raw || typeof raw !== "object") {
+    throw new Error(`Invalid tracker.json at ${filePath}: not a JSON object.`);
+  }
+  const r = raw as Record<string, unknown>;
+  const errs: string[] = [];
+
+  if (r.version !== 4) errs.push(`version must be 4, got ${JSON.stringify(r.version)}`);
+  if (typeof r.slug !== "string" || !r.slug) errs.push(`slug must be a non-empty string`);
+  if (typeof r.branch !== "string" || !r.branch) errs.push(`branch must be a non-empty string`);
+  if (typeof r.started !== "string") errs.push(`started must be an ISO timestamp string`);
+  if (r.mode !== MODE_FULL && r.mode !== MODE_AUTO)
+    errs.push(`mode must be "${MODE_FULL}" or "${MODE_AUTO}", got ${JSON.stringify(r.mode)}`);
+
+  const validStatuses = ["in-progress", "paused", "completed", "failed"];
+  if (typeof r.status !== "string" || !validStatuses.includes(r.status)) {
+    errs.push(`status must be one of ${validStatuses.join(", ")}, got ${JSON.stringify(r.status)}`);
+  }
+
+  if (r.currentPhase !== null && !(PHASE_NAMES as readonly string[]).includes(r.currentPhase as string)) {
+    errs.push(`currentPhase must be null or a known phase, got ${JSON.stringify(r.currentPhase)}`);
+  }
+  if (r.currentStep !== null && typeof r.currentStep !== "string") {
+    errs.push(`currentStep must be null or a string`);
+  }
+
+  if (!r.phases || typeof r.phases !== "object") {
+    errs.push(`phases must be an object`);
+  } else {
+    for (const phase of PHASE_NAMES) {
+      if (!(phase in (r.phases as object))) errs.push(`phases.${phase} is missing`);
+    }
+  }
+
+  if (!Array.isArray(r.loopbacks)) errs.push(`loopbacks must be an array`);
+  if (!r.metadata || typeof r.metadata !== "object") {
+    errs.push(`metadata must be an object`);
+  } else {
+    const m = r.metadata as Record<string, unknown>;
+    if (typeof m.worktreeRoot !== "string") errs.push(`metadata.worktreeRoot must be a string`);
+    if (typeof m.mainRepoRoot !== "string") errs.push(`metadata.mainRepoRoot must be a string`);
+  }
+
+  if (r.classification !== undefined && (typeof r.classification !== "string" || !isClassification(r.classification))) {
+    errs.push(`classification, if set, must be a valid Classification`);
+  }
+  if (r.modelPolicy !== undefined && (typeof r.modelPolicy !== "string" || !isModelPolicy(r.modelPolicy))) {
+    errs.push(`modelPolicy, if set, must be a valid ModelPolicy`);
+  }
+
+  if (errs.length > 0) {
+    throw new Error(`Invalid tracker.json at ${filePath}:\n  - ${errs.join("\n  - ")}`);
+  }
+
+  return raw as WorkKitState;
 }
 
 export function writeState(worktreeRoot: string, state: WorkKitState): void {
-  const dir = stateDir(worktreeRoot);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  fs.mkdirSync(stateDir(worktreeRoot), { recursive: true });
   const target = statePath(worktreeRoot);
   const tmp = target + "." + randomUUID().slice(0, 8) + ".tmp";
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n", "utf-8");
@@ -85,10 +152,7 @@ export function writeState(worktreeRoot: string, state: WorkKitState): void {
 // ── State.md ────────────────────────────────────────────────────────
 
 export function writeStateMd(worktreeRoot: string, content: string): void {
-  const dir = stateDir(worktreeRoot);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  fs.mkdirSync(stateDir(worktreeRoot), { recursive: true });
   const target = stateMdPath(worktreeRoot);
   const tmp = target + "." + randomUUID().slice(0, 8) + ".tmp";
   fs.writeFileSync(tmp, content, "utf-8");
@@ -96,9 +160,7 @@ export function writeStateMd(worktreeRoot: string, content: string): void {
 }
 
 export function readStateMd(worktreeRoot: string): string | null {
-  const filePath = stateMdPath(worktreeRoot);
-  if (!fs.existsSync(filePath)) return null;
-  return fs.readFileSync(filePath, "utf-8");
+  return readFileOrNull(stateMdPath(worktreeRoot));
 }
 
 // ── Git Helpers ─────────────────────────────────────────────────
@@ -115,7 +177,7 @@ export function gitMainRepoRoot(cwd: string): string | null {
       timeout: 5000,
       stdio: ["ignore", "pipe", "ignore"],
     });
-    const firstLine = output.split("\n").find(l => l.startsWith("worktree "));
+    const firstLine = output.split("\n").find((l) => l.startsWith("worktree "));
     if (firstLine) return firstLine.slice("worktree ".length).trim();
     return null;
   } catch {

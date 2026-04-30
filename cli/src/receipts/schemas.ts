@@ -130,18 +130,11 @@ export interface ReviewReviewReceipt extends BaseReceipt {
   findings_by_lens?: Record<string, { blocking: number; non_blocking: number }>;
 }
 
-export interface WrapupSummaryReceipt extends BaseReceipt {
-  step: "wrap-up/summary";
+export interface WrapupFinalizeReceipt extends BaseReceipt {
+  step: "wrap-up/finalize";
   summary_path?: string;
-}
-
-export interface WrapupKnowledgeReceipt extends BaseReceipt {
-  step: "wrap-up/knowledge";
   extracted?: {
-    lessons: number;
-    conventions: number;
-    risks: number;
-    decisions: number;
+    findings: number;
     workflow: number;
   };
 }
@@ -160,8 +153,7 @@ export type Receipt =
   | ReviewReviewReceipt
   | ReviewResolveReceipt
   | DeployShipReceipt
-  | WrapupSummaryReceipt
-  | WrapupKnowledgeReceipt;
+  | WrapupFinalizeReceipt;
 
 /** Step keys that have a receipt schema. Used by the validator and run loop. */
 export const RECEIPT_STEP_KEYS = [
@@ -178,8 +170,7 @@ export const RECEIPT_STEP_KEYS = [
   "review/review",
   "review/resolve",
   "deploy/ship",
-  "wrap-up/summary",
-  "wrap-up/knowledge",
+  "wrap-up/finalize",
 ] as const satisfies readonly Receipt["step"][];
 
 export type ReceiptStepKey = (typeof RECEIPT_STEP_KEYS)[number];

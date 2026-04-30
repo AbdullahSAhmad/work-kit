@@ -11,13 +11,11 @@ export function redactIgnoredBlocks(content: string): string {
   const lines = content.split("\n");
   const result: string[] = [];
   let inBlock = false;
-  let blockStart = -1;
   let blockLineCount = 0;
 
   for (let i = 0; i < lines.length; i++) {
     if (!inBlock && IGNORE_START.test(lines[i])) {
       inBlock = true;
-      blockStart = i;
       blockLineCount = 0;
     }
 

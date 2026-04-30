@@ -9,7 +9,7 @@ export const BUILD_STEPS = ["setup", "implement", "commit"] as const;
 export const TEST_STEPS = ["exercise", "validate"] as const;
 export const REVIEW_STEPS = ["scope", "review", "resolve"] as const;
 export const DEPLOY_STEPS = ["ship"] as const;
-export const WRAPUP_STEPS = ["summary", "knowledge"] as const;
+export const WRAPUP_STEPS = ["finalize"] as const;
 
 export type TriageStep = (typeof TRIAGE_STEPS)[number];
 export type PlanStep = (typeof PLAN_STEPS)[number];
@@ -81,17 +81,17 @@ export function isModelPolicy(value: string): value is ModelPolicy {
  * Outcomes drive loop-back routing (see config/loopback-routes.ts).
  */
 export const STEP_OUTCOMES = [
-  "done",                // generic success
-  "ok",                  // alias for done
-  "proceed",             // explicit "no loopback, advance"
-  "approved",            // review/resolve cleared for deploy
-  "revise",              // audit / review found gaps; loop back to fix
-  "broken",              // refactor or change broke something downstream
-  "changes_requested",   // review resolve requested changes
-  "fix_needed",          // deploy/ship blocked or fix-forward needed; loop back to build/implement
-  "needs_debug",         // step hit an error it can't resolve — invoke wk-debug, then return
-  "blocked",             // step cannot proceed without external input
-  "skipped",             // step intentionally skipped at runtime
+  "done", // generic success
+  "ok", // alias for done
+  "proceed", // explicit "no loopback, advance"
+  "approved", // review/resolve cleared for deploy
+  "revise", // audit / review found gaps; loop back to fix
+  "broken", // refactor or change broke something downstream
+  "changes_requested", // review resolve requested changes
+  "fix_needed", // deploy/ship blocked or fix-forward needed; loop back to build/implement
+  "needs_debug", // step hit an error it can't resolve — invoke wk-debug, then return
+  "blocked", // step cannot proceed without external input
+  "skipped", // step intentionally skipped at runtime
 ] as const;
 export type StepOutcome = (typeof STEP_OUTCOMES)[number];
 
@@ -186,9 +186,26 @@ export interface AgentSpec {
 }
 
 export type Action =
-  | { action: "spawn_agent"; phase: PhaseName; step: string; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier; receiptPath?: string }
+  | {
+      action: "spawn_agent";
+      phase: PhaseName;
+      step: string;
+      skillFile: string;
+      agentPrompt: string;
+      onComplete: string;
+      model?: ModelTier;
+      receiptPath?: string;
+    }
   | { action: "spawn_parallel_agents"; agents: AgentSpec[]; thenSequential?: AgentSpec; onComplete: string }
-  | { action: "spawn_debug_agent"; origin: Location; iteration: number; skillFile: string; agentPrompt: string; onComplete: string; model?: ModelTier }
+  | {
+      action: "spawn_debug_agent";
+      origin: Location;
+      iteration: number;
+      skillFile: string;
+      agentPrompt: string;
+      onComplete: string;
+      model?: ModelTier;
+    }
   | { action: "wait_for_user"; message: string }
   | { action: "loopback"; from: Location; to: Location; reason: string }
   | { action: "complete"; message: string }

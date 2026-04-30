@@ -1,7 +1,7 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
 import { execFileSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { findWorktreeRoot, readState, stateExists } from "../state/store.js";
 
 interface Check {
@@ -47,7 +47,11 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
   if (phasesMissing === 0) {
     checks.push({ name: "skill:phases", status: "pass", message: `All ${phases.length} phase skills found` });
   } else {
-    checks.push({ name: "skill:phases", status: "fail", message: `${phasesMissing} phase skill(s) missing from ${skillsDir}` });
+    checks.push({
+      name: "skill:phases",
+      status: "fail",
+      message: `${phasesMissing} phase skill(s) missing from ${skillsDir}`,
+    });
   }
 
   // 3b. Chrome DevTools MCP availability (used by the browser lens of test/exercise).
@@ -60,13 +64,15 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
     checks.push({
       name: "mcp:chrome-devtools",
       status: "warn",
-      message: "Chrome DevTools MCP could not be detected. The browser lens of test/exercise will be skipped if invoked.",
+      message:
+        "Chrome DevTools MCP could not be detected. The browser lens of test/exercise will be skipped if invoked.",
     });
   } else {
     checks.push({
       name: "mcp:chrome-devtools",
       status: "warn",
-      message: "Chrome DevTools MCP not configured. test/exercise's browser lens will skip — install the MCP server to enable live browser verification.",
+      message:
+        "Chrome DevTools MCP not configured. test/exercise's browser lens will skip — install the MCP server to enable live browser verification.",
     });
   }
 
@@ -88,8 +94,9 @@ export function doctorCommand(worktreeRoot?: string): { ok: boolean; checks: Che
       } else {
         checks.push({ name: "state", status: "warn", message: "tracker.json exists but has unexpected structure" });
       }
-    } catch (e: any) {
-      checks.push({ name: "state", status: "warn", message: `tracker.json error: ${e.message}` });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      checks.push({ name: "state", status: "warn", message: `tracker.json error: ${message}` });
     }
   } else {
     checks.push({ name: "state", status: "pass", message: "No active work-kit (OK — run `work-kit init` to start)" });

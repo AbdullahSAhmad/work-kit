@@ -1,11 +1,11 @@
-import { WorkKitState, PhaseName } from "../state/schema.js";
 import { getContextFor } from "../config/agent-map.js";
-import { extractSection, extractTopSection } from "./extractor.js";
-import { readStateMd } from "../state/store.js";
-import { skillFilePath } from "../config/workflow.js";
-import { redactIgnoredBlocks } from "./redactor.js";
 import { CLI_BINARY } from "../config/constants.js";
+import { skillFilePath } from "../config/workflow.js";
 import { receiptPathIfApplicable } from "../receipts/store.js";
+import { PhaseName, WorkKitState } from "../state/schema.js";
+import { readStateMd } from "../state/store.js";
+import { extractSection, extractTopSection } from "./extractor.js";
+import { redactIgnoredBlocks } from "./redactor.js";
 
 /**
  * Build a complete agent prompt for a given phase/step.
@@ -16,7 +16,7 @@ export function buildAgentPrompt(
   state: WorkKitState,
   phase: PhaseName,
   step: string,
-  stateMd?: string | null
+  stateMd?: string | null,
 ): string {
   const ctx = getContextFor(phase, step);
   const md = stateMd ?? readStateMd(worktreeRoot);
@@ -66,13 +66,17 @@ export function buildAgentPrompt(
   const rp = receiptPathIfApplicable(phase, step);
   if (rp) {
     parts.push("");
-    parts.push(`**Required receipt:** Before the step is considered done, write a structured JSON receipt to \`${rp}\`. The skill file's "## Receipt" section declares the schema. The CLI validates the receipt and derives the step outcome from it — do not pass an \`--outcome\` flag.`);
+    parts.push(
+      `**Required receipt:** Before the step is considered done, write a structured JSON receipt to \`${rp}\`. The skill file's "## Receipt" section declares the schema. The CLI validates the receipt and derives the step outcome from it — do not pass an \`--outcome\` flag.`,
+    );
     parts.push("");
     parts.push(`When the receipt is on disk, the orchestrator will run: \`${CLI_BINARY} complete ${phase}/${step}\``);
   } else if (step === "wrap-up") {
     parts.push(`Follow the wrap-up skill file instructions for archiving and cleanup.`);
   } else {
-    parts.push(`When done, report your outcome so the orchestrator can run: \`${CLI_BINARY} complete ${phase}/${step} --outcome <outcome>\``);
+    parts.push(
+      `When done, report your outcome so the orchestrator can run: \`${CLI_BINARY} complete ${phase}/${step} --outcome <outcome>\``,
+    );
   }
 
   return redactIgnoredBlocks(parts.join("\n"));

@@ -1,16 +1,16 @@
-import { findWorktreeRoot, readState, resolveMainRepoRoot, stateExists, gitHeadSha } from "../state/store.js";
+import { skillFilePath } from "../config/workflow.js";
+import type { PhaseName } from "../state/schema.js";
+import { findWorktreeRoot, gitHeadSha, readState, resolveMainRepoRoot, stateExists } from "../state/store.js";
 import {
   appendAutoEntry,
   ensureKnowledgeDir,
   fileForType,
   isKnowledgeType,
   KNOWLEDGE_TYPES,
-  redact,
   type KnowledgeEntry,
   type KnowledgeType,
+  redact,
 } from "../utils/knowledge.js";
-import { skillFilePath } from "../config/workflow.js";
-import type { PhaseName } from "../state/schema.js";
 
 export interface LearnOptions {
   type: string;
@@ -71,7 +71,8 @@ export function learnCommand(opts: LearnOptions): LearnResult {
     if (!mainRepoRoot) {
       return {
         action: "error",
-        message: "No work-kit session found and not inside a git repo. Run from a project directory or provide --worktree-root.",
+        message:
+          "No work-kit session found and not inside a git repo. Run from a project directory or provide --worktree-root.",
       };
     }
   }

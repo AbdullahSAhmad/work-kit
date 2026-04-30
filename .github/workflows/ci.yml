@@ -18,5 +18,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
+      - run: npx biome ci
       - run: npx tsc --project cli/tsconfig.json --noEmit
       - run: npx tsx --test cli/src/**/*.test.ts

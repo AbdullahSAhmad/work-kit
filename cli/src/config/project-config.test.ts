@@ -1,12 +1,12 @@
-import { describe, it, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
 import { randomUUID } from "node:crypto";
-import { loadProjectConfig } from "./project-config.js";
-import { resolveParallelGroups, DEFAULT_PARALLEL_GROUPS } from "../workflow/parallel.js";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { afterEach, describe, it } from "node:test";
+import { DEFAULT_PARALLEL_GROUPS, resolveParallelGroups } from "../workflow/parallel.js";
 import { PROJECT_CONFIG_FILE } from "./constants.js";
+import { loadProjectConfig } from "./project-config.js";
 
 function makeTmpDir(): string {
   const dir = path.join(os.tmpdir(), `wk-config-${randomUUID()}`);
@@ -88,11 +88,11 @@ describe("loadProjectConfig", () => {
     fs.writeFileSync(
       path.join(tmp, PROJECT_CONFIG_FILE),
       JSON.stringify({
-        workflow: { include: ["wrap-up/knowledge", "bogus/step"], exclude: ["plan/audit"] },
+        workflow: { include: ["wrap-up/finalize", "bogus/step"], exclude: ["plan/audit"] },
       }),
     );
     const config = loadProjectConfig(tmp);
-    assert.deepStrictEqual(config.workflow?.include, ["wrap-up/knowledge"]);
+    assert.deepStrictEqual(config.workflow?.include, ["wrap-up/finalize"]);
     assert.deepStrictEqual(config.workflow?.exclude, ["plan/audit"]);
   });
 

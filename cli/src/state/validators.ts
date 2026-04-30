@@ -1,5 +1,5 @@
-import { WorkKitState, PhaseName } from "./schema.js";
 import { PHASE_PREREQUISITES } from "../config/workflow.js";
+import { PhaseName, WorkKitState } from "./schema.js";
 
 export interface ValidationResult {
   valid: boolean;

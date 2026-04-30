@@ -1,9 +1,9 @@
 import * as fs from "node:fs";
-import { readState, writeState, findWorktreeRoot, statePath, gitMainRepoRoot } from "../state/store.js";
-import { unpause } from "../state/helpers.js";
 import { CLI_BINARY } from "../config/constants.js";
 import { discoverWorktrees } from "../observer/data.js";
+import { unpause } from "../state/helpers.js";
 import type { Action, ResumableSessionSummary } from "../state/schema.js";
+import { findWorktreeRoot, gitMainRepoRoot, readState, statePath, writeState } from "../state/store.js";
 
 export interface ResumeOptions {
   worktreeRoot?: string;
@@ -14,7 +14,7 @@ function collectResumableSessions(mainRepoRoot: string): ResumableSessionSummary
   const sessions: ResumableSessionSummary[] = [];
   const now = Date.now();
   for (const wt of discoverWorktrees(mainRepoRoot)) {
-    let state;
+    let state: ReturnType<typeof readState>;
     try {
       state = readState(wt);
     } catch {
@@ -99,7 +99,7 @@ export function resumeCommand(options: ResumeOptions = {}): Action {
 
   // 3. Slug selector → find matching session in this repo (paused OR in-progress)
   if (options.slug) {
-    const match = sessions.find(s => s.slug === options.slug);
+    const match = sessions.find((s) => s.slug === options.slug);
     if (!match) {
       return {
         action: "error",

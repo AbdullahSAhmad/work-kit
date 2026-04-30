@@ -7,26 +7,26 @@
  * fields for their own bookkeeping; the validator won't trip on them.
  */
 
-import { CLASSIFICATIONS, isClassification } from "../state/schema.js";
 import type { PhaseName } from "../state/schema.js";
-import {
-  RECEIPT_VERSION,
-  RECEIPT_STEP_KEYS,
-  isReceiptStepKey,
-  type Receipt,
-  type ReceiptStepKey,
-} from "./schemas.js";
+import { CLASSIFICATIONS, isClassification } from "../state/schema.js";
+import { isReceiptStepKey, RECEIPT_STEP_KEYS, RECEIPT_VERSION, type Receipt, type ReceiptStepKey } from "./schemas.js";
 
-export type ValidationResult =
-  | { ok: true; receipt: Receipt }
-  | { ok: false; errors: string[] };
+export type ValidationResult = { ok: true; receipt: Receipt } | { ok: false; errors: string[] };
 
 // ── Type guards ─────────────────────────────────────────────────────
 
-function isString(v: unknown): v is string { return typeof v === "string"; }
-function isBool(v: unknown): v is boolean { return typeof v === "boolean"; }
-function isNumber(v: unknown): v is number { return typeof v === "number" && !Number.isNaN(v); }
-function isArray(v: unknown): v is unknown[] { return Array.isArray(v); }
+function isString(v: unknown): v is string {
+  return typeof v === "string";
+}
+function isBool(v: unknown): v is boolean {
+  return typeof v === "boolean";
+}
+function isNumber(v: unknown): v is number {
+  return typeof v === "number" && !Number.isNaN(v);
+}
+function isArray(v: unknown): v is unknown[] {
+  return Array.isArray(v);
+}
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -65,11 +65,7 @@ function validateBase(raw: Record<string, unknown>, expectedStep: string): strin
 
 type StepValidator = (raw: Record<string, unknown>) => string[];
 
-function checkArrayOfObjects(
-  raw: Record<string, unknown>,
-  field: string,
-  required: string[]
-): string[] {
+function checkArrayOfObjects(raw: Record<string, unknown>, field: string, required: string[]): string[] {
   const errors: string[] = [];
   const arr = raw[field];
   if (!isArray(arr)) {
@@ -167,7 +163,10 @@ const VALIDATORS: Record<ReceiptStepKey, StepValidator> = {
   "review/scope": (raw) => {
     const errors: string[] = [];
     if (!isObject(raw.diff_classification)) errors.push(`diff_classification must be an object`);
-    if (!isArray(raw.lenses_to_run) || !raw.lenses_to_run.every((l) => isOneOf(l, ["quality", "efficiency", "security", "compliance"] as const))) {
+    if (
+      !isArray(raw.lenses_to_run) ||
+      !raw.lenses_to_run.every((l) => isOneOf(l, ["quality", "efficiency", "security", "compliance"] as const))
+    ) {
       errors.push(`lenses_to_run must be an array of "quality" | "efficiency" | "security" | "compliance"`);
     }
     return errors;
@@ -198,15 +197,13 @@ const VALIDATORS: Record<ReceiptStepKey, StepValidator> = {
     return errors;
   },
 
-  "wrap-up/summary": () => [],
-
-  "wrap-up/knowledge": (raw) => {
+  "wrap-up/finalize": (raw) => {
     const errors: string[] = [];
     if (raw.extracted !== undefined) {
       if (!isObject(raw.extracted)) {
         errors.push(`extracted must be an object when present`);
       } else {
-        for (const k of ["lessons", "conventions", "risks", "decisions", "workflow"]) {
+        for (const k of ["findings", "workflow"]) {
           if (raw.extracted[k] !== undefined && !isNumber(raw.extracted[k])) {
             errors.push(`extracted.${k} must be a number when present`);
           }
@@ -224,11 +221,7 @@ const VALIDATORS: Record<ReceiptStepKey, StepValidator> = {
  * Returns the typed receipt on success, a flat list of human-readable
  * errors on failure.
  */
-export function validateReceipt(
-  raw: unknown,
-  phase: PhaseName,
-  step: string
-): ValidationResult {
+export function validateReceipt(raw: unknown, phase: PhaseName, step: string): ValidationResult {
   if (!isObject(raw)) {
     return { ok: false, errors: [`receipt is not a JSON object`] };
   }

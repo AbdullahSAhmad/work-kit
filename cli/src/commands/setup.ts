@@ -1,10 +1,10 @@
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
-import { spawnSync } from "node:child_process";
-import { doctorCommand } from "./doctor.js";
-import { bold, dim, green, yellow, red, cyan } from "../utils/colors.js";
+import { bold, cyan, dim, green, red, yellow } from "../utils/colors.js";
 import { ensureKnowledgeDir, KNOWLEDGE_DIR, KNOWLEDGE_LOCK } from "../utils/knowledge.js";
+import { doctorCommand } from "./doctor.js";
 import { ensureGitignored } from "./init.js";
 
 const SKILLS_SOURCE = path.resolve(import.meta.dirname, "..", "..", "..", "skills");
@@ -133,7 +133,7 @@ function stripWorkKitHooks(hooks: HookSettings): HookSettings {
     const cleanedGroups: HookMatcherGroup[] = [];
     for (const group of groups) {
       const cleanedEntries = (group.hooks || []).filter(
-        (h) => !(h.type === "command" && typeof h.command === "string" && h.command.includes(HOOK_SENTINEL))
+        (h) => !(h.type === "command" && typeof h.command === "string" && h.command.includes(HOOK_SENTINEL)),
       );
       if (cleanedEntries.length > 0) {
         cleanedGroups.push({ ...group, hooks: cleanedEntries });
@@ -181,7 +181,7 @@ function installHooks(projectDir: string): { added: number; file: string } {
       settings = raw.trim() ? JSON.parse(raw) : {};
     } catch (err) {
       throw new Error(
-        `Failed to parse ${settingsFile}: ${(err as Error).message}. Fix or remove the file and re-run setup.`
+        `Failed to parse ${settingsFile}: ${(err as Error).message}. Fix or remove the file and re-run setup.`,
       );
     }
   }
@@ -228,8 +228,9 @@ function hasPlaywrightInstalled(projectDir: string): boolean {
 }
 
 function hasPlaywrightConfig(projectDir: string): boolean {
-  return ["playwright.config.ts", "playwright.config.js", "playwright.config.mjs", "playwright.config.cjs"]
-    .some((f) => fs.existsSync(path.join(projectDir, f)));
+  return ["playwright.config.ts", "playwright.config.js", "playwright.config.mjs", "playwright.config.cjs"].some((f) =>
+    fs.existsSync(path.join(projectDir, f)),
+  );
 }
 
 function runStreamed(cmd: string, args: string[], cwd: string): boolean {
@@ -239,9 +240,11 @@ function runStreamed(cmd: string, args: string[], cwd: string): boolean {
 
 function installPlaywrightPackage(pm: PackageManager, projectDir: string): boolean {
   const args =
-    pm === "pnpm" ? ["add", "-D", "@playwright/test"] :
-    pm === "yarn" ? ["add", "-D", "@playwright/test"] :
-    ["install", "-D", "@playwright/test"];
+    pm === "pnpm"
+      ? ["add", "-D", "@playwright/test"]
+      : pm === "yarn"
+        ? ["add", "-D", "@playwright/test"]
+        : ["install", "-D", "@playwright/test"];
   console.error(`  ${dim(`$ ${pm} ${args.join(" ")}`)}`);
   if (runStreamed(pm, args, projectDir)) return true;
 
@@ -250,11 +253,15 @@ function installPlaywrightPackage(pm: PackageManager, projectDir: string): boole
   // --legacy-peer-deps so Playwright still installs; the user's underlying
   // conflict is left for them to fix separately.
   if (pm === "npm") {
-    console.error(`  ${yellow("!")} npm install failed (likely peer-dep conflict). Retrying with --legacy-peer-deps...`);
+    console.error(
+      `  ${yellow("!")} npm install failed (likely peer-dep conflict). Retrying with --legacy-peer-deps...`,
+    );
     const fallbackArgs = [...args, "--legacy-peer-deps"];
     console.error(`  ${dim(`$ ${pm} ${fallbackArgs.join(" ")}`)}`);
     if (runStreamed(pm, fallbackArgs, projectDir)) {
-      console.error(`  ${dim("Note: installed with --legacy-peer-deps. Your project still has the original peer-dep conflict — fix it separately when convenient.")}`);
+      console.error(
+        `  ${dim("Note: installed with --legacy-peer-deps. Your project still has the original peer-dep conflict — fix it separately when convenient.")}`,
+      );
       return true;
     }
   }
@@ -275,7 +282,7 @@ function scaffoldPlaywrightConfig(pm: PackageManager, projectDir: string): boole
   return runStreamed(
     "npm",
     ["init", "playwright@latest", "--", "--quiet", "--browser=chromium", "--no-examples"],
-    projectDir
+    projectDir,
   );
 }
 
@@ -328,8 +335,8 @@ async function ensurePlaywright(projectDir: string): Promise<void> {
   }
 }
 
-// Project knowledge files (lessons/conventions/risks/workflow) are committed
-// to the repo. Only the lockfile is gitignored.
+// Project knowledge files (findings/workflow) are committed to the repo.
+// Only the lockfile is gitignored.
 function setupKnowledgeDir(projectDir: string): void {
   console.error(`\nScaffolding ${KNOWLEDGE_DIR}/ (project knowledge files)...`);
   try {
@@ -339,7 +346,9 @@ function setupKnowledgeDir(projectDir: string): void {
         console.error(`  ${green("+")} ${KNOWLEDGE_DIR}/${f}`);
       }
       console.error(`  ${yellow("!")} ${bold("These files are committed to your repo.")} Don't write secrets in them.`);
-      console.error(`  ${dim("work-kit redacts known secret shapes at write time, but the regex sweep is best-effort.")}`);
+      console.error(
+        `  ${dim("work-kit redacts known secret shapes at write time, but the regex sweep is best-effort.")}`,
+      );
     } else {
       console.error(`  ${dim("Already scaffolded.")}`);
     }
@@ -426,7 +435,9 @@ export async function setupCommand(targetPath?: string): Promise<void> {
   console.error(`\nInstalling Claude Code hooks into ${projectDir}/.claude/settings.json...`);
   try {
     const { added, file } = installHooks(projectDir);
-    console.error(`  ${green("+")} ${added} hook${added === 1 ? "" : "s"} merged into ${path.relative(projectDir, file) || file}`);
+    console.error(
+      `  ${green("+")} ${added} hook${added === 1 ? "" : "s"} merged into ${path.relative(projectDir, file) || file}`,
+    );
     console.error(`  ${dim("Observer will now detect permission prompts and AskUserQuestion calls.")}`);
   } catch (err) {
     console.error(`  ${red("✗")} ${(err as Error).message}`);

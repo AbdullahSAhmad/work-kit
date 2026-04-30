@@ -92,7 +92,7 @@ Then append a **single-line breadcrumb** to `.work-kit/state.md` under `## Obser
 - [risk] debug:<origin-phase>/<origin-step>: <one-sentence cause + verdict>
 ```
 
-This lets `wrap-up/knowledge` graduate the debug finding into the project's risks file.
+This lets `wrap-up/finalize` graduate the debug finding into the project's risks file.
 
 ## After you finish
 

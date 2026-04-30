@@ -46,7 +46,7 @@ Throughout every step, capture in shared state.md sections:
 
 - **`## Decisions`** — When you choose between real alternatives: `**<context>**: chose <X> over <Y> — <why>`. Skip obvious choices.
 - **`## Deviations`** — When you diverge from the Blueprint: `**<Blueprint step>**: <what changed> — <why>`. Every deviation needs a reason.
-- **`## Observations`** — When you notice a project convention, fragile area, learning, or workflow feedback: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these route to `.work-kit-knowledge/`.
+- **`## Observations`** — When you notice a project convention, fragile area, learning, or workflow feedback: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/finalize` these route to `.work-kit-knowledge/`.
 
 These feed the work-kit log summary and project knowledge files.
 

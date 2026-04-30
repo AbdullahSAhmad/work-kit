@@ -40,7 +40,7 @@ If the project lacks CI/CD or production observability, mark those gates `not_ap
 Update the shared state.md sections:
 
 - **`## Decisions`** — Record merge method choice, rollback criteria, fix-forward vs rollback calls.
-- **`## Observations`** — Whenever you notice deploy fragility, a missing convention, or feedback about the deploy phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these route to `.work-kit-knowledge/`.
+- **`## Observations`** — Whenever you notice deploy fragility, a missing convention, or feedback about the deploy phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/finalize` these route to `.work-kit-knowledge/`.
 
 ## This phase is optional
 

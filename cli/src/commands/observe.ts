@@ -1,12 +1,12 @@
 import * as path from "node:path";
+import { collectDashboardData, discoverWorkKitProjects } from "../observer/data.js";
 import {
-  renderDashboard,
   enterAlternateScreen,
   exitAlternateScreen,
   moveCursorHome,
+  renderDashboard,
   renderTooSmall,
 } from "../observer/renderer.js";
-import { collectDashboardData, discoverWorkKitProjects } from "../observer/data.js";
 import { startWatching } from "../observer/watcher.js";
 import { gitMainRepoRoot } from "../state/store.js";
 
@@ -34,12 +34,19 @@ export async function observeCommand(opts: { mainRepo?: string; all?: boolean })
     cleanedUp = true;
 
     // Stop tick interval
-    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
 
     // Restore terminal
     exitAlternateScreen();
     if (process.stdin.isTTY && process.stdin.setRawMode) {
-      try { process.stdin.setRawMode(false); } catch { /* ignore */ }
+      try {
+        process.stdin.setRawMode(false);
+      } catch {
+        /* ignore */
+      }
     }
     process.stdin.removeAllListeners("data");
   }

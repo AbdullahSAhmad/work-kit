@@ -1,6 +1,6 @@
+import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as crypto from "node:crypto";
 import { KNOWLEDGE_DIR, KNOWLEDGE_LOCK } from "../config/constants.js";
 import { atomicWriteFile } from "./fs.js";
 
@@ -21,32 +21,23 @@ export function isKnowledgeType(value: string): value is KnowledgeType {
 }
 
 const TYPE_TO_FILE: Record<KnowledgeType, string> = {
-  lesson: "lessons.md",
-  convention: "conventions.md",
-  risk: "risks.md",
+  lesson: "findings.md",
+  convention: "findings.md",
+  risk: "findings.md",
+  decision: "findings.md",
   workflow: "workflow.md",
-  decision: "decisions.md",
 };
 
 const FILE_TO_TITLE: Record<string, string> = {
-  "lessons.md": "Lessons",
-  "conventions.md": "Conventions",
-  "risks.md": "Risks",
+  "findings.md": "Project Findings",
   "workflow.md": "Workflow Feedback",
-  "decisions.md": "Decisions",
 };
 
 const FILE_TO_BLURB: Record<string, string> = {
-  "lessons.md":
-    "Project-specific learnings discovered while doing work in this codebase.",
-  "conventions.md":
-    "Codified rules this project follows. Once a convention is here, future sessions should respect it.",
-  "risks.md":
-    "Known fragile or dangerous areas. Touch these with care.",
+  "findings.md":
+    "Project-specific knowledge captured during work-kit sessions: lessons learned, conventions this codebase follows, known fragile areas (risks), and architectural decisions (what was chosen, what was rejected, why). Tagged with [lesson|convention|risk|decision] in the entry text.",
   "workflow.md":
     "Feedback about the work-kit workflow itself as observed in this project — skill quality, step skips, loopbacks, failure modes. Mined manually to improve work-kit upstream.",
-  "decisions.md":
-    "Architectural and design decisions made during work-kit sessions: what was chosen, what was rejected, why. Format mirrors a lightweight ADR — read these before re-litigating a settled choice.",
 };
 
 // ── Path Resolvers ──────────────────────────────────────────────────
@@ -110,7 +101,7 @@ export function withKnowledgeLock<T>(mainRepoRoot: string, fn: () => T): T {
       if (err?.code !== "EEXIST") throw err;
       if (Date.now() - start > LOCK_TIMEOUT_MS) {
         throw new Error(
-          `Could not acquire knowledge lock at ${lockPath} within ${LOCK_TIMEOUT_MS}ms. Another work-kit process may be stuck — remove the .lock file if no work-kit process is running.`
+          `Could not acquire knowledge lock at ${lockPath} within ${LOCK_TIMEOUT_MS}ms. Another work-kit process may be stuck — remove the .lock file if no work-kit process is running.`,
         );
       }
       sleepSync(LOCK_POLL_MS);
@@ -181,17 +172,15 @@ benefits.
 
 ## Files
 
-- **lessons.md** — things you learned about this codebase (project-specific).
-- **conventions.md** — codified rules this project follows.
-- **risks.md** — fragile or dangerous areas to handle with care.
-- **decisions.md** — architectural choices made during sessions: what was
-  picked, what was rejected, why. Read before re-litigating a settled choice.
+- **findings.md** — project-specific knowledge: lessons learned, conventions,
+  known fragile areas (risks), and architectural decisions. Tagged with
+  [lesson|convention|risk|decision] inside each entry.
 - **workflow.md** — feedback about the work-kit workflow itself as observed
   in this project. Mined manually across projects to improve work-kit.
 
 Each file has two sections:
 
-- **Auto-captured** — appended by work-kit during \`wrap-up/knowledge\` and
+- **Auto-captured** — appended by work-kit during \`wrap-up/finalize\` and
   by \`work-kit learn\`. Inside \`<!-- work-kit:auto:start -->\` markers.
   **Do not edit by hand.**
 - **Manual** — for humans only. Tooling never touches it. Add curated rules
@@ -208,15 +197,15 @@ source you commit.
 
 - During a session, agents append typed bullets to \`## Observations\` in
   \`.work-kit/state.md\`.
-- At \`wrap-up/knowledge\`, the kit parses Observations + Decisions +
-  Deviations + tracker.json loopbacks and routes them to the four files.
+- At \`wrap-up/finalize\`, the kit parses Observations + Decisions +
+  tracker.json loopbacks and routes them to the two files.
 - Agents may also call \`work-kit learn --type X --text "..."\` mid-session.
 
 ## Reading
 
-\`work-kit bootstrap\` injects \`lessons.md\`, \`conventions.md\`, and
-\`risks.md\` into every new session's opening context. \`workflow.md\` is
-**not** injected — it's a write-only artifact for human review.
+\`work-kit bootstrap\` injects \`findings.md\` into every new session's
+opening context. \`workflow.md\` is **not** injected — it's a write-only
+artifact for human review.
 `;
 
 // Roots whose knowledge dir we've already verified this process. Lets
@@ -242,7 +231,7 @@ export function ensureKnowledgeDir(mainRepoRoot: string): { created: string[] } 
     created.push("README.md");
   }
 
-  for (const file of Object.values(TYPE_TO_FILE)) {
+  for (const file of new Set(Object.values(TYPE_TO_FILE))) {
     const p = path.join(dir, file);
     if (!fs.existsSync(p)) {
       fs.writeFileSync(p, stubContent(file), "utf-8");
@@ -315,11 +304,7 @@ function readKnowledgeFileRaw(mainRepoRoot: string, file: string): string | null
  * entries from the auto-captured block until the cap is hit. If still over,
  * append a "(N more entries)" tail.
  */
-export function readKnowledgeFile(
-  mainRepoRoot: string,
-  file: string,
-  capLines: number = 200
-): string | null {
+export function readKnowledgeFile(mainRepoRoot: string, file: string, capLines: number = 200): string | null {
   const raw = readKnowledgeFileRaw(mainRepoRoot, file);
   if (raw === null) return null;
 
@@ -333,7 +318,10 @@ export function readKnowledgeFile(
 
   if (autoStart === -1 || autoEnd === -1) {
     // Markers missing — just truncate from the top.
-    return lines.slice(0, capLines).concat([`... (${lines.length - capLines} more lines)`]).join("\n");
+    return lines
+      .slice(0, capLines)
+      .concat([`... (${lines.length - capLines} more lines)`])
+      .join("\n");
   }
 
   const headerLines = lines.slice(0, autoStart + 1);
@@ -343,7 +331,7 @@ export function readKnowledgeFile(
 
   // Reserve budget for header + manual + auto markers + safety
   const reserved = headerLines.length + manualLines.length + 2;
-  let autoBudget = Math.max(5, capLines - reserved);
+  const autoBudget = Math.max(5, capLines - reserved);
 
   let truncatedAuto = autoBodyLines;
   let omitted = 0;
@@ -414,11 +402,7 @@ function insertEntry(content: string, entry: KnowledgeEntry): string | null {
  * For multiple entries to the same file, prefer `appendAutoEntries` to do
  * a single read-modify-write per file.
  */
-export function appendAutoEntry(
-  mainRepoRoot: string,
-  file: string,
-  entry: KnowledgeEntry
-): boolean {
+export function appendAutoEntry(mainRepoRoot: string, file: string, entry: KnowledgeEntry): boolean {
   return withKnowledgeLock(mainRepoRoot, () => {
     const content = loadOrStub(mainRepoRoot, file);
     const next = insertEntry(content, entry);
@@ -441,7 +425,7 @@ export interface AppendBatchResult {
  */
 export function appendAutoEntries(
   mainRepoRoot: string,
-  entriesByFile: Map<string, KnowledgeEntry[]>
+  entriesByFile: Map<string, KnowledgeEntry[]>,
 ): AppendBatchResult {
   return withKnowledgeLock(mainRepoRoot, () => {
     const perFile = new Map<string, { written: number; duplicates: number }>();

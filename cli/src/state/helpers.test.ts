@@ -1,7 +1,7 @@
-import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { parseLocation, resetToLocation } from "./helpers.js";
-import type { WorkKitState, PhaseName, PhaseState, StepState } from "./schema.js";
+import type { PhaseName, PhaseState, StepState, WorkKitState } from "./schema.js";
 import { PHASE_NAMES, STEPS_BY_PHASE } from "./schema.js";
 
 function makeState(): WorkKitState {

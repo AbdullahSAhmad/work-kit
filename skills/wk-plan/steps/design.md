@@ -173,7 +173,7 @@ Examples:
 - **ID generation**: chose ULID over UUID v4 — sortable, K-ordered for index locality.
 ```
 
-`work-kit extract` (run during `wrap-up/knowledge`) auto-graduates these into `.work-kit-knowledge/decisions.md`. Bullets that don't match this shape are skipped silently.
+`work-kit extract` (run during `wrap-up/finalize`) auto-graduates these into `.work-kit-knowledge/findings.md`. Bullets that don't match this shape are skipped silently.
 
 ## Anti-Rationalization
 

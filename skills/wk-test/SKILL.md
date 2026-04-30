@@ -46,7 +46,7 @@ Throughout every step, update the shared state.md sections:
 
 - **`## Criteria`** — Validate checks off criteria with inline evidence: `- [x] <criterion> — <test name | screenshot path | flow verdict>`. Skip without evidence is `[ ]` plus a reason.
 - **`## Decisions`** — Judgment calls during testing (e.g., "marked criterion X untestable because..."): `- **<context>**: chose <X> over <Y> — <one-sentence why>`. Skip obvious choices.
-- **`## Observations`** — Whenever you spot a fragile area, a missing test pattern, or feedback about the test phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/knowledge` these route to `.work-kit-knowledge/`.
+- **`## Observations`** — Whenever you spot a fragile area, a missing test pattern, or feedback about the test phase itself, append: `- [lesson|convention|risk|workflow] text` (workflow tag may include `:phase/step`). At `wrap-up/finalize` these route to `.work-kit-knowledge/`.
 
 The criteria checklist is copied directly into the final work-kit log. Make it accurate.
 

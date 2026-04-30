@@ -5,9 +5,9 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { atomicWriteFile } from "../utils/fs.js";
-import { STATE_DIR } from "../state/store.js";
 import type { PhaseName } from "../state/schema.js";
+import { STATE_DIR } from "../state/store.js";
+import { atomicWriteFile } from "../utils/fs.js";
 import { isReceiptStepKey, type Receipt } from "./schemas.js";
 
 export const RECEIPTS_DIR = "receipts";
@@ -52,8 +52,8 @@ export function readReceiptRaw(worktreeRoot: string, phase: PhaseName, step: str
   let raw: string;
   try {
     raw = fs.readFileSync(p, "utf-8");
-  } catch (e: any) {
-    if (e?.code === "ENOENT") return null;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException)?.code === "ENOENT") return null;
     throw e;
   }
   try {
@@ -63,12 +63,7 @@ export function readReceiptRaw(worktreeRoot: string, phase: PhaseName, step: str
   }
 }
 
-export function writeReceipt(
-  worktreeRoot: string,
-  phase: PhaseName,
-  step: string,
-  receipt: Receipt
-): void {
+export function writeReceipt(worktreeRoot: string, phase: PhaseName, step: string, receipt: Receipt): void {
   ensureReceiptsDir(worktreeRoot);
   atomicWriteFile(receiptPath(worktreeRoot, phase, step), JSON.stringify(receipt, null, 2) + "\n");
 }

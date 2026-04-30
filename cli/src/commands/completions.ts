@@ -3,22 +3,22 @@ _work_kit_completions() {
   local cur="\${COMP_WORDS[COMP_CWORD]}"
   local commands="init next complete status context validate loopback workflow doctor setup upgrade completions"
 
-  if [ \$COMP_CWORD -eq 1 ]; then
-    COMPREPLY=(\$(compgen -W "\$commands" -- "\$cur"))
+  if [ $COMP_CWORD -eq 1 ]; then
+    COMPREPLY=($(compgen -W "$commands" -- "$cur"))
     return
   fi
 
   local cmd="\${COMP_WORDS[1]}"
-  case "\$cmd" in
+  case "$cmd" in
     complete|context|validate)
       local phases="triage/classify plan/understand plan/design plan/audit build/setup build/implement build/commit test/exercise test/validate review/scope review/review review/resolve deploy/ship"
-      COMPREPLY=(\$(compgen -W "\$phases" -- "\$cur"))
+      COMPREPLY=($(compgen -W "$phases" -- "$cur"))
       ;;
     init)
-      COMPREPLY=(\$(compgen -W "--mode --description --classification --worktree-root" -- "\$cur"))
+      COMPREPLY=($(compgen -W "--mode --description --classification --worktree-root" -- "$cur"))
       ;;
     completions)
-      COMPREPLY=(\$(compgen -W "bash zsh fish" -- "\$cur"))
+      COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur"))
       ;;
   esac
 }
@@ -68,12 +68,12 @@ _work_kit() {
     return
   fi
 
-  case \$words[2] in
+  case $words[2] in
     complete|context|validate)
       _describe -t phases 'phase' phases
       ;;
     init)
-      _arguments \$init_opts
+      _arguments $init_opts
       ;;
     completions)
       _describe -t shells 'shell' shells
@@ -104,8 +104,8 @@ complete -c work-kit -n '__fish_use_subcommand' -a 'completions' -d 'Output shel
 # Phase completions for complete, context, validate
 set -l phase_cmds 'complete context validate'
 set -l phases 'triage/classify' 'plan/understand' 'plan/design' 'plan/audit' 'build/setup' 'build/implement' 'build/commit' 'test/exercise' 'test/validate' 'review/scope' 'review/review' 'review/resolve' 'deploy/ship'
-for phase in \$phases
-  complete -c work-kit -n "__fish_seen_subcommand_from \$phase_cmds" -a "\$phase"
+for phase in $phases
+  complete -c work-kit -n "__fish_seen_subcommand_from $phase_cmds" -a "$phase"
 end
 
 # init options

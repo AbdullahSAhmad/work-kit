@@ -1,6 +1,6 @@
 const enabled = process.stdout.isTTY !== false && process.env.NO_COLOR === undefined;
 
-const code = (n: number) => enabled ? `\x1b[${n}m` : "";
+const code = (n: number) => (enabled ? `\x1b[${n}m` : "");
 const reset = code(0);
 
 export const bold = (s: string) => `${code(1)}${s}${reset}`;

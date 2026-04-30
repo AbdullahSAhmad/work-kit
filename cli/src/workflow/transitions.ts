@@ -1,5 +1,5 @@
-import { WorkKitState, PhaseName, STEPS_BY_PHASE } from "../state/schema.js";
 import { PHASE_ORDER } from "../config/workflow.js";
+import { PhaseName, STEPS_BY_PHASE, WorkKitState } from "../state/schema.js";
 
 export interface NextStep {
   type: "step" | "phase-boundary" | "complete" | "wait-for-user";
@@ -17,7 +17,10 @@ export function nextStepInPhase(state: WorkKitState, phase: PhaseName): string |
 
   for (const step of steps) {
     const stepState = phaseState.steps[step];
-    if (stepState && (stepState.status === "pending" || stepState.status === "in-progress" || stepState.status === "waiting")) {
+    if (
+      stepState &&
+      (stepState.status === "pending" || stepState.status === "in-progress" || stepState.status === "waiting")
+    ) {
       return step;
     }
   }
@@ -29,9 +32,7 @@ export function nextStepInPhase(state: WorkKitState, phase: PhaseName): string |
  */
 export function isPhaseComplete(state: WorkKitState, phase: PhaseName): boolean {
   const phaseState = state.phases[phase];
-  return Object.values(phaseState.steps).every(
-    (s) => s.status === "completed" || s.status === "skipped"
-  );
+  return Object.values(phaseState.steps).every((s) => s.status === "completed" || s.status === "skipped");
 }
 
 /**

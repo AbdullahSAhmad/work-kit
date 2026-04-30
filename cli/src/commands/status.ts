@@ -1,5 +1,5 @@
 import { PHASE_NAMES } from "../state/schema.js";
-import { readState, findWorktreeRoot } from "../state/store.js";
+import { findWorktreeRoot, readState } from "../state/store.js";
 
 interface StatusOutput {
   slug: string;
@@ -26,7 +26,9 @@ export function statusCommand(worktreeRoot?: string): StatusOutput {
   const phases: StatusOutput["phases"] = {};
   for (const phase of PHASE_NAMES) {
     const ps = state.phases[phase];
-    let completed = 0, total = 0, active = 0;
+    let completed = 0,
+      total = 0,
+      active = 0;
     for (const s of Object.values(ps.steps)) {
       if (s.status === "skipped") continue;
       total++;
